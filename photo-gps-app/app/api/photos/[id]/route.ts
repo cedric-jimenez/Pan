@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server"
-import { unlink } from "fs/promises"
-import { join } from "path"
 import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/session"
+import { deleteFromBlob } from "@/lib/blob"
 
 // GET single photo
 export async function GET(
@@ -116,12 +115,11 @@ export async function DELETE(
       )
     }
 
-    // Delete file from filesystem
+    // Delete file from Vercel Blob Storage
     try {
-      const filepath = join(process.cwd(), "public", photo.url)
-      await unlink(filepath)
+      await deleteFromBlob(photo.url)
     } catch (error) {
-      console.error("Failed to delete file:", error)
+      console.error("Failed to delete blob:", error)
     }
 
     // Delete from database

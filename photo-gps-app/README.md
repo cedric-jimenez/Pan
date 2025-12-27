@@ -190,6 +190,25 @@ npm start
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new).
+This application is optimized for deployment on Vercel with PostgreSQL and Blob Storage.
 
-Check out the [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Quick Deploy
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
+
+### What You'll Need
+
+1. **Vercel Postgres** - For the database (auto-configured)
+2. **Vercel Blob** - For photo storage (auto-configured)
+3. **Environment Variables** - `NEXTAUTH_SECRET` and `NEXTAUTH_URL`
+
+### Step-by-Step Guide
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete deployment instructions including:
+- Setting up Vercel Postgres
+- Configuring Blob Storage
+- Environment variables
+- Database initialization
+- Troubleshooting
+
+The application will automatically use Vercel's infrastructure when deployed.

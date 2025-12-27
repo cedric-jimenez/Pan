@@ -19,6 +19,8 @@
     "@auth/prisma-adapter": "^2.11.1",
     "@headlessui/react": "^2.2.9",
     "@prisma/client": "^7.2.0",
+    "@vercel/blob": "^2.0.0",
+    "@vercel/postgres": "^0.10.0",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
