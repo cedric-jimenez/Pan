@@ -108,7 +108,7 @@ export default function GalleryPage() {
         ) : (
           <PhotoGrid
             photos={photos}
-            onPhotoClick={(photo) => setSelectedPhoto(photo)}
+            onPhotoClick={(photo: Photo) => setSelectedPhoto(photo)}
           />
         )}
       </main>

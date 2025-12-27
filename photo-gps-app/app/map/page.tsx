@@ -159,7 +159,7 @@ export default function MapPage() {
         {/* Map */}
         <MapView
           photos={filteredPhotos}
-          onPhotoClick={(photo) => setSelectedPhoto(photo)}
+          onPhotoClick={(photo: Photo) => setSelectedPhoto(photo)}
         />
 
         {photos.length > 0 && photosWithLocation.length === 0 && (
