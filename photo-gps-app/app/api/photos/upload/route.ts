@@ -33,12 +33,7 @@ export async function POST(request: Request) {
     // Extract EXIF data
     let exifData: any = {}
     try {
-      exifData = await exifr.parse(buffer, {
-        gps: true,
-        exif: true,
-        ifd0: true,
-        ifd1: true,
-      })
+      exifData = await exifr.parse(buffer)
     } catch (error) {
       console.log("No EXIF data found or error parsing:", error)
     }
