@@ -6,23 +6,7 @@ import { format } from "date-fns"
 import Image from "next/image"
 import Input from "./Input"
 import Button from "./Button"
-
-interface Photo {
-  id: string
-  url: string
-  originalName: string
-  takenAt: string | null
-  latitude: number | null
-  longitude: number | null
-  title: string | null
-  description: string | null
-  cameraMake: string | null
-  cameraModel: string | null
-  iso: number | null
-  aperture: string | null
-  shutterSpeed: string | null
-  focalLength: string | null
-}
+import { Photo } from "@/types/photo"
 
 interface PhotoDetailsModalProps {
   photo: Photo

@@ -7,23 +7,7 @@ import Navbar from "@/components/Navbar"
 import PhotoUpload from "@/components/PhotoUpload"
 import PhotoGrid from "@/components/PhotoGrid"
 import PhotoDetailsModal from "@/components/PhotoDetailsModal"
-
-interface Photo {
-  id: string
-  url: string
-  originalName: string
-  takenAt: string | null
-  latitude: number | null
-  longitude: number | null
-  title: string | null
-  description: string | null
-  cameraMake: string | null
-  cameraModel: string | null
-  iso: number | null
-  aperture: string | null
-  shutterSpeed: string | null
-  focalLength: string | null
-}
+import { Photo } from "@/types/photo"
 
 export default function GalleryPage() {
   const { data: session, status } = useSession()
