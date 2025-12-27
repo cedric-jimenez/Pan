@@ -6,6 +6,7 @@ import { format } from "date-fns"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 import Image from "next/image"
+import { Photo } from "@/types/photo"
 
 // Fix for default markers in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl
@@ -14,16 +15,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 })
-
-interface Photo {
-  id: string
-  url: string
-  originalName: string
-  takenAt: string | null
-  latitude: number | null
-  longitude: number | null
-  title: string | null
-}
 
 interface MapViewProps {
   photos: Photo[]

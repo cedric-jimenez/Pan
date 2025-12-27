@@ -1,14 +1,6 @@
 import { format } from "date-fns"
 import Image from "next/image"
-
-interface Photo {
-  id: string
-  url: string
-  originalName: string
-  takenAt: string | null
-  latitude: number | null
-  longitude: number | null
-}
+import { Photo } from "@/types/photo"
 
 interface PhotoGridProps {
   photos: Photo[]

@@ -8,6 +8,7 @@ import Navbar from "@/components/Navbar"
 import PhotoDetailsModal from "@/components/PhotoDetailsModal"
 import Input from "@/components/Input"
 import Button from "@/components/Button"
+import { Photo } from "@/types/photo"
 
 // Dynamically import MapView to avoid SSR issues with Leaflet
 const MapView = dynamic(() => import("@/components/MapView"), {
@@ -18,23 +19,6 @@ const MapView = dynamic(() => import("@/components/MapView"), {
     </div>
   ),
 })
-
-interface Photo {
-  id: string
-  url: string
-  originalName: string
-  takenAt: string | null
-  latitude: number | null
-  longitude: number | null
-  title: string | null
-  description: string | null
-  cameraMake: string | null
-  cameraModel: string | null
-  iso: number | null
-  aperture: string | null
-  shutterSpeed: string | null
-  focalLength: string | null
-}
 
 export default function MapPage() {
   const { data: session, status } = useSession()
@@ -175,7 +159,7 @@ export default function MapPage() {
         {/* Map */}
         <MapView
           photos={filteredPhotos}
-          onPhotoClick={(photo) => setSelectedPhoto(photo)}
+          onPhotoClick={(photo: Photo) => setSelectedPhoto(photo)}
         />
 
         {photos.length > 0 && photosWithLocation.length === 0 && (
