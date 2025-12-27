@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server"
-import { writeFile } from "fs/promises"
-import { join } from "path"
 import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/session"
+import { uploadToBlob } from "@/lib/blob"
 import exifr from "exifr"
 
 export async function POST(request: Request) {
@@ -44,13 +43,12 @@ export async function POST(request: Request) {
       console.log("No EXIF data found or error parsing:", error)
     }
 
-    // Generate unique filename
+    // Upload to Vercel Blob Storage
+    const blobUrl = await uploadToBlob(file)
+
+    // Generate unique filename for reference
     const timestamp = Date.now()
     const filename = `${timestamp}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-    const filepath = join(process.cwd(), "public/uploads", filename)
-
-    // Save file
-    await writeFile(filepath, buffer)
 
     // Extract GPS coordinates
     const latitude = exifData?.latitude || null
@@ -80,7 +78,7 @@ export async function POST(request: Request) {
         originalName: file.name,
         fileSize: file.size,
         mimeType: file.type,
-        url: `/uploads/${filename}`,
+        url: blobUrl,
         latitude,
         longitude,
         takenAt,

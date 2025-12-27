@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhotoMap - Aperçu des écrans</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #ededed;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #3b82f6;
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #a1a1aa;
+            margin-bottom: 40px;
+        }
+
+        .screen-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .screen {
+            background: #141414;
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .screen-header {
+            background: #1f2937;
+            padding: 15px;
+            border-bottom: 1px solid #27272a;
+        }
+
+        .screen-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #ededed;
+        }
+
+        .screen-body {
+            padding: 30px 20px;
+        }
+
+        /* Login/Register screens */
+        .auth-card {
+            background: #141414;
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            padding: 40px 30px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .auth-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .auth-subtitle {
+            text-align: center;
+            color: #a1a1aa;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 8px;
+            color: #ededed;
+            font-size: 1rem;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .link {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+
+        .text-center {
+            text-align: center;
+            margin-top: 20px;
+            color: #a1a1aa;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: #141414;
+            border-bottom: 1px solid #27272a;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-link {
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: #18181b;
+            color: #a1a1aa;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .nav-link.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        /* Photo Grid */
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+        }
+
+        .photo-card {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #27272a, #18181b);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .photo-card::after {
+            content: '📷';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            opacity: 0.3;
+        }
+
+        .photo-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            padding: 10px;
+            font-size: 0.75rem;
+        }
+
+        .gps-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #10b981;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        /* Upload area */
+        .upload-area {
+            border: 2px dashed #27272a;
+            border-radius: 12px;
+            padding: 60px 20px;
+            text-align: center;
+            margin-bottom: 30px;
+            background: #18181b;
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        /* Map placeholder */
+        .map-placeholder {
+            background: linear-gradient(135deg, #1f2937, #18181b);
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            margin-top: 20px;
+        }
+
+        /* Date filter */
+        .date-filter {
+            background: #141414;
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .filter-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .filter-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 10px;
+        }
+
+        .btn-small {
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-secondary {
+            background: #1f2937;
+            color: #e5e7eb;
+        }
+
+        /* Color palette */
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .color-box {
+            text-align: center;
+        }
+
+        .color-swatch {
+            height: 80px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border: 1px solid #27272a;
+        }
+
+        .color-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .color-value {
+            font-size: 0.75rem;
+            color: #a1a1aa;
+            font-family: monospace;
+        }
+
+        @media (max-width: 640px) {
+            .screen-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📸 PhotoMap - GPS Photo Gallery</h1>
+        <p class="subtitle">Aperçu des écrans - Thème sombre moderne</p>
+
+        <!-- Login Screen -->
+        <div class="screen-grid">
+            <div class="screen">
+                <div class="screen-header">
+                    <div class="screen-title">🔐 Écran de Connexion</div>
+                </div>
+                <div class="screen-body">
+                    <div class="auth-card">
+                        <h2 class="auth-title">Bienvenue</h2>
+                        <p class="auth-subtitle">Connectez-vous à votre compte PhotoMap</p>
+
+                        <div class="input-group">
+                            <label class="label">Email</label>
+                            <input type="email" class="input" placeholder="vous@exemple.com" value="">
+                        </div>
+
+                        <div class="input-group">
+                            <label class="label">Mot de passe</label>
+                            <input type="password" class="input" placeholder="••••••••" value="">
+                        </div>
+
+                        <button class="btn btn-primary">Se connecter</button>
+
+                        <p class="text-center">
+                            Pas de compte ? <a href="#" class="link">S'inscrire</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Register Screen -->
+            <div class="screen">
+                <div class="screen-header">
+                    <div class="screen-title">✍️ Écran d'Inscription</div>
+                </div>
+                <div class="screen-body">
+                    <div class="auth-card">
+                        <h2 class="auth-title">Créer un compte</h2>
+                        <p class="auth-subtitle">Commencez à gérer vos photos</p>
+
+                        <div class="input-group">
+                            <label class="label">Nom</label>
+                            <input type="text" class="input" placeholder="Votre nom" value="">
+                        </div>
+
+                        <div class="input-group">
+                            <label class="label">Email</label>
+                            <input type="email" class="input" placeholder="vous@exemple.com" value="">
+                        </div>
+
+                        <div class="input-group">
+                            <label class="label">Mot de passe</label>
+                            <input type="password" class="input" placeholder="••••••••" value="">
+                        </div>
+
+                        <div class="input-group">
+                            <label class="label">Confirmer le mot de passe</label>
+                            <input type="password" class="input" placeholder="••••••••" value="">
+                        </div>
+
+                        <button class="btn btn-primary">Créer un compte</button>
+
+                        <p class="text-center">
+                            Déjà un compte ? <a href="#" class="link">Se connecter</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gallery Screen -->
+        <div class="screen">
+            <div class="screen-header">
+                <div class="screen-title">🖼️ Galerie Photos</div>
+            </div>
+            <div class="screen-body">
+                <div class="navbar">
+                    <div class="nav-content">
+                        <div class="nav-logo">PhotoMap</div>
+                        <div class="nav-links">
+                            <a href="#" class="nav-link active">Galerie</a>
+                            <a href="#" class="nav-link">Carte</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="upload-area">
+                    <div class="upload-icon">☁️</div>
+                    <div style="font-size: 1.1rem; font-weight: 500; margin-bottom: 5px;">
+                        Glissez-déposez vos photos ici
+                    </div>
+                    <div style="color: #a1a1aa; font-size: 0.9rem;">
+                        Supports JPEG, PNG, GIF, WebP, HEIC
+                    </div>
+                </div>
+
+                <div class="photo-grid">
+                    <div class="photo-card">
+                        <div class="gps-badge">📍 GPS</div>
+                        <div class="photo-overlay">
+                            Paris, 25 déc 2024
+                        </div>
+                    </div>
+                    <div class="photo-card">
+                        <div class="gps-badge">📍 GPS</div>
+                        <div class="photo-overlay">
+                            Lyon, 20 déc 2024
+                        </div>
+                    </div>
+                    <div class="photo-card">
+                        <div class="photo-overlay">
+                            Nice, 15 déc 2024
+                        </div>
+                    </div>
+                    <div class="photo-card">
+                        <div class="gps-badge">📍 GPS</div>
+                        <div class="photo-overlay">
+                            Marseille, 10 déc
+                        </div>
+                    </div>
+                    <div class="photo-card">
+                        <div class="photo-overlay">
+                            Bordeaux, 5 déc
+                        </div>
+                    </div>
+                    <div class="photo-card">
+                        <div class="gps-badge">📍 GPS</div>
+                        <div class="photo-overlay">
+                            Toulouse, 1 déc
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Screen -->
+        <div class="screen">
+            <div class="screen-header">
+                <div class="screen-title">🗺️ Vue Carte</div>
+            </div>
+            <div class="screen-body">
+                <div class="navbar">
+                    <div class="nav-content">
+                        <div class="nav-logo">PhotoMap</div>
+                        <div class="nav-links">
+                            <a href="#" class="nav-link">Galerie</a>
+                            <a href="#" class="nav-link active">Carte</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="date-filter">
+                    <div class="filter-title">Filtrer par plage de dates</div>
+                    <div class="filter-row">
+                        <div class="input-group">
+                            <label class="label">Date de début</label>
+                            <input type="date" class="input">
+                        </div>
+                        <div class="input-group">
+                            <label class="label">Date de fin</label>
+                            <input type="date" class="input">
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: flex-end;">
+                            <button class="btn-small btn-primary">Appliquer</button>
+                            <button class="btn-small btn-secondary">Effacer</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="map-placeholder">
+                    🗺️
+                    <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 1rem; color: #a1a1aa;">
+                        Carte interactive avec marqueurs GPS
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Color Palette -->
+        <div style="margin-top: 60px; padding: 30px; background: #141414; border: 1px solid #27272a; border-radius: 12px;">
+            <h2 style="margin-bottom: 20px;">🎨 Palette de Couleurs</h2>
+            <div class="color-palette">
+                <div class="color-box">
+                    <div class="color-swatch" style="background: #0a0a0a;"></div>
+                    <div class="color-name">Background</div>
+                    <div class="color-value">#0a0a0a</div>
+                </div>
+                <div class="color-box">
+                    <div class="color-swatch" style="background: #141414;"></div>
+                    <div class="color-name">Card</div>
+                    <div class="color-value">#141414</div>
+                </div>
+                <div class="color-box">
+                    <div class="color-swatch" style="background: #3b82f6;"></div>
+                    <div class="color-name">Primary</div>
+                    <div class="color-value">#3b82f6</div>
+                </div>
+                <div class="color-box">
+                    <div class="color-swatch" style="background: #10b981;"></div>
+                    <div class="color-name">Accent</div>
+                    <div class="color-value">#10b981</div>
+                </div>
+                <div class="color-box">
+                    <div class="color-swatch" style="background: #ef4444;"></div>
+                    <div class="color-name">Destructive</div>
+                    <div class="color-value">#ef4444</div>
+                </div>
+                <div class="color-box">
+                    <div class="color-swatch" style="background: #27272a; border: 1px solid #3f3f46;"></div>
+                    <div class="color-name">Border</div>
+                    <div class="color-value">#27272a</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 40px; padding: 20px; text-align: center; color: #a1a1aa; border-top: 1px solid #27272a;">
+            <p>✨ PhotoMap - Application de gestion de photos avec GPS</p>
+            <p style="margin-top: 5px; font-size: 0.9rem;">Next.js 14 • TypeScript • Tailwind CSS • Prisma</p>
+        </div>
+    </div>
+</body>
+</html>
