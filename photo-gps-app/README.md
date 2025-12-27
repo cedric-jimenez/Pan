@@ -128,6 +128,59 @@ npx prisma db push --force-reset
 npx prisma generate
 ```
 
+## Development Tools
+
+### Testing
+
+The project uses **Vitest** for unit tests and **React Testing Library** for component tests.
+
+```bash
+# Run tests in watch mode
+npm test
+
+# Run tests with UI (interactive)
+npm run test:ui
+
+# Run tests with coverage report
+npm run test:coverage
+
+# Run tests once (CI mode)
+npm test -- --run
+```
+
+See [TESTING.md](./TESTING.md) for detailed testing guide and best practices.
+
+### Code Formatting
+
+**Prettier** is configured for consistent code formatting with Tailwind CSS support.
+
+```bash
+# Format all files
+npm run format
+
+# Check formatting (useful for CI)
+npm run format:check
+```
+
+### Linting
+
+**ESLint** is configured with Next.js and Prettier rules.
+
+```bash
+# Run linter
+npm run lint
+
+# Fix linting issues automatically
+npm run lint:fix
+```
+
+### Type Checking
+
+```bash
+# Run TypeScript type checker
+npm run type-check
+```
+
 ## Build for Production
 
 ```bash
