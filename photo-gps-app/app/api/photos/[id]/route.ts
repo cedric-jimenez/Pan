@@ -6,14 +6,15 @@ import { deleteFromBlob } from "@/lib/blob"
 // GET single photo
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth()
+    const { id } = await params
 
     const photo = await prisma.photo.findFirst({
       where: {
-        id: params.id,
+        id,
         userId: user.id,
       },
     })
@@ -44,16 +45,17 @@ export async function GET(
 // PATCH update photo
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth()
+    const { id } = await params
     const { title, description } = await request.json()
 
     // Check if photo belongs to user
     const existingPhoto = await prisma.photo.findFirst({
       where: {
-        id: params.id,
+        id,
         userId: user.id,
       },
     })
@@ -68,7 +70,7 @@ export async function PATCH(
     // Update photo
     const photo = await prisma.photo.update({
       where: {
-        id: params.id,
+        id,
       },
       data: {
         title: title !== undefined ? title : undefined,
@@ -95,15 +97,16 @@ export async function PATCH(
 // DELETE photo
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth()
+    const { id } = await params
 
     // Check if photo belongs to user
     const photo = await prisma.photo.findFirst({
       where: {
-        id: params.id,
+        id,
         userId: user.id,
       },
     })
@@ -125,7 +128,7 @@ export async function DELETE(
     // Delete from database
     await prisma.photo.delete({
       where: {
-        id: params.id,
+        id,
       },
     })
 
