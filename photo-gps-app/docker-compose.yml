@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: photo-gps-postgres
+    environment:
+      POSTGRES_USER: photouser
+      POSTGRES_PASSWORD: photopass
+      POSTGRES_DB: photogps
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U photouser -d photogps"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Next.js Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: photo-gps-app
+    environment:
+      - DATABASE_URL=postgresql://photouser:photopass@postgres:5432/photogps
+      - DIRECT_URL=postgresql://photouser:photopass@postgres:5432/photogps
+      - NEXTAUTH_SECRET=local-dev-secret-change-in-production
+      - NEXTAUTH_URL=http://localhost:3000
+      - NODE_ENV=development
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+      - uploads:/app/public/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "npx prisma db push && npm run dev"
+
+volumes:
+  postgres_data:
+  uploads:
