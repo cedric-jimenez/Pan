@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/session"
 import { uploadToBlob } from "@/lib/blob"
 import exifr from "exifr"
+import sharp from "sharp"
 
 export async function POST(request: Request) {
   try {
@@ -38,8 +39,21 @@ export async function POST(request: Request) {
       console.log("No EXIF data found or error parsing:", error)
     }
 
-    // Upload to Vercel Blob Storage
-    const blobUrl = await uploadToBlob(file)
+    // Compress image to JPEG at 80% quality while keeping EXIF metadata
+    const compressedBuffer = await sharp(buffer)
+      .jpeg({ quality: 80 })
+      .withMetadata() // Preserve EXIF data including GPS
+      .toBuffer()
+
+    // Create a new File from compressed buffer
+    const compressedFile = new File(
+      [compressedBuffer],
+      file.name.replace(/\.\w+$/, '.jpg'), // Ensure .jpg extension
+      { type: 'image/jpeg' }
+    )
+
+    // Upload compressed version to Vercel Blob Storage
+    const blobUrl = await uploadToBlob(compressedFile)
 
     // Generate unique filename for reference
     const timestamp = Date.now()
@@ -71,8 +85,8 @@ export async function POST(request: Request) {
         userId: user.id,
         filename,
         originalName: file.name,
-        fileSize: file.size,
-        mimeType: file.type,
+        fileSize: compressedBuffer.length, // Use compressed size
+        mimeType: 'image/jpeg', // Always JPEG after compression
         url: blobUrl,
         latitude,
         longitude,
