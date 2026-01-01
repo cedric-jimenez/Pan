@@ -2,6 +2,9 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/session"
 
+type SortBy = 'date' | 'title' | 'size' | 'camera'
+type SortOrder = 'asc' | 'desc'
+
 export async function GET(request: Request) {
   try {
     const user = await requireAuth()
@@ -9,6 +12,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const startDate = searchParams.get("startDate")
     const endDate = searchParams.get("endDate")
+    const sortBy = (searchParams.get("sortBy") || 'date') as SortBy
+    const sortOrder = (searchParams.get("sortOrder") || 'desc') as SortOrder
 
     // Build query filters
     const where: { userId: string; takenAt?: { gte?: Date; lte?: Date } } = {
@@ -25,11 +30,45 @@ export async function GET(request: Request) {
       }
     }
 
+    // Build orderBy based on sortBy parameter
+    let orderBy: Record<string, 'asc' | 'desc'> | Record<string, 'asc' | 'desc'>[]
+
+    switch (sortBy) {
+      case 'date':
+        // Sort by takenAt if available, otherwise by createdAt
+        orderBy = [
+          { takenAt: sortOrder === 'asc' ? 'asc' : 'desc' },
+          { createdAt: sortOrder === 'asc' ? 'asc' : 'desc' }
+        ]
+        break
+
+      case 'title':
+        // Sort by title if available, otherwise by originalName
+        orderBy = [
+          { title: sortOrder === 'asc' ? 'asc' : 'desc' },
+          { originalName: sortOrder === 'asc' ? 'asc' : 'desc' }
+        ]
+        break
+
+      case 'size':
+        orderBy = { fileSize: sortOrder === 'asc' ? 'asc' : 'desc' }
+        break
+
+      case 'camera':
+        // Sort by cameraModel if available, otherwise by cameraMake
+        orderBy = [
+          { cameraModel: sortOrder === 'asc' ? 'asc' : 'desc' },
+          { cameraMake: sortOrder === 'asc' ? 'asc' : 'desc' }
+        ]
+        break
+
+      default:
+        orderBy = { takenAt: 'desc' }
+    }
+
     const photos = await prisma.photo.findMany({
       where,
-      orderBy: {
-        takenAt: "desc",
-      },
+      orderBy,
     })
 
     return NextResponse.json({ photos })

@@ -108,7 +108,10 @@ describe("GET /api/photos", () => {
     })
     expect(prisma.photo.findMany).toHaveBeenCalledWith({
       where: { userId: "user-123" },
-      orderBy: { takenAt: "desc" },
+      orderBy: [
+        { takenAt: "desc" },
+        { createdAt: "desc" }
+      ],
     })
   })
 
@@ -140,7 +143,10 @@ describe("GET /api/photos", () => {
           lte: new Date("2024-01-31"),
         },
       },
-      orderBy: { takenAt: "desc" },
+      orderBy: [
+        { takenAt: "desc" },
+        { createdAt: "desc" }
+      ],
     })
   })
 
@@ -169,7 +175,10 @@ describe("GET /api/photos", () => {
           gte: new Date("2024-01-01"),
         },
       },
-      orderBy: { takenAt: "desc" },
+      orderBy: [
+        { takenAt: "desc" },
+        { createdAt: "desc" }
+      ],
     })
   })
 
@@ -187,6 +196,84 @@ describe("GET /api/photos", () => {
     // Assert
     expect(response.status).toBe(401)
     expect(data.error).toBe("Unauthorized")
+  })
+
+  it("sorts photos by title ascending", async () => {
+    // Mock authenticated user
+    vi.mocked(requireAuth).mockResolvedValue({
+      id: "user-123",
+      email: "test@example.com",
+      name: "Test User",
+    })
+
+    // Mock photos
+    vi.mocked(prisma.photo.findMany).mockResolvedValue([])
+
+    // Create request with sort params
+    const request = new Request("http://localhost:3000/api/photos?sortBy=title&sortOrder=asc")
+
+    // Execute
+    await GET(request)
+
+    // Assert
+    expect(prisma.photo.findMany).toHaveBeenCalledWith({
+      where: { userId: "user-123" },
+      orderBy: [
+        { title: "asc" },
+        { originalName: "asc" }
+      ],
+    })
+  })
+
+  it("sorts photos by size descending", async () => {
+    // Mock authenticated user
+    vi.mocked(requireAuth).mockResolvedValue({
+      id: "user-123",
+      email: "test@example.com",
+      name: "Test User",
+    })
+
+    // Mock photos
+    vi.mocked(prisma.photo.findMany).mockResolvedValue([])
+
+    // Create request with sort params
+    const request = new Request("http://localhost:3000/api/photos?sortBy=size&sortOrder=desc")
+
+    // Execute
+    await GET(request)
+
+    // Assert
+    expect(prisma.photo.findMany).toHaveBeenCalledWith({
+      where: { userId: "user-123" },
+      orderBy: { fileSize: "desc" },
+    })
+  })
+
+  it("sorts photos by camera model", async () => {
+    // Mock authenticated user
+    vi.mocked(requireAuth).mockResolvedValue({
+      id: "user-123",
+      email: "test@example.com",
+      name: "Test User",
+    })
+
+    // Mock photos
+    vi.mocked(prisma.photo.findMany).mockResolvedValue([])
+
+    // Create request with sort params
+    const request = new Request("http://localhost:3000/api/photos?sortBy=camera&sortOrder=asc")
+
+    // Execute
+    await GET(request)
+
+    // Assert
+    expect(prisma.photo.findMany).toHaveBeenCalledWith({
+      where: { userId: "user-123" },
+      orderBy: [
+        { cameraModel: "asc" },
+        { cameraMake: "asc" }
+      ],
+    })
   })
 })
 

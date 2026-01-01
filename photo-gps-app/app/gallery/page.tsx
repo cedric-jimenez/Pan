@@ -69,7 +69,13 @@ export default function GalleryPage() {
 
   const fetchPhotos = async () => {
     try {
-      const response = await fetch("/api/photos")
+      // Build query params with sorting
+      const params = new URLSearchParams({
+        sortBy,
+        sortOrder,
+      })
+
+      const response = await fetch(`/api/photos?${params}`)
       if (response.ok) {
         const data = await response.json()
         setPhotos(data.photos)
@@ -85,7 +91,8 @@ export default function GalleryPage() {
     if (session) {
       fetchPhotos()
     }
-  }, [session])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, sortBy, sortOrder])
 
   const handlePhotoUpdate = async (updatedPhoto: Photo) => {
     setPhotos((prev) =>
@@ -99,44 +106,11 @@ export default function GalleryPage() {
     setSelectedPhoto(null)
   }
 
-  // Group photos by day with sorting
+  // Group photos by day (photos are already sorted by API)
   const photosByDay = useMemo(() => {
-    // Sort photos based on selected criteria
-    const sortedPhotos = [...photos].sort((a, b) => {
-      let compareResult = 0
-
-      switch (sortBy) {
-        case 'date':
-          const dateA = a.takenAt ? new Date(a.takenAt) : new Date(a.createdAt)
-          const dateB = b.takenAt ? new Date(b.takenAt) : new Date(b.createdAt)
-          compareResult = dateB.getTime() - dateA.getTime()
-          break
-
-        case 'title':
-          const titleA = (a.title || a.originalName).toLowerCase()
-          const titleB = (b.title || b.originalName).toLowerCase()
-          compareResult = titleA.localeCompare(titleB)
-          break
-
-        case 'size':
-          compareResult = b.fileSize - a.fileSize
-          break
-
-        case 'camera':
-          const cameraA = (a.cameraModel || a.cameraMake || '').toLowerCase()
-          const cameraB = (b.cameraModel || b.cameraMake || '').toLowerCase()
-          compareResult = cameraA.localeCompare(cameraB)
-          break
-      }
-
-      // Apply sort order
-      return sortOrder === 'asc' ? -compareResult : compareResult
-    })
-
-    // Group by day
     const groups = new Map<string, Photo[]>()
 
-    sortedPhotos.forEach((photo) => {
+    photos.forEach((photo) => {
       const photoDate = photo.takenAt ? new Date(photo.takenAt) : new Date(photo.createdAt)
       const dayKey = format(startOfDay(photoDate), 'yyyy-MM-dd')
 
@@ -150,7 +124,7 @@ export default function GalleryPage() {
       date: parseISO(dateKey),
       photos
     }))
-  }, [photos, sortBy, sortOrder])
+  }, [photos])
 
   if (status === "loading" || isLoading) {
     return (
