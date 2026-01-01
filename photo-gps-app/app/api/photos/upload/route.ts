@@ -45,8 +45,9 @@ export async function POST(request: Request) {
       .withMetadata() // Preserve EXIF data including GPS
       .toBuffer()
 
-    // Create a Blob from compressed buffer, then a File
-    const blob = new Blob([compressedBuffer], { type: 'image/jpeg' })
+    // Convert Buffer to Uint8Array for compatibility with Blob/File constructors
+    const uint8Array = new Uint8Array(compressedBuffer)
+    const blob = new Blob([uint8Array], { type: 'image/jpeg' })
     const compressedFile = new File(
       [blob],
       file.name.replace(/\.\w+$/, '.jpg'), // Ensure .jpg extension
