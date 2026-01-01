@@ -23,6 +23,8 @@ export default function GalleryPage() {
   const [gridSize, setGridSize] = useState<GridSize>('medium')
   const [sortBy, setSortBy] = useState<SortBy>('date')
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchInput, setSearchInput] = useState('')
 
   // Load preferences from localStorage
   useEffect(() => {
@@ -61,6 +63,15 @@ export default function GalleryPage() {
     localStorage.setItem('gallerySortOrder', newOrder)
   }
 
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(searchInput)
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [searchInput])
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login")
@@ -69,11 +80,15 @@ export default function GalleryPage() {
 
   const fetchPhotos = async () => {
     try {
-      // Build query params with sorting
+      // Build query params with sorting and search
       const params = new URLSearchParams({
         sortBy,
         sortOrder,
       })
+
+      if (searchQuery.trim()) {
+        params.set('search', searchQuery.trim())
+      }
 
       const response = await fetch(`/api/photos?${params}`)
       if (response.ok) {
@@ -92,7 +107,7 @@ export default function GalleryPage() {
       fetchPhotos()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, sortBy, sortOrder])
+  }, [session, sortBy, sortOrder, searchQuery])
 
   const handlePhotoUpdate = async (updatedPhoto: Photo) => {
     setPhotos((prev) =>
@@ -164,6 +179,41 @@ export default function GalleryPage() {
             </p>
 
             <div className="flex flex-wrap items-center gap-4">
+              {/* Search input */}
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder="Rechercher..."
+                  className="pl-9 pr-9 py-1.5 text-sm bg-muted border-0 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring w-48"
+                />
+                <svg
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                {searchInput && (
+                  <button
+                    onClick={() => setSearchInput('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    title="Effacer la recherche"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+
               {/* Sort selector */}
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Tri :</span>

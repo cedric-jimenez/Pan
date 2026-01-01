@@ -273,6 +273,183 @@ describe("GET /api/photos", () => {
       ],
     })
   })
+
+  it("searches photos by title", async () => {
+    // Mock authenticated user
+    vi.mocked(requireAuth).mockResolvedValue({
+      id: "user-123",
+      email: "test@example.com",
+      name: "Test User",
+    })
+
+    // Mock photos
+    vi.mocked(prisma.photo.findMany).mockResolvedValue([])
+
+    // Create request with search param
+    const request = new Request("http://localhost:3000/api/photos?search=Paris")
+
+    // Execute
+    await GET(request)
+
+    // Assert
+    expect(prisma.photo.findMany).toHaveBeenCalledWith({
+      where: {
+        userId: "user-123",
+        OR: [
+          { title: { contains: "Paris", mode: "insensitive" } },
+          { originalName: { contains: "Paris", mode: "insensitive" } },
+          { description: { contains: "Paris", mode: "insensitive" } },
+          { cameraMake: { contains: "Paris", mode: "insensitive" } },
+          { cameraModel: { contains: "Paris", mode: "insensitive" } },
+        ],
+      },
+      orderBy: [
+        { takenAt: "desc" },
+        { createdAt: "desc" }
+      ],
+    })
+  })
+
+  it("searches photos case-insensitively", async () => {
+    // Mock authenticated user
+    vi.mocked(requireAuth).mockResolvedValue({
+      id: "user-123",
+      email: "test@example.com",
+      name: "Test User",
+    })
+
+    // Mock photos
+    vi.mocked(prisma.photo.findMany).mockResolvedValue([])
+
+    // Create request with lowercase search
+    const request = new Request("http://localhost:3000/api/photos?search=canon")
+
+    // Execute
+    await GET(request)
+
+    // Assert - should search with mode: 'insensitive'
+    expect(prisma.photo.findMany).toHaveBeenCalledWith({
+      where: {
+        userId: "user-123",
+        OR: [
+          { title: { contains: "canon", mode: "insensitive" } },
+          { originalName: { contains: "canon", mode: "insensitive" } },
+          { description: { contains: "canon", mode: "insensitive" } },
+          { cameraMake: { contains: "canon", mode: "insensitive" } },
+          { cameraModel: { contains: "canon", mode: "insensitive" } },
+        ],
+      },
+      orderBy: [
+        { takenAt: "desc" },
+        { createdAt: "desc" }
+      ],
+    })
+  })
+
+  it("combines search with sorting", async () => {
+    // Mock authenticated user
+    vi.mocked(requireAuth).mockResolvedValue({
+      id: "user-123",
+      email: "test@example.com",
+      name: "Test User",
+    })
+
+    // Mock photos
+    vi.mocked(prisma.photo.findMany).mockResolvedValue([])
+
+    // Create request with search and sort params
+    const request = new Request("http://localhost:3000/api/photos?search=sunset&sortBy=title&sortOrder=asc")
+
+    // Execute
+    await GET(request)
+
+    // Assert
+    expect(prisma.photo.findMany).toHaveBeenCalledWith({
+      where: {
+        userId: "user-123",
+        OR: [
+          { title: { contains: "sunset", mode: "insensitive" } },
+          { originalName: { contains: "sunset", mode: "insensitive" } },
+          { description: { contains: "sunset", mode: "insensitive" } },
+          { cameraMake: { contains: "sunset", mode: "insensitive" } },
+          { cameraModel: { contains: "sunset", mode: "insensitive" } },
+        ],
+      },
+      orderBy: [
+        { title: "asc" },
+        { originalName: "asc" }
+      ],
+    })
+  })
+
+  it("ignores empty search query", async () => {
+    // Mock authenticated user
+    vi.mocked(requireAuth).mockResolvedValue({
+      id: "user-123",
+      email: "test@example.com",
+      name: "Test User",
+    })
+
+    // Mock photos
+    vi.mocked(prisma.photo.findMany).mockResolvedValue([])
+
+    // Create request with empty search
+    const request = new Request("http://localhost:3000/api/photos?search=   ")
+
+    // Execute
+    await GET(request)
+
+    // Assert - should not include OR clause for empty/whitespace search
+    expect(prisma.photo.findMany).toHaveBeenCalledWith({
+      where: { userId: "user-123" },
+      orderBy: [
+        { takenAt: "desc" },
+        { createdAt: "desc" }
+      ],
+    })
+  })
+
+  it("combines search with date range filter", async () => {
+    // Mock authenticated user
+    vi.mocked(requireAuth).mockResolvedValue({
+      id: "user-123",
+      email: "test@example.com",
+      name: "Test User",
+    })
+
+    // Mock photos
+    vi.mocked(prisma.photo.findMany).mockResolvedValue([])
+
+    // Create request with search and date range
+    const request = new Request(
+      "http://localhost:3000/api/photos?search=vacation&startDate=2024-01-01&endDate=2024-12-31"
+    )
+
+    // Execute
+    await GET(request)
+
+    // Assert
+    expect(prisma.photo.findMany).toHaveBeenCalledWith({
+      where: {
+        userId: "user-123",
+        takenAt: {
+          gte: new Date("2024-01-01"),
+          lte: new Date("2024-12-31"),
+        },
+        OR: [
+          { title: { contains: "vacation", mode: "insensitive" } },
+          { originalName: { contains: "vacation", mode: "insensitive" } },
+          { description: { contains: "vacation", mode: "insensitive" } },
+          { cameraMake: { contains: "vacation", mode: "insensitive" } },
+          { cameraModel: { contains: "vacation", mode: "insensitive" } },
+        ],
+      },
+      orderBy: [
+        { takenAt: "desc" },
+        { createdAt: "desc" }
+      ],
+    })
+  })
 })
 
 describe("GET /api/photos/[id]", () => {
