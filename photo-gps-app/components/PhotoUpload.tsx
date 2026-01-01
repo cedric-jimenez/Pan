@@ -22,7 +22,7 @@ export default function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
     try {
       const options = {
         maxSizeMB: 3.5, // Target max size: 3.5MB (under Vercel's 4.5MB limit)
-        maxWidthOrHeight: 2000, // Max dimension
+        maxWidthOrHeight: 800, // Max dimension (proportional resize)
         useWebWorker: true,
         preserveExif: true, // CRITICAL: Preserve EXIF data (GPS, date, camera info)
       }

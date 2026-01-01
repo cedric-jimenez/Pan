@@ -59,8 +59,12 @@ export async function POST(request: Request) {
       console.log("No EXIF data found or error parsing:", error)
     }
 
-    // Compress image to JPEG at 80% quality while keeping EXIF metadata
+    // Resize and compress image to JPEG at 80% quality while keeping EXIF metadata
     const compressedBuffer = await sharp(buffer)
+      .resize(800, 800, {
+        fit: 'inside', // Proportional resize to fit within 800x800
+        withoutEnlargement: true // Don't upscale small images
+      })
       .jpeg({ quality: 80 })
       .withMetadata() // Preserve EXIF data including GPS
       .toBuffer()

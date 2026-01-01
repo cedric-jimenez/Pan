@@ -27,9 +27,11 @@ vi.mock("exifr", () => ({
 
 vi.mock("sharp", () => ({
   default: vi.fn(() => ({
-    jpeg: vi.fn(() => ({
-      withMetadata: vi.fn(() => ({
-        toBuffer: vi.fn(),
+    resize: vi.fn(() => ({
+      jpeg: vi.fn(() => ({
+        withMetadata: vi.fn(() => ({
+          toBuffer: vi.fn(),
+        })),
       })),
     })),
   })),
@@ -70,12 +72,14 @@ describe("POST /api/photos/upload", () => {
       FocalLength: 50,
     })
 
-    // Mock sharp compression
+    // Mock sharp compression with resize
     const mockBuffer = Buffer.from("compressed-image-data")
     vi.mocked(sharp).mockReturnValue({
-      jpeg: vi.fn().mockReturnValue({
-        withMetadata: vi.fn().mockReturnValue({
-          toBuffer: vi.fn().mockResolvedValue(mockBuffer),
+      resize: vi.fn().mockReturnValue({
+        jpeg: vi.fn().mockReturnValue({
+          withMetadata: vi.fn().mockReturnValue({
+            toBuffer: vi.fn().mockResolvedValue(mockBuffer),
+          }),
         }),
       }),
     } as any)
@@ -162,12 +166,14 @@ describe("POST /api/photos/upload", () => {
     // Mock no EXIF data
     vi.mocked(exifr.parse).mockResolvedValue({})
 
-    // Mock sharp compression
+    // Mock sharp compression with resize
     const mockBuffer = Buffer.from("compressed-image-data")
     vi.mocked(sharp).mockReturnValue({
-      jpeg: vi.fn().mockReturnValue({
-        withMetadata: vi.fn().mockReturnValue({
-          toBuffer: vi.fn().mockResolvedValue(mockBuffer),
+      resize: vi.fn().mockReturnValue({
+        jpeg: vi.fn().mockReturnValue({
+          withMetadata: vi.fn().mockReturnValue({
+            toBuffer: vi.fn().mockResolvedValue(mockBuffer),
+          }),
         }),
       }),
     } as any)
@@ -242,8 +248,11 @@ describe("POST /api/photos/upload", () => {
         toBuffer: vi.fn().mockResolvedValue(Buffer.from("compressed")),
       }),
     })
-    vi.mocked(sharp).mockReturnValue({
+    const resizeSpy = vi.fn().mockReturnValue({
       jpeg: jpegSpy,
+    })
+    vi.mocked(sharp).mockReturnValue({
+      resize: resizeSpy,
     } as any)
 
     // Mock blob upload
@@ -381,12 +390,14 @@ describe("POST /api/photos/upload", () => {
     // Mock EXIF parsing error
     vi.mocked(exifr.parse).mockRejectedValue(new Error("Invalid EXIF data"))
 
-    // Mock sharp compression
+    // Mock sharp compression with resize
     const mockBuffer = Buffer.from("compressed-image-data")
     vi.mocked(sharp).mockReturnValue({
-      jpeg: vi.fn().mockReturnValue({
-        withMetadata: vi.fn().mockReturnValue({
-          toBuffer: vi.fn().mockResolvedValue(mockBuffer),
+      resize: vi.fn().mockReturnValue({
+        jpeg: vi.fn().mockReturnValue({
+          withMetadata: vi.fn().mockReturnValue({
+            toBuffer: vi.fn().mockResolvedValue(mockBuffer),
+          }),
         }),
       }),
     } as any)
@@ -447,11 +458,13 @@ describe("POST /api/photos/upload", () => {
     // Mock EXIF parsing
     vi.mocked(exifr.parse).mockResolvedValue({})
 
-    // Mock sharp compression
+    // Mock sharp compression with resize
     vi.mocked(sharp).mockReturnValue({
-      jpeg: vi.fn().mockReturnValue({
-        withMetadata: vi.fn().mockReturnValue({
-          toBuffer: vi.fn().mockResolvedValue(Buffer.from("compressed")),
+      resize: vi.fn().mockReturnValue({
+        jpeg: vi.fn().mockReturnValue({
+          withMetadata: vi.fn().mockReturnValue({
+            toBuffer: vi.fn().mockResolvedValue(Buffer.from("compressed")),
+          }),
         }),
       }),
     } as any)
