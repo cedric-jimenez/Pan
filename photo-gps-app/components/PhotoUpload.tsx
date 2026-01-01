@@ -48,6 +48,7 @@ export default function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     setError("")
     setUploadProgress([])
+    let successCount = 0
 
     for (const file of acceptedFiles) {
       try {
@@ -76,6 +77,7 @@ export default function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
           throw new Error(data.error || "Upload failed")
         }
 
+        successCount++
         setUploadProgress((prev) => [
           ...prev,
           `✓ ${file.name} uploaded successfully`,
@@ -87,9 +89,12 @@ export default function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
       }
     }
 
+    // Only reload gallery if at least one upload succeeded
     setTimeout(() => {
       setUploadProgress([])
-      onUploadComplete()
+      if (successCount > 0) {
+        onUploadComplete()
+      }
     }, 2000)
   }, [onUploadComplete])
 
