@@ -266,6 +266,7 @@ export default function GalleryPage() {
                   </svg>
                 </button>
               </div>
+              </div>
             </div>
           </div>
         )}
