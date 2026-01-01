@@ -2,20 +2,17 @@
 
 import { useCallback, useState } from "react"
 import { useDropzone } from "react-dropzone"
-import Button from "./Button"
 
 interface PhotoUploadProps {
   onUploadComplete: () => void
 }
 
 export default function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
-  const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<string[]>([])
   const [error, setError] = useState("")
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     setError("")
-    setIsUploading(true)
     setUploadProgress([])
 
     for (const file of acceptedFiles) {
@@ -39,13 +36,13 @@ export default function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
           ...prev,
           `✓ ${file.name} uploaded successfully`,
         ])
-      } catch (err: any) {
-        setUploadProgress((prev) => [...prev, `✗ ${file.name} failed: ${err.message}`])
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Unknown error'
+        setUploadProgress((prev) => [...prev, `✗ ${file.name} failed: ${message}`])
         setError("Some files failed to upload")
       }
     }
 
-    setIsUploading(false)
     setTimeout(() => {
       setUploadProgress([])
       onUploadComplete()

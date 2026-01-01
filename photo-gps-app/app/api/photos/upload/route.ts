@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     const buffer = Buffer.from(bytes)
 
     // Extract EXIF data
-    let exifData: any = {}
+    let exifData: Record<string, unknown> = {}
     try {
       exifData = await exifr.parse(buffer)
     } catch (error) {
@@ -103,10 +103,10 @@ export async function POST(request: Request) {
     })
 
     return NextResponse.json({ photo }, { status: 201 })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Upload error:", error)
 
-    if (error.message === "Unauthorized") {
+    if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }

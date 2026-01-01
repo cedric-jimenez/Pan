@@ -66,7 +66,7 @@ export default function RegisterPage() {
         router.push("/gallery")
         router.refresh()
       }
-    } catch (error) {
+    } catch {
       setError("An error occurred. Please try again.")
     } finally {
       setIsLoading(false)
