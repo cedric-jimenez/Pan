@@ -94,6 +94,9 @@ export default function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
                 errorMessage = `Format invalide : ${data.error}`
               }
               break
+            case 409:
+              errorMessage = "Ce fichier existe déjà dans votre galerie"
+              break
             case 413:
               errorMessage = "Fichier trop volumineux (max 10 MB après compression)"
               break
