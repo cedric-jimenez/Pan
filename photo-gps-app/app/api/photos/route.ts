@@ -14,9 +14,22 @@ export async function GET(request: Request) {
     const endDate = searchParams.get("endDate")
     const sortBy = (searchParams.get("sortBy") || 'date') as SortBy
     const sortOrder = (searchParams.get("sortOrder") || 'desc') as SortOrder
+    const search = searchParams.get("search")
 
     // Build query filters
-    const where: { userId: string; takenAt?: { gte?: Date; lte?: Date } } = {
+    type WhereClause = {
+      userId: string
+      takenAt?: { gte?: Date; lte?: Date }
+      OR?: Array<{
+        title?: { contains: string; mode: 'insensitive' }
+        originalName?: { contains: string; mode: 'insensitive' }
+        description?: { contains: string; mode: 'insensitive' }
+        cameraMake?: { contains: string; mode: 'insensitive' }
+        cameraModel?: { contains: string; mode: 'insensitive' }
+      }>
+    }
+
+    const where: WhereClause = {
       userId: user.id,
     }
 
@@ -28,6 +41,17 @@ export async function GET(request: Request) {
       if (endDate) {
         where.takenAt.lte = new Date(endDate)
       }
+    }
+
+    // Add search filter
+    if (search && search.trim()) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { originalName: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { cameraMake: { contains: search, mode: 'insensitive' } },
+        { cameraModel: { contains: search, mode: 'insensitive' } },
+      ]
     }
 
     // Build orderBy based on sortBy parameter
