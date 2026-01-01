@@ -3,8 +3,5 @@
     "app/api/photos/upload/route.ts": {
       "maxDuration": 60
     }
-  },
-  "limits": {
-    "maxRequestBodySize": "10mb"
   }
 }
