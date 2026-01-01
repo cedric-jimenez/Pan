@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react"
 import { useDropzone } from "react-dropzone"
+import imageCompression from 'browser-image-compression'
 
 interface PhotoUploadProps {
   onUploadComplete: () => void
@@ -11,57 +12,28 @@ export default function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
   const [uploadProgress, setUploadProgress] = useState<string[]>([])
   const [error, setError] = useState("")
 
-  // Compress image on client side to reduce upload size
+  // Compress image on client side while preserving EXIF data
   const compressImage = async (file: File): Promise<File> => {
     // If file is already small enough (< 4MB), return as-is
     if (file.size < 4 * 1024 * 1024) {
       return file
     }
 
-    return new Promise((resolve, reject) => {
-      const img = new Image()
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
-
-      img.onload = () => {
-        // Calculate new dimensions (max 2000px on longest side)
-        const maxSize = 2000
-        let width = img.width
-        let height = img.height
-
-        if (width > height && width > maxSize) {
-          height = (height * maxSize) / width
-          width = maxSize
-        } else if (height > maxSize) {
-          width = (width * maxSize) / height
-          height = maxSize
-        }
-
-        canvas.width = width
-        canvas.height = height
-
-        ctx?.drawImage(img, 0, 0, width, height)
-
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              const compressedFile = new File([blob], file.name, {
-                type: 'image/jpeg',
-                lastModified: Date.now(),
-              })
-              resolve(compressedFile)
-            } else {
-              reject(new Error('Failed to compress image'))
-            }
-          },
-          'image/jpeg',
-          0.85 // 85% quality
-        )
+    try {
+      const options = {
+        maxSizeMB: 3.5, // Target max size: 3.5MB (under Vercel's 4.5MB limit)
+        maxWidthOrHeight: 2000, // Max dimension
+        useWebWorker: true,
+        preserveExif: true, // CRITICAL: Preserve EXIF data (GPS, date, camera info)
       }
 
-      img.onerror = () => reject(new Error('Failed to load image'))
-      img.src = URL.createObjectURL(file)
-    })
+      const compressedFile = await imageCompression(file, options)
+      return compressedFile
+    } catch (error) {
+      console.error('Compression failed:', error)
+      // If compression fails, return original file
+      return file
+    }
   }
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {

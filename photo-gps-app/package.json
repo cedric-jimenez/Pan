@@ -23,6 +23,7 @@
     "@vercel/blob": "^2.0.0",
     "@vercel/postgres": "^0.10.0",
     "bcryptjs": "^3.0.3",
+    "browser-image-compression": "^2.0.2",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "exifr": "^7.1.3",
