@@ -49,23 +49,21 @@ export async function POST(request: Request) {
       .withMetadata() // Preserve EXIF data including GPS
       .toBuffer()
 
-    // Generate unique filename for storage (before creating File object)
-    const timestamp = Date.now()
-    const originalName = file.name || 'photo.jpg'
-    const safeName = originalName.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const uniqueFilename = `${timestamp}-${safeName}`.replace(/\.\w+$/, '.jpg')
-
     // Convert Buffer to Uint8Array for compatibility with Blob/File constructors
     const uint8Array = new Uint8Array(compressedBuffer)
     const blob = new Blob([uint8Array], { type: 'image/jpeg' })
     const compressedFile = new File(
       [blob],
-      uniqueFilename, // Use unique filename instead of file.name
+      file.name.replace(/\.\w+$/, '.jpg'), // Ensure .jpg extension
       { type: 'image/jpeg' }
     )
 
-    // Upload compressed version to Vercel Blob Storage with unique filename
+    // Upload compressed version to Vercel Blob Storage
     const blobUrl = await uploadToBlob(compressedFile)
+
+    // Generate unique filename for reference
+    const timestamp = Date.now()
+    const filename = `${timestamp}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
 
     // Extract GPS coordinates
     const latitude = typeof exifData?.latitude === 'number' ? exifData.latitude : null
@@ -93,8 +91,8 @@ export async function POST(request: Request) {
     const photo = await prisma.photo.create({
       data: {
         userId: user.id,
-        filename: uniqueFilename,
-        originalName: originalName,
+        filename,
+        originalName: file.name,
         fileSize: compressedBuffer.length, // Use compressed size
         mimeType: 'image/jpeg', // Always JPEG after compression
         url: blobUrl,
