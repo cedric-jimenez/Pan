@@ -2,14 +2,23 @@ import { format } from "date-fns"
 import Image from "next/image"
 import { Photo } from "@/types/photo"
 
+export type GridSize = 'small' | 'medium' | 'large'
+
 interface PhotoGridProps {
   photos: Photo[]
   onPhotoClick: (photo: Photo) => void
+  gridSize?: GridSize
 }
 
-export default function PhotoGrid({ photos, onPhotoClick }: PhotoGridProps) {
+const gridSizeClasses: Record<GridSize, string> = {
+  small: 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6',
+  medium: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
+  large: 'grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
+}
+
+export default function PhotoGrid({ photos, onPhotoClick, gridSize = 'medium' }: PhotoGridProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+    <div className={`grid ${gridSizeClasses[gridSize]} gap-4`}>
       {photos.map((photo) => (
         <div
           key={photo.id}
