@@ -1,8 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import { format, parseISO, startOfDay } from "date-fns"
+import { fr } from "date-fns/locale"
 import Navbar from "@/components/Navbar"
 import PhotoUpload from "@/components/PhotoUpload"
 import PhotoGrid from "@/components/PhotoGrid"
@@ -53,6 +55,34 @@ export default function GalleryPage() {
     setPhotos((prev) => prev.filter((p) => p.id !== photoId))
     setSelectedPhoto(null)
   }
+
+  // Group photos by day
+  const photosByDay = useMemo(() => {
+    // Sort photos by date (newest first)
+    const sortedPhotos = [...photos].sort((a, b) => {
+      const dateA = a.takenAt ? new Date(a.takenAt) : new Date(a.createdAt)
+      const dateB = b.takenAt ? new Date(b.takenAt) : new Date(b.createdAt)
+      return dateB.getTime() - dateA.getTime()
+    })
+
+    // Group by day
+    const groups = new Map<string, Photo[]>()
+
+    sortedPhotos.forEach((photo) => {
+      const photoDate = photo.takenAt ? new Date(photo.takenAt) : new Date(photo.createdAt)
+      const dayKey = format(startOfDay(photoDate), 'yyyy-MM-dd')
+
+      if (!groups.has(dayKey)) {
+        groups.set(dayKey, [])
+      }
+      groups.get(dayKey)!.push(photo)
+    })
+
+    return Array.from(groups.entries()).map(([dateKey, photos]) => ({
+      date: parseISO(dateKey),
+      photos
+    }))
+  }, [photos])
 
   if (status === "loading" || isLoading) {
     return (
@@ -106,10 +136,27 @@ export default function GalleryPage() {
             </p>
           </div>
         ) : (
-          <PhotoGrid
-            photos={photos}
-            onPhotoClick={(photo: Photo) => setSelectedPhoto(photo)}
-          />
+          <div className="space-y-8">
+            {photosByDay.map(({ date, photos }) => (
+              <div key={format(date, 'yyyy-MM-dd')}>
+                {/* Date header */}
+                <div className="mb-4 pb-2 border-b border-border">
+                  <h2 className="text-xl font-semibold">
+                    {format(date, 'EEEE d MMMM yyyy', { locale: fr })}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {photos.length} photo{photos.length > 1 ? 's' : ''}
+                  </p>
+                </div>
+
+                {/* Photos grid */}
+                <PhotoGrid
+                  photos={photos}
+                  onPhotoClick={(photo: Photo) => setSelectedPhoto(photo)}
+                />
+              </div>
+            ))}
+          </div>
         )}
       </main>
 
