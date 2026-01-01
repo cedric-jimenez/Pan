@@ -11,6 +11,9 @@ import PhotoGrid, { GridSize } from "@/components/PhotoGrid"
 import PhotoDetailsModal from "@/components/PhotoDetailsModal"
 import { Photo } from "@/types/photo"
 
+type SortBy = 'date' | 'title' | 'size' | 'camera'
+type SortOrder = 'asc' | 'desc'
+
 export default function GalleryPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -18,12 +21,24 @@ export default function GalleryPage() {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [gridSize, setGridSize] = useState<GridSize>('medium')
+  const [sortBy, setSortBy] = useState<SortBy>('date')
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
 
-  // Load grid size from localStorage
+  // Load preferences from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('galleryGridSize')
-    if (saved && (saved === 'small' || saved === 'medium' || saved === 'large')) {
-      setGridSize(saved as GridSize)
+    const savedGridSize = localStorage.getItem('galleryGridSize')
+    if (savedGridSize && (savedGridSize === 'small' || savedGridSize === 'medium' || savedGridSize === 'large')) {
+      setGridSize(savedGridSize as GridSize)
+    }
+
+    const savedSortBy = localStorage.getItem('gallerySortBy')
+    if (savedSortBy && ['date', 'title', 'size', 'camera'].includes(savedSortBy)) {
+      setSortBy(savedSortBy as SortBy)
+    }
+
+    const savedSortOrder = localStorage.getItem('gallerySortOrder')
+    if (savedSortOrder && (savedSortOrder === 'asc' || savedSortOrder === 'desc')) {
+      setSortOrder(savedSortOrder as SortOrder)
     }
   }, [])
 
@@ -31,6 +46,19 @@ export default function GalleryPage() {
   const handleGridSizeChange = (size: GridSize) => {
     setGridSize(size)
     localStorage.setItem('galleryGridSize', size)
+  }
+
+  // Save sort preference to localStorage
+  const handleSortChange = (newSortBy: SortBy) => {
+    setSortBy(newSortBy)
+    localStorage.setItem('gallerySortBy', newSortBy)
+  }
+
+  // Toggle sort order
+  const toggleSortOrder = () => {
+    const newOrder = sortOrder === 'asc' ? 'desc' : 'asc'
+    setSortOrder(newOrder)
+    localStorage.setItem('gallerySortOrder', newOrder)
   }
 
   useEffect(() => {
@@ -71,13 +99,38 @@ export default function GalleryPage() {
     setSelectedPhoto(null)
   }
 
-  // Group photos by day
+  // Group photos by day with sorting
   const photosByDay = useMemo(() => {
-    // Sort photos by date (newest first)
+    // Sort photos based on selected criteria
     const sortedPhotos = [...photos].sort((a, b) => {
-      const dateA = a.takenAt ? new Date(a.takenAt) : new Date(a.createdAt)
-      const dateB = b.takenAt ? new Date(b.takenAt) : new Date(b.createdAt)
-      return dateB.getTime() - dateA.getTime()
+      let compareResult = 0
+
+      switch (sortBy) {
+        case 'date':
+          const dateA = a.takenAt ? new Date(a.takenAt) : new Date(a.createdAt)
+          const dateB = b.takenAt ? new Date(b.takenAt) : new Date(b.createdAt)
+          compareResult = dateB.getTime() - dateA.getTime()
+          break
+
+        case 'title':
+          const titleA = (a.title || a.originalName).toLowerCase()
+          const titleB = (b.title || b.originalName).toLowerCase()
+          compareResult = titleA.localeCompare(titleB)
+          break
+
+        case 'size':
+          compareResult = b.fileSize - a.fileSize
+          break
+
+        case 'camera':
+          const cameraA = (a.cameraModel || a.cameraMake || '').toLowerCase()
+          const cameraB = (b.cameraModel || b.cameraMake || '').toLowerCase()
+          compareResult = cameraA.localeCompare(cameraB)
+          break
+      }
+
+      // Apply sort order
+      return sortOrder === 'asc' ? -compareResult : compareResult
     })
 
     // Group by day
@@ -97,7 +150,7 @@ export default function GalleryPage() {
       date: parseISO(dateKey),
       photos
     }))
-  }, [photos])
+  }, [photos, sortBy, sortOrder])
 
   if (status === "loading" || isLoading) {
     return (
@@ -131,13 +184,46 @@ export default function GalleryPage() {
         </div>
 
         {photos.length > 0 && (
-          <div className="mb-6 flex items-center justify-between">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground">
               {photos.length} photo{photos.length > 1 ? 's' : ''}
             </p>
 
-            {/* Grid size selector */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-4">
+              {/* Sort selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Tri :</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => handleSortChange(e.target.value as SortBy)}
+                  className="px-3 py-1.5 text-sm bg-muted border-0 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="date">Date</option>
+                  <option value="title">Titre</option>
+                  <option value="size">Taille</option>
+                  <option value="camera">Appareil</option>
+                </select>
+
+                {/* Sort order toggle */}
+                <button
+                  onClick={toggleSortOrder}
+                  className="px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-lg transition-colors"
+                  title={sortOrder === 'desc' ? 'Décroissant' : 'Croissant'}
+                >
+                  {sortOrder === 'desc' ? (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+
+              {/* Grid size selector */}
+              <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground mr-2">Taille :</span>
               <div className="flex gap-1 p-1 bg-muted rounded-lg">
                 <button
