@@ -5,6 +5,10 @@ import { uploadToBlob } from "@/lib/blob"
 import exifr from "exifr"
 import sharp from "sharp"
 
+// Configure route to handle larger file uploads
+export const runtime = 'nodejs'
+export const maxDuration = 60 // Maximum execution time in seconds
+
 export async function POST(request: Request) {
   try {
     const user = await requireAuth()

@@ -11,16 +11,79 @@ export default function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
   const [uploadProgress, setUploadProgress] = useState<string[]>([])
   const [error, setError] = useState("")
 
+  // Compress image on client side to reduce upload size
+  const compressImage = async (file: File): Promise<File> => {
+    // If file is already small enough (< 4MB), return as-is
+    if (file.size < 4 * 1024 * 1024) {
+      return file
+    }
+
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+
+      img.onload = () => {
+        // Calculate new dimensions (max 2000px on longest side)
+        const maxSize = 2000
+        let width = img.width
+        let height = img.height
+
+        if (width > height && width > maxSize) {
+          height = (height * maxSize) / width
+          width = maxSize
+        } else if (height > maxSize) {
+          width = (width * maxSize) / height
+          height = maxSize
+        }
+
+        canvas.width = width
+        canvas.height = height
+
+        ctx?.drawImage(img, 0, 0, width, height)
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const compressedFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              })
+              resolve(compressedFile)
+            } else {
+              reject(new Error('Failed to compress image'))
+            }
+          },
+          'image/jpeg',
+          0.85 // 85% quality
+        )
+      }
+
+      img.onerror = () => reject(new Error('Failed to load image'))
+      img.src = URL.createObjectURL(file)
+    })
+  }
+
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     setError("")
     setUploadProgress([])
 
     for (const file of acceptedFiles) {
       try {
-        setUploadProgress((prev) => [...prev, `Uploading ${file.name}...`])
+        setUploadProgress((prev) => [...prev, `Préparation de ${file.name}...`])
+
+        // Compress image before upload
+        const compressedFile = await compressImage(file)
+        const sizeBefore = (file.size / 1024 / 1024).toFixed(2)
+        const sizeAfter = (compressedFile.size / 1024 / 1024).toFixed(2)
+
+        setUploadProgress((prev) => [
+          ...prev.slice(0, -1),
+          `Upload de ${file.name} (${sizeBefore}MB → ${sizeAfter}MB)...`,
+        ])
 
         const formData = new FormData()
-        formData.append("file", file)
+        formData.append("file", compressedFile)
 
         const response = await fetch("/api/photos/upload", {
           method: "POST",
