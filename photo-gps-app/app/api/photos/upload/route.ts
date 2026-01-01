@@ -35,6 +35,22 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
+    // Check if this file already exists for this user (by name and size)
+    const existingPhoto = await prisma.photo.findFirst({
+      where: {
+        userId: user.id,
+        originalName: file.name,
+        fileSize: buffer.length,
+      }
+    })
+
+    if (existingPhoto) {
+      return NextResponse.json(
+        { error: "Ce fichier existe déjà dans votre galerie" },
+        { status: 409 }
+      )
+    }
+
     // Extract EXIF data
     let exifData: Record<string, unknown> = {}
     try {

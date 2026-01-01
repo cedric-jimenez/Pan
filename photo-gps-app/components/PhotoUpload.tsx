@@ -74,7 +74,43 @@ export default function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
 
         if (!response.ok) {
           const data = await response.json()
-          throw new Error(data.error || "Upload failed")
+
+          // Map HTTP status codes to user-friendly French messages
+          let errorMessage = data.error || "Erreur d'upload"
+
+          switch (response.status) {
+            case 401:
+              errorMessage = "Vous devez être connecté pour uploader des photos"
+              break
+            case 400:
+              // Validation errors - use server message if available
+              if (data.error.includes("No file")) {
+                errorMessage = "Aucun fichier fourni"
+              } else if (data.error.includes("must be an image")) {
+                errorMessage = "Le fichier doit être une image"
+              } else if (data.error.includes("too large")) {
+                errorMessage = "Fichier trop volumineux (max 10 MB)"
+              } else {
+                errorMessage = `Format invalide : ${data.error}`
+              }
+              break
+            case 409:
+              errorMessage = "Ce fichier existe déjà dans votre galerie"
+              break
+            case 413:
+              errorMessage = "Fichier trop volumineux (max 10 MB après compression)"
+              break
+            case 507:
+              errorMessage = "Quota de stockage atteint. Supprimez des photos pour en ajouter de nouvelles"
+              break
+            case 500:
+              errorMessage = "Erreur lors du traitement de l'image. Réessayez avec une autre photo"
+              break
+            default:
+              errorMessage = `Erreur ${response.status}: ${data.error}`
+          }
+
+          throw new Error(errorMessage)
         }
 
         successCount++
@@ -83,9 +119,9 @@ export default function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
           `✓ ${file.name} uploaded successfully`,
         ])
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'Unknown error'
-        setUploadProgress((prev) => [...prev, `✗ ${file.name} failed: ${message}`])
-        setError("Some files failed to upload")
+        const message = err instanceof Error ? err.message : 'Erreur inconnue'
+        setUploadProgress((prev) => [...prev, `✗ ${file.name} : ${message}`])
+        setError("Certains fichiers n'ont pas pu être uploadés. Consultez les détails ci-dessus.")
       }
     }
 
