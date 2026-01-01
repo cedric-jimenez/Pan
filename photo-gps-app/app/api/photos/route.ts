@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     const endDate = searchParams.get("endDate")
 
     // Build query filters
-    const where: any = {
+    const where: { userId: string; takenAt?: { gte?: Date; lte?: Date } } = {
       userId: user.id,
     }
 
@@ -33,10 +33,10 @@ export async function GET(request: Request) {
     })
 
     return NextResponse.json({ photos })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Fetch photos error:", error)
 
-    if (error.message === "Unauthorized") {
+    if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }

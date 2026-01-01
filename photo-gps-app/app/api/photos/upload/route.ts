@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     const buffer = Buffer.from(bytes)
 
     // Extract EXIF data
-    let exifData: any = {}
+    let exifData: Record<string, unknown> = {}
     try {
       exifData = await exifr.parse(buffer)
     } catch (error) {
@@ -62,24 +62,26 @@ export async function POST(request: Request) {
     const filename = `${timestamp}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
 
     // Extract GPS coordinates
-    const latitude = exifData?.latitude || null
-    const longitude = exifData?.longitude || null
+    const latitude = typeof exifData?.latitude === 'number' ? exifData.latitude : null
+    const longitude = typeof exifData?.longitude === 'number' ? exifData.longitude : null
 
     // Extract datetime
     let takenAt = null
     if (exifData?.DateTimeOriginal) {
-      takenAt = new Date(exifData.DateTimeOriginal)
+      const dateValue = exifData.DateTimeOriginal
+      takenAt = dateValue instanceof Date ? dateValue : new Date(String(dateValue))
     } else if (exifData?.DateTime) {
-      takenAt = new Date(exifData.DateTime)
+      const dateValue = exifData.DateTime
+      takenAt = dateValue instanceof Date ? dateValue : new Date(String(dateValue))
     }
 
     // Extract camera info
-    const cameraMake = exifData?.Make || null
-    const cameraModel = exifData?.Model || null
-    const iso = exifData?.ISO || null
-    const aperture = exifData?.FNumber ? `f/${exifData.FNumber}` : null
-    const shutterSpeed = exifData?.ExposureTime ? `${exifData.ExposureTime}s` : null
-    const focalLength = exifData?.FocalLength ? `${exifData.FocalLength}mm` : null
+    const cameraMake = exifData?.Make ? String(exifData.Make) : null
+    const cameraModel = exifData?.Model ? String(exifData.Model) : null
+    const iso = exifData?.ISO ? Number(exifData.ISO) : null
+    const aperture = exifData?.FNumber ? `f/${Number(exifData.FNumber)}` : null
+    const shutterSpeed = exifData?.ExposureTime ? `${Number(exifData.ExposureTime)}s` : null
+    const focalLength = exifData?.FocalLength ? `${Number(exifData.FocalLength)}mm` : null
 
     // Save to database
     const photo = await prisma.photo.create({
@@ -103,10 +105,10 @@ export async function POST(request: Request) {
     })
 
     return NextResponse.json({ photo }, { status: 201 })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Upload error:", error)
 
-    if (error.message === "Unauthorized") {
+    if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
