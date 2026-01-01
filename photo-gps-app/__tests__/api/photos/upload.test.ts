@@ -10,6 +10,7 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     photo: {
       create: vi.fn(),
+      findFirst: vi.fn(),
     },
   },
 }))
@@ -52,6 +53,9 @@ describe("POST /api/photos/upload", () => {
       email: "test@example.com",
       name: "Test User",
     })
+
+    // Mock no duplicate file found
+    vi.mocked(prisma.photo.findFirst).mockResolvedValue(null)
 
     // Mock EXIF data with GPS
     vi.mocked(exifr.parse).mockResolvedValue({
@@ -152,6 +156,9 @@ describe("POST /api/photos/upload", () => {
       name: "Test User",
     })
 
+    // Mock no duplicate file found
+    vi.mocked(prisma.photo.findFirst).mockResolvedValue(null)
+
     // Mock no EXIF data
     vi.mocked(exifr.parse).mockResolvedValue({})
 
@@ -222,6 +229,9 @@ describe("POST /api/photos/upload", () => {
       email: "test@example.com",
       name: "Test User",
     })
+
+    // Mock no duplicate file found
+    vi.mocked(prisma.photo.findFirst).mockResolvedValue(null)
 
     // Mock EXIF parsing
     vi.mocked(exifr.parse).mockResolvedValue({})
@@ -364,6 +374,9 @@ describe("POST /api/photos/upload", () => {
       email: "test@example.com",
       name: "Test User",
     })
+
+    // Mock no duplicate file found
+    vi.mocked(prisma.photo.findFirst).mockResolvedValue(null)
 
     // Mock EXIF parsing error
     vi.mocked(exifr.parse).mockRejectedValue(new Error("Invalid EXIF data"))
