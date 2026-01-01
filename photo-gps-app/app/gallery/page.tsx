@@ -84,11 +84,11 @@ export default function GalleryPage() {
     }
   }, [status, router])
 
-  const fetchPhotos = useCallback(async (pageNum: number, append = false) => {
+  const fetchPhotos = useCallback(async (pageNum: number, append = false, silent = false) => {
     try {
       if (append) {
         setIsLoadingMore(true)
-      } else {
+      } else if (!silent) {
         setIsLoading(true)
       }
 
@@ -231,8 +231,7 @@ export default function GalleryPage() {
         <div className="mb-8">
           <PhotoUpload onUploadComplete={() => {
             setPage(1)
-            setPhotos([])
-            fetchPhotos(1, false)
+            fetchPhotos(1, false, true)
           }} />
         </div>
 
