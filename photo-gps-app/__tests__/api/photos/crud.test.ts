@@ -62,7 +62,6 @@ describe("GET /api/photos", () => {
         updatedAt: new Date(),
         title: "Paris Trip",
         description: "Eiffel Tower",
-        location: null,
       },
       {
         id: "photo-2",
@@ -85,7 +84,6 @@ describe("GET /api/photos", () => {
         updatedAt: new Date(),
         title: null,
         description: null,
-        location: null,
       },
     ]
     vi.mocked(prisma.photo.findMany).mockResolvedValue(mockPhotos)
@@ -312,7 +310,6 @@ describe("GET /api/photos/[id]", () => {
       updatedAt: new Date(),
       title: "Paris Trip",
       description: "Eiffel Tower",
-      location: null,
     }
     vi.mocked(prisma.photo.findFirst).mockResolvedValue(mockPhoto)
 
@@ -425,7 +422,6 @@ describe("PATCH /api/photos/[id]", () => {
       updatedAt: new Date(),
       title: null,
       description: null,
-      location: null,
     }
     vi.mocked(prisma.photo.findFirst).mockResolvedValue(existingPhoto)
 
@@ -494,7 +490,6 @@ describe("PATCH /api/photos/[id]", () => {
       updatedAt: new Date(),
       title: "Old Title",
       description: "Old Description",
-      location: null,
     })
 
     // Mock updated photo
@@ -519,7 +514,6 @@ describe("PATCH /api/photos/[id]", () => {
       updatedAt: new Date(),
       title: "New Title",
       description: "Old Description",
-      location: null,
     })
 
     // Create request
@@ -621,7 +615,6 @@ describe("DELETE /api/photos/[id]", () => {
       updatedAt: new Date(),
       title: "Paris Trip",
       description: "Eiffel Tower",
-      location: null,
     }
     vi.mocked(prisma.photo.findFirst).mockResolvedValue(mockPhoto)
 
@@ -680,7 +673,6 @@ describe("DELETE /api/photos/[id]", () => {
       updatedAt: new Date(),
       title: null,
       description: null,
-      location: null,
     }
     vi.mocked(prisma.photo.findFirst).mockResolvedValue(mockPhoto)
 

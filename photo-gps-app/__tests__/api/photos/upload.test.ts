@@ -101,7 +101,6 @@ describe("POST /api/photos/upload", () => {
       updatedAt: new Date(),
       title: null,
       description: null,
-      location: null,
     }
     vi.mocked(prisma.photo.create).mockResolvedValue(mockPhoto)
 
@@ -191,7 +190,6 @@ describe("POST /api/photos/upload", () => {
       updatedAt: new Date(),
       title: null,
       description: null,
-      location: null,
     }
     vi.mocked(prisma.photo.create).mockResolvedValue(mockPhoto)
 
@@ -263,7 +261,6 @@ describe("POST /api/photos/upload", () => {
       updatedAt: new Date(),
       title: null,
       description: null,
-      location: null,
     })
 
     // Create test file
@@ -406,7 +403,6 @@ describe("POST /api/photos/upload", () => {
       updatedAt: new Date(),
       title: null,
       description: null,
-      location: null,
     })
 
     // Create test file
