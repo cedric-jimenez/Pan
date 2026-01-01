@@ -28,6 +28,15 @@ export default function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
       }
 
       const compressedFile = await imageCompression(file, options)
+
+      // Ensure the filename is preserved (browser-image-compression sometimes loses it)
+      if (compressedFile.name === 'blob' || !compressedFile.name) {
+        return new File([compressedFile], file.name, {
+          type: compressedFile.type,
+          lastModified: compressedFile.lastModified,
+        })
+      }
+
       return compressedFile
     } catch (error) {
       console.error('Compression failed:', error)
