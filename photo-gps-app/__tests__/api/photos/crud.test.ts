@@ -14,6 +14,7 @@ vi.mock("@/lib/prisma", () => ({
       findFirst: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+      count: vi.fn(),
     },
   },
 }))
@@ -86,6 +87,7 @@ describe("GET /api/photos", () => {
         description: null,
       },
     ]
+    vi.mocked(prisma.photo.count).mockResolvedValue(2)
     vi.mocked(prisma.photo.findMany).mockResolvedValue(mockPhotos)
 
     // Create request
@@ -110,6 +112,8 @@ describe("GET /api/photos", () => {
         { takenAt: "desc" },
         { createdAt: "desc" }
       ],
+      skip: 0,
+      take: 20,
     })
   })
 
@@ -122,6 +126,7 @@ describe("GET /api/photos", () => {
     })
 
     // Mock photos
+    vi.mocked(prisma.photo.count).mockResolvedValue(0)
     vi.mocked(prisma.photo.findMany).mockResolvedValue([])
 
     // Create request with date filters
@@ -145,6 +150,8 @@ describe("GET /api/photos", () => {
         { takenAt: "desc" },
         { createdAt: "desc" }
       ],
+      skip: 0,
+      take: 20,
     })
   })
 
@@ -157,6 +164,7 @@ describe("GET /api/photos", () => {
     })
 
     // Mock photos
+    vi.mocked(prisma.photo.count).mockResolvedValue(0)
     vi.mocked(prisma.photo.findMany).mockResolvedValue([])
 
     // Create request with start date only
@@ -177,6 +185,8 @@ describe("GET /api/photos", () => {
         { takenAt: "desc" },
         { createdAt: "desc" }
       ],
+      skip: 0,
+      take: 20,
     })
   })
 
@@ -205,6 +215,7 @@ describe("GET /api/photos", () => {
     })
 
     // Mock photos
+    vi.mocked(prisma.photo.count).mockResolvedValue(0)
     vi.mocked(prisma.photo.findMany).mockResolvedValue([])
 
     // Create request with sort params
@@ -220,6 +231,8 @@ describe("GET /api/photos", () => {
         { title: "asc" },
         { originalName: "asc" }
       ],
+      skip: 0,
+      take: 20,
     })
   })
 
@@ -232,6 +245,7 @@ describe("GET /api/photos", () => {
     })
 
     // Mock photos
+    vi.mocked(prisma.photo.count).mockResolvedValue(0)
     vi.mocked(prisma.photo.findMany).mockResolvedValue([])
 
     // Create request with sort params
@@ -244,6 +258,8 @@ describe("GET /api/photos", () => {
     expect(prisma.photo.findMany).toHaveBeenCalledWith({
       where: { userId: "user-123" },
       orderBy: { fileSize: "desc" },
+      skip: 0,
+      take: 20,
     })
   })
 
@@ -256,6 +272,7 @@ describe("GET /api/photos", () => {
     })
 
     // Mock photos
+    vi.mocked(prisma.photo.count).mockResolvedValue(0)
     vi.mocked(prisma.photo.findMany).mockResolvedValue([])
 
     // Create request with sort params
@@ -271,6 +288,8 @@ describe("GET /api/photos", () => {
         { cameraModel: "asc" },
         { cameraMake: "asc" }
       ],
+      skip: 0,
+      take: 20,
     })
   })
 
@@ -283,6 +302,7 @@ describe("GET /api/photos", () => {
     })
 
     // Mock photos
+    vi.mocked(prisma.photo.count).mockResolvedValue(0)
     vi.mocked(prisma.photo.findMany).mockResolvedValue([])
 
     // Create request with search param
@@ -307,6 +327,8 @@ describe("GET /api/photos", () => {
         { takenAt: "desc" },
         { createdAt: "desc" }
       ],
+      skip: 0,
+      take: 20,
     })
   })
 
@@ -319,6 +341,7 @@ describe("GET /api/photos", () => {
     })
 
     // Mock photos
+    vi.mocked(prisma.photo.count).mockResolvedValue(0)
     vi.mocked(prisma.photo.findMany).mockResolvedValue([])
 
     // Create request with lowercase search
@@ -343,6 +366,8 @@ describe("GET /api/photos", () => {
         { takenAt: "desc" },
         { createdAt: "desc" }
       ],
+      skip: 0,
+      take: 20,
     })
   })
 
@@ -355,6 +380,7 @@ describe("GET /api/photos", () => {
     })
 
     // Mock photos
+    vi.mocked(prisma.photo.count).mockResolvedValue(0)
     vi.mocked(prisma.photo.findMany).mockResolvedValue([])
 
     // Create request with search and sort params
@@ -379,6 +405,8 @@ describe("GET /api/photos", () => {
         { title: "asc" },
         { originalName: "asc" }
       ],
+      skip: 0,
+      take: 20,
     })
   })
 
@@ -391,6 +419,7 @@ describe("GET /api/photos", () => {
     })
 
     // Mock photos
+    vi.mocked(prisma.photo.count).mockResolvedValue(0)
     vi.mocked(prisma.photo.findMany).mockResolvedValue([])
 
     // Create request with empty search
@@ -406,6 +435,8 @@ describe("GET /api/photos", () => {
         { takenAt: "desc" },
         { createdAt: "desc" }
       ],
+      skip: 0,
+      take: 20,
     })
   })
 
@@ -418,6 +449,7 @@ describe("GET /api/photos", () => {
     })
 
     // Mock photos
+    vi.mocked(prisma.photo.count).mockResolvedValue(0)
     vi.mocked(prisma.photo.findMany).mockResolvedValue([])
 
     // Create request with search and date range
@@ -448,6 +480,168 @@ describe("GET /api/photos", () => {
         { takenAt: "desc" },
         { createdAt: "desc" }
       ],
+      skip: 0,
+      take: 20,
+    })
+  })
+
+  it("paginates results with default page 1 and limit 20", async () => {
+    // Mock authenticated user
+    vi.mocked(requireAuth).mockResolvedValue({
+      id: "user-123",
+      email: "test@example.com",
+      name: "Test User",
+    })
+
+    // Mock photos and count
+    vi.mocked(prisma.photo.count).mockResolvedValue(50)
+    vi.mocked(prisma.photo.findMany).mockResolvedValue([])
+
+    // Create request without pagination params
+    const request = new Request("http://localhost:3000/api/photos")
+
+    // Execute
+    const response = await GET(request)
+    const data = await response.json()
+
+    // Assert
+    expect(prisma.photo.count).toHaveBeenCalledWith({
+      where: { userId: "user-123" },
+    })
+    expect(prisma.photo.findMany).toHaveBeenCalledWith({
+      where: { userId: "user-123" },
+      orderBy: [
+        { takenAt: "desc" },
+        { createdAt: "desc" }
+      ],
+      skip: 0,
+      take: 20,
+    })
+    expect(data.pagination).toEqual({
+      page: 1,
+      limit: 20,
+      total: 50,
+      hasMore: true,
+    })
+  })
+
+  it("paginates to page 2", async () => {
+    // Mock authenticated user
+    vi.mocked(requireAuth).mockResolvedValue({
+      id: "user-123",
+      email: "test@example.com",
+      name: "Test User",
+    })
+
+    // Mock photos and count
+    vi.mocked(prisma.photo.count).mockResolvedValue(50)
+    vi.mocked(prisma.photo.findMany).mockResolvedValue([])
+
+    // Create request with page 2
+    const request = new Request("http://localhost:3000/api/photos?page=2")
+
+    // Execute
+    const response = await GET(request)
+    const data = await response.json()
+
+    // Assert - should skip 20 (page 1)
+    expect(prisma.photo.findMany).toHaveBeenCalledWith({
+      where: { userId: "user-123" },
+      orderBy: [
+        { takenAt: "desc" },
+        { createdAt: "desc" }
+      ],
+      skip: 20,
+      take: 20,
+    })
+    expect(data.pagination.page).toBe(2)
+    expect(data.pagination.hasMore).toBe(true)
+  })
+
+  it("paginates to page 3 with custom limit", async () => {
+    // Mock authenticated user
+    vi.mocked(requireAuth).mockResolvedValue({
+      id: "user-123",
+      email: "test@example.com",
+      name: "Test User",
+    })
+
+    // Mock photos and count
+    vi.mocked(prisma.photo.count).mockResolvedValue(100)
+    vi.mocked(prisma.photo.findMany).mockResolvedValue([])
+
+    // Create request with page 3 and limit 10
+    const request = new Request("http://localhost:3000/api/photos?page=3&limit=10")
+
+    // Execute
+    const response = await GET(request)
+    const data = await response.json()
+
+    // Assert - should skip 20 (2 pages * 10 per page)
+    expect(prisma.photo.findMany).toHaveBeenCalledWith({
+      where: { userId: "user-123" },
+      orderBy: [
+        { takenAt: "desc" },
+        { createdAt: "desc" }
+      ],
+      skip: 20,
+      take: 10,
+    })
+    expect(data.pagination).toEqual({
+      page: 3,
+      limit: 10,
+      total: 100,
+      hasMore: true,
+    })
+  })
+
+  it("indicates hasMore is false on last page", async () => {
+    // Mock authenticated user
+    vi.mocked(requireAuth).mockResolvedValue({
+      id: "user-123",
+      email: "test@example.com",
+      name: "Test User",
+    })
+
+    // Mock 15 total photos, requesting page 1 with 20 limit
+    vi.mocked(prisma.photo.count).mockResolvedValue(15)
+    const mockPhotos = Array(15).fill(null).map((_, i) => ({
+      id: `photo-${i}`,
+      userId: "user-123",
+      filename: `photo${i}.jpg`,
+      originalName: `photo${i}.jpg`,
+      fileSize: 1000,
+      mimeType: "image/jpeg",
+      url: `https://blob.vercel-storage.com/photo${i}.jpg`,
+      latitude: null,
+      longitude: null,
+      takenAt: new Date(),
+      cameraMake: null,
+      cameraModel: null,
+      iso: null,
+      aperture: null,
+      shutterSpeed: null,
+      focalLength: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      title: null,
+      description: null,
+    }))
+    vi.mocked(prisma.photo.findMany).mockResolvedValue(mockPhotos)
+
+    // Create request
+    const request = new Request("http://localhost:3000/api/photos")
+
+    // Execute
+    const response = await GET(request)
+    const data = await response.json()
+
+    // Assert - hasMore should be false since we got all 15 photos
+    expect(data.pagination).toEqual({
+      page: 1,
+      limit: 20,
+      total: 15,
+      hasMore: false,
     })
   })
 })

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, useRef, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { format, parseISO, startOfDay } from "date-fns"
@@ -20,11 +20,17 @@ export default function GalleryPage() {
   const [photos, setPhotos] = useState<Photo[]>([])
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [gridSize, setGridSize] = useState<GridSize>('medium')
   const [sortBy, setSortBy] = useState<SortBy>('date')
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchInput, setSearchInput] = useState('')
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const [total, setTotal] = useState(0)
+  const observerRef = useRef<IntersectionObserver | null>(null)
+  const loadMoreRef = useRef<HTMLDivElement | null>(null)
 
   // Load preferences from localStorage
   useEffect(() => {
@@ -78,12 +84,20 @@ export default function GalleryPage() {
     }
   }, [status, router])
 
-  const fetchPhotos = async () => {
+  const fetchPhotos = useCallback(async (pageNum: number, append = false) => {
     try {
-      // Build query params with sorting and search
+      if (append) {
+        setIsLoadingMore(true)
+      } else {
+        setIsLoading(true)
+      }
+
+      // Build query params with sorting, search, and pagination
       const params = new URLSearchParams({
         sortBy,
         sortOrder,
+        page: pageNum.toString(),
+        limit: '20',
       })
 
       if (searchQuery.trim()) {
@@ -93,21 +107,67 @@ export default function GalleryPage() {
       const response = await fetch(`/api/photos?${params}`)
       if (response.ok) {
         const data = await response.json()
-        setPhotos(data.photos)
+
+        if (append) {
+          setPhotos((prev) => [...prev, ...data.photos])
+        } else {
+          setPhotos(data.photos)
+        }
+
+        setHasMore(data.pagination.hasMore)
+        setTotal(data.pagination.total)
       }
     } catch (error) {
       console.error("Failed to fetch photos:", error)
     } finally {
       setIsLoading(false)
+      setIsLoadingMore(false)
     }
-  }
+  }, [sortBy, sortOrder, searchQuery])
 
+  // Reset to page 1 and fetch when filters change
   useEffect(() => {
     if (session) {
-      fetchPhotos()
+      setPage(1)
+      setPhotos([])
+      fetchPhotos(1, false)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, sortBy, sortOrder, searchQuery])
+  }, [session, sortBy, sortOrder, searchQuery, fetchPhotos])
+
+  // Load more photos when page changes (for infinite scroll)
+  useEffect(() => {
+    if (session && page > 1) {
+      fetchPhotos(page, true)
+    }
+  }, [page, session, fetchPhotos])
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    if (isLoading || !hasMore) return
+
+    if (observerRef.current) {
+      observerRef.current.disconnect()
+    }
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isLoadingMore && hasMore) {
+          setPage((prev) => prev + 1)
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    if (loadMoreRef.current) {
+      observerRef.current.observe(loadMoreRef.current)
+    }
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect()
+      }
+    }
+  }, [isLoading, isLoadingMore, hasMore])
 
   const handlePhotoUpdate = async (updatedPhoto: Photo) => {
     setPhotos((prev) =>
@@ -169,13 +229,17 @@ export default function GalleryPage() {
         </div>
 
         <div className="mb-8">
-          <PhotoUpload onUploadComplete={fetchPhotos} />
+          <PhotoUpload onUploadComplete={() => {
+            setPage(1)
+            setPhotos([])
+            fetchPhotos(1, false)
+          }} />
         </div>
 
         {photos.length > 0 && (
           <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground">
-              {photos.length} photo{photos.length > 1 ? 's' : ''}
+              {photos.length} / {total} photo{total > 1 ? 's' : ''}
             </p>
 
             <div className="flex flex-wrap items-center gap-4">
@@ -337,6 +401,25 @@ export default function GalleryPage() {
                 />
               </div>
             ))}
+
+            {/* Infinite scroll trigger and loading indicator */}
+            {hasMore && (
+              <div ref={loadMoreRef} className="py-8 text-center">
+                {isLoadingMore && (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin h-6 w-6 border-3 border-primary border-t-transparent rounded-full"></div>
+                    <p className="text-muted-foreground">Chargement...</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* End of results indicator */}
+            {!hasMore && photos.length > 0 && (
+              <div className="py-8 text-center">
+                <p className="text-muted-foreground">Toutes les photos ont été chargées</p>
+              </div>
+            )}
           </div>
         )}
       </main>
