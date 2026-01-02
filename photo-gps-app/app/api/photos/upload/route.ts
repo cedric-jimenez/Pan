@@ -78,12 +78,25 @@ async function callRailwayCrop(buffer: Buffer): Promise<{
       const base64Data = data.cropped_image.replace(/^data:image\/\w+;base64,/, '')
       const croppedBuffer = Buffer.from(base64Data, 'base64')
 
+      console.log({
+        message: 'Using cropped image from Railway',
+        croppedBufferSize: croppedBuffer.length,
+        hasBase64Prefix: data.cropped_image.startsWith('data:image'),
+      })
+
       return {
         detected: true,
         croppedBuffer,
         confidence: data.bounding_box?.confidence || null,
       }
     }
+
+    console.log({
+      message: 'Not using cropped image',
+      detected: data.detected,
+      hasCroppedImage: !!data.cropped_image,
+      croppedImageType: typeof data.cropped_image,
+    })
 
     return {
       detected: false,
@@ -178,12 +191,25 @@ export async function POST(request: Request) {
       isCropped = true
       cropConfidence = cropResult.confidence
       salamanderDetected = true
+      console.log({
+        message: 'Final buffer decision: using cropped image',
+        finalBufferSize: finalBuffer.length,
+        isCropped: true,
+      })
     } else {
       // Fallback to Sharp compressed image
       finalBuffer = compressedBuffer
       isCropped = false
       cropConfidence = cropResult.confidence
       salamanderDetected = cropResult.detected
+
+      console.log({
+        message: 'Final buffer decision: using fallback',
+        finalBufferSize: finalBuffer.length,
+        isCropped: false,
+        cropResultDetected: cropResult.detected,
+        hasCroppedBuffer: !!cropResult.croppedBuffer,
+      })
 
       if (cropResult.error) {
         console.log(`Using fallback image due to: ${cropResult.error}`)
