@@ -43,9 +43,24 @@ import { uploadToBlob } from "@/lib/blob"
 import exifr from "exifr"
 import sharp from "sharp"
 
+// Mock global fetch for Railway API calls
+global.fetch = vi.fn()
+
 describe("POST /api/photos/upload", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+
+    // Default mock for Railway API - no salamander detected (fallback behavior)
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        success: true,
+        detected: false,
+        message: "No salamander detected",
+        bounding_box: null,
+        cropped_image: null,
+      }),
+    } as Response)
   })
 
   it("successfully uploads photo with EXIF data", async () => {
@@ -105,6 +120,9 @@ describe("POST /api/photos/upload", () => {
       aperture: "f/2.8",
       shutterSpeed: "0.004s",
       focalLength: "50mm",
+      isCropped: false,
+      cropConfidence: null,
+      salamanderDetected: false,
       createdAt: new Date(),
       updatedAt: new Date(),
       title: null,
@@ -276,6 +294,9 @@ describe("POST /api/photos/upload", () => {
       aperture: null,
       shutterSpeed: null,
       focalLength: null,
+      isCropped: false,
+      cropConfidence: null,
+      salamanderDetected: false,
       createdAt: new Date(),
       updatedAt: new Date(),
       title: null,
@@ -423,6 +444,9 @@ describe("POST /api/photos/upload", () => {
       aperture: null,
       shutterSpeed: null,
       focalLength: null,
+      isCropped: false,
+      cropConfidence: null,
+      salamanderDetected: false,
       createdAt: new Date(),
       updatedAt: new Date(),
       title: null,

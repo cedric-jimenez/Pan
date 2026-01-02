@@ -9,6 +9,100 @@ import sharp from "sharp"
 export const runtime = 'nodejs'
 export const maxDuration = 60 // Maximum execution time in seconds
 
+/**
+ * Call Railway YOLO API to detect and crop salamander
+ * @param buffer - Image buffer to process
+ * @returns Crop result with detected flag, cropped buffer, and confidence
+ */
+async function callRailwayCrop(buffer: Buffer): Promise<{
+  detected: boolean
+  croppedBuffer: Buffer | null
+  confidence: number | null
+  error?: string
+}> {
+  const railwayUrl = process.env.RAILWAY_API_URL
+  const confidenceThreshold = parseFloat(process.env.YOLO_CONFIDENCE_THRESHOLD || '0.5')
+  const timeoutMs = parseInt(process.env.YOLO_TIMEOUT_MS || '10000', 10)
+
+  if (!railwayUrl) {
+    console.warn('RAILWAY_API_URL not configured, skipping YOLO crop')
+    return { detected: false, croppedBuffer: null, confidence: null, error: 'Railway URL not configured' }
+  }
+
+  try {
+    const startTime = Date.now()
+
+    // Create FormData with image
+    const formData = new FormData()
+    const blob = new Blob([buffer], { type: 'image/jpeg' })
+    formData.append('file', blob, 'image.jpg')
+
+    // Call Railway API with timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+
+    const response = await fetch(
+      `${railwayUrl}/crop-salamander?confidence=${confidenceThreshold}&return_base64=true`,
+      {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal,
+      }
+    )
+
+    clearTimeout(timeoutId)
+    const duration = Date.now() - startTime
+
+    if (!response.ok) {
+      console.warn(`Railway API error: ${response.status} ${response.statusText}`)
+      return {
+        detected: false,
+        croppedBuffer: null,
+        confidence: null,
+        error: `Railway API error: ${response.status}`
+      }
+    }
+
+    const data = await response.json()
+
+    console.log({
+      action: 'yolo_crop',
+      success: data.success,
+      detected: data.detected,
+      confidence: data.bounding_box?.confidence,
+      duration_ms: duration,
+    })
+
+    if (data.detected && data.cropped_image) {
+      // Convert base64 to Buffer
+      const base64Data = data.cropped_image.replace(/^data:image\/\w+;base64,/, '')
+      const croppedBuffer = Buffer.from(base64Data, 'base64')
+
+      return {
+        detected: true,
+        croppedBuffer,
+        confidence: data.bounding_box?.confidence || null,
+      }
+    }
+
+    return {
+      detected: false,
+      croppedBuffer: null,
+      confidence: data.bounding_box?.confidence || null,
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        console.warn(`Railway API timeout after ${timeoutMs}ms`)
+        return { detected: false, croppedBuffer: null, confidence: null, error: 'Timeout' }
+      }
+      console.error('Railway API error:', error.message)
+      return { detected: false, croppedBuffer: null, confidence: null, error: error.message }
+    }
+    return { detected: false, croppedBuffer: null, confidence: null, error: 'Unknown error' }
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const user = await requireAuth()
@@ -69,8 +163,35 @@ export async function POST(request: Request) {
       .withMetadata() // Preserve EXIF data including GPS
       .toBuffer()
 
+    // Call Railway YOLO API to detect and crop salamander
+    const cropResult = await callRailwayCrop(compressedBuffer)
+
+    // Determine which buffer to use: cropped or compressed
+    let finalBuffer: Buffer
+    let isCropped = false
+    let cropConfidence: number | null = null
+    let salamanderDetected = true
+
+    if (cropResult.detected && cropResult.croppedBuffer) {
+      // Use cropped image
+      finalBuffer = cropResult.croppedBuffer
+      isCropped = true
+      cropConfidence = cropResult.confidence
+      salamanderDetected = true
+    } else {
+      // Fallback to Sharp compressed image
+      finalBuffer = compressedBuffer
+      isCropped = false
+      cropConfidence = cropResult.confidence
+      salamanderDetected = cropResult.detected
+
+      if (cropResult.error) {
+        console.log(`Using fallback image due to: ${cropResult.error}`)
+      }
+    }
+
     // Convert Buffer to Uint8Array for compatibility with Blob/File constructors
-    const uint8Array = new Uint8Array(compressedBuffer)
+    const uint8Array = new Uint8Array(finalBuffer)
     const blob = new Blob([uint8Array], { type: 'image/jpeg' })
     const compressedFile = new File(
       [blob],
@@ -113,7 +234,7 @@ export async function POST(request: Request) {
         userId: user.id,
         filename,
         originalName: file.name,
-        fileSize: compressedBuffer.length, // Use compressed size
+        fileSize: finalBuffer.length, // Use final buffer size (cropped or compressed)
         mimeType: 'image/jpeg', // Always JPEG after compression
         url: blobUrl,
         latitude,
@@ -125,6 +246,10 @@ export async function POST(request: Request) {
         aperture,
         shutterSpeed,
         focalLength,
+        // YOLO crop metadata
+        isCropped,
+        cropConfidence,
+        salamanderDetected,
       }
     })
 
