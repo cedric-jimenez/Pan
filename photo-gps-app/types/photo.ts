@@ -23,6 +23,11 @@ export interface Photo {
   title: string | null
   description: string | null
 
+  // YOLO crop metadata
+  isCropped: boolean
+  cropConfidence: number | null
+  salamanderDetected: boolean
+
   createdAt: Date | string
   updatedAt: Date | string
 }
