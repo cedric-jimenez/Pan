@@ -34,7 +34,7 @@ async function callRailwayCrop(buffer: Buffer): Promise<{
 
     // Create FormData with image
     const formData = new FormData()
-    const blob = new Blob([buffer], { type: 'image/jpeg' })
+    const blob = new Blob([Uint8Array.from(buffer)], { type: 'image/jpeg' })
     formData.append('file', blob, 'image.jpg')
 
     // Call Railway API with timeout
