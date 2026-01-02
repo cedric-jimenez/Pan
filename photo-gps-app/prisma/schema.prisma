@@ -83,6 +83,11 @@ model Photo {
   title       String?
   description String?
 
+  // YOLO crop metadata
+  isCropped          Boolean   @default(false)
+  cropConfidence     Float?
+  salamanderDetected Boolean   @default(true)
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
