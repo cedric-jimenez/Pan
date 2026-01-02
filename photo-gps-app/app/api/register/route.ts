@@ -7,22 +7,16 @@ export async function POST(request: Request) {
     const { email, password, name } = await request.json()
 
     if (!email || !password) {
-      return NextResponse.json(
-        { error: "Email and password are required" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Email and password are required" }, { status: 400 })
     }
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
     })
 
     if (existingUser) {
-      return NextResponse.json(
-        { error: "User already exists" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "User already exists" }, { status: 400 })
     }
 
     // Hash password
@@ -34,7 +28,7 @@ export async function POST(request: Request) {
         email,
         password: hashedPassword,
         name: name || null,
-      }
+      },
     })
 
     return NextResponse.json(
@@ -43,9 +37,6 @@ export async function POST(request: Request) {
     )
   } catch (error) {
     console.error("Registration error:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

@@ -22,7 +22,7 @@ describe("Blob Storage Utilities", () => {
         url: mockBlobUrl,
         pathname: "test-abc123.jpg",
         contentType: "image/jpeg",
-        contentDisposition: "inline; filename=\"test.jpg\"",
+        contentDisposition: 'inline; filename="test.jpg"',
         downloadUrl: mockBlobUrl,
       })
 
@@ -48,7 +48,7 @@ describe("Blob Storage Utilities", () => {
         url: mockBlobUrl,
         pathname: "test-abc123.png",
         contentType: "image/png",
-        contentDisposition: "inline; filename=\"test.png\"",
+        contentDisposition: 'inline; filename="test.png"',
         downloadUrl: mockBlobUrl,
       })
 

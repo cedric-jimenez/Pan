@@ -1,5 +1,5 @@
-import { InputHTMLAttributes, forwardRef } from 'react'
-import clsx from 'clsx'
+import { InputHTMLAttributes, forwardRef } from "react"
+import clsx from "clsx"
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string
@@ -10,30 +10,24 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, className, ...props }, ref) => {
     return (
       <div className="w-full">
-        {label && (
-          <label className="block text-sm font-medium mb-2 text-foreground">
-            {label}
-          </label>
-        )}
+        {label && <label className="text-foreground mb-2 block text-sm font-medium">{label}</label>}
         <input
           ref={ref}
           className={clsx(
-            'w-full px-4 py-2 rounded-lg bg-input border border-border text-foreground',
-            'focus:outline-none focus:ring-2 focus:ring-ring',
-            'placeholder:text-muted-foreground',
-            error && 'border-destructive',
+            "bg-input border-border text-foreground w-full rounded-lg border px-4 py-2",
+            "focus:ring-ring focus:ring-2 focus:outline-none",
+            "placeholder:text-muted-foreground",
+            error && "border-destructive",
             className
           )}
           {...props}
         />
-        {error && (
-          <p className="mt-1 text-sm text-destructive">{error}</p>
-        )}
+        {error && <p className="text-destructive mt-1 text-sm">{error}</p>}
       </div>
     )
   }
 )
 
-Input.displayName = 'Input'
+Input.displayName = "Input"
 
 export default Input

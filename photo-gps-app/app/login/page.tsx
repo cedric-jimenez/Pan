@@ -40,13 +40,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="bg-background flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-card border border-border rounded-xl p-8 shadow-lg">
-          <h1 className="text-3xl font-bold text-center mb-2">Welcome Back</h1>
-          <p className="text-center text-muted-foreground mb-8">
-            Sign in to your PhotoMap account
-          </p>
+        <div className="bg-card border-border rounded-xl border p-8 shadow-lg">
+          <h1 className="mb-2 text-center text-3xl font-bold">Welcome Back</h1>
+          <p className="text-muted-foreground mb-8 text-center">Sign in to your PhotoMap account</p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <Input
@@ -68,22 +66,17 @@ export default function LoginPage() {
             />
 
             {error && (
-              <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg">
+              <div className="bg-destructive/10 border-destructive text-destructive rounded-lg border px-4 py-3">
                 {error}
               </div>
             )}
 
-            <Button
-              type="submit"
-              variant="primary"
-              className="w-full"
-              isLoading={isLoading}
-            >
+            <Button type="submit" variant="primary" className="w-full" isLoading={isLoading}>
               Sign In
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-muted-foreground">
+          <p className="text-muted-foreground mt-6 text-center">
             Don&apos;t have an account?{" "}
             <Link href="/register" className="text-primary hover:underline">
               Sign up

@@ -1,14 +1,14 @@
-import { ButtonHTMLAttributes } from 'react'
-import clsx from 'clsx'
+import { ButtonHTMLAttributes } from "react"
+import clsx from "clsx"
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'destructive'
+  variant?: "primary" | "secondary" | "destructive"
   isLoading?: boolean
 }
 
 export default function Button({
   children,
-  variant = 'primary',
+  variant = "primary",
   isLoading = false,
   className,
   disabled,
@@ -17,11 +17,12 @@ export default function Button({
   return (
     <button
       className={clsx(
-        'px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
+        "rounded-lg px-4 py-2 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
         {
-          'bg-primary text-primary-foreground hover:bg-primary/90': variant === 'primary',
-          'bg-secondary text-secondary-foreground hover:bg-secondary/80': variant === 'secondary',
-          'bg-destructive text-destructive-foreground hover:bg-destructive/90': variant === 'destructive',
+          "bg-primary text-primary-foreground hover:bg-primary/90": variant === "primary",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80": variant === "secondary",
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90":
+            variant === "destructive",
         },
         className
       )}
@@ -30,7 +31,7 @@ export default function Button({
     >
       {isLoading ? (
         <span className="flex items-center gap-2">
-          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+          <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
             <circle
               className="opacity-25"
               cx="12"
