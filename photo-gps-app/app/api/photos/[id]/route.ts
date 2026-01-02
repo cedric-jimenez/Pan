@@ -4,10 +4,7 @@ import { requireAuth } from "@/lib/session"
 import { deleteFromBlob } from "@/lib/blob"
 
 // GET single photo
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await requireAuth()
     const { id } = await params
@@ -20,33 +17,21 @@ export async function GET(
     })
 
     if (!photo) {
-      return NextResponse.json(
-        { error: "Photo not found" },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "Photo not found" }, { status: 404 })
     }
 
     return NextResponse.json({ photo })
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    return NextResponse.json(
-      { error: "Failed to fetch photo" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Failed to fetch photo" }, { status: 500 })
   }
 }
 
 // PATCH update photo
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await requireAuth()
     const { id } = await params
@@ -61,10 +46,7 @@ export async function PATCH(
     })
 
     if (!existingPhoto) {
-      return NextResponse.json(
-        { error: "Photo not found" },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "Photo not found" }, { status: 404 })
     }
 
     // Update photo
@@ -81,24 +63,15 @@ export async function PATCH(
     return NextResponse.json({ photo })
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    return NextResponse.json(
-      { error: "Failed to update photo" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Failed to update photo" }, { status: 500 })
   }
 }
 
 // DELETE photo
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await requireAuth()
     const { id } = await params
@@ -112,10 +85,7 @@ export async function DELETE(
     })
 
     if (!photo) {
-      return NextResponse.json(
-        { error: "Photo not found" },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "Photo not found" }, { status: 404 })
     }
 
     // Delete file from Vercel Blob Storage
@@ -135,15 +105,9 @@ export async function DELETE(
     return NextResponse.json({ success: true })
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    return NextResponse.json(
-      { error: "Failed to delete photo" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Failed to delete photo" }, { status: 500 })
   }
 }

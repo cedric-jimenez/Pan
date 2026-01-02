@@ -12,10 +12,7 @@ export async function POST(request: Request) {
     const { photoIds } = await request.json()
 
     if (!Array.isArray(photoIds) || photoIds.length === 0) {
-      return NextResponse.json(
-        { error: "photoIds doit être un tableau non vide" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "photoIds doit être un tableau non vide" }, { status: 400 })
     }
 
     // Fetch all photos that belong to the user
@@ -60,16 +57,10 @@ export async function POST(request: Request) {
     })
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     console.error("Bulk delete error:", error)
-    return NextResponse.json(
-      { error: "Échec de la suppression des photos" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Échec de la suppression des photos" }, { status: 500 })
   }
 }

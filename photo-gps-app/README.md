@@ -97,11 +97,13 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ### Viewing Photos
 
 **Gallery View:**
+
 - Browse all your photos in a responsive grid
 - Click any photo to view details
 - See GPS indicator on photos with location data
 
 **Map View:**
+
 - Switch to the "Map View" tab in navigation
 - See all photos with GPS coordinates on an interactive map
 - Use the date range filter to narrow down photos
@@ -205,6 +207,7 @@ This application is optimized for deployment on Vercel with PostgreSQL and Blob 
 ### Step-by-Step Guide
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete deployment instructions including:
+
 - Setting up Vercel Postgres
 - Configuring Blob Storage
 - Environment variables

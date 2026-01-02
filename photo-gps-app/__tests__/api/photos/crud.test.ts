@@ -108,10 +108,7 @@ describe("GET /api/photos", () => {
     })
     expect(prisma.photo.findMany).toHaveBeenCalledWith({
       where: { userId: "user-123" },
-      orderBy: [
-        { takenAt: "desc" },
-        { createdAt: "desc" }
-      ],
+      orderBy: [{ takenAt: "desc" }, { createdAt: "desc" }],
       skip: 0,
       take: 20,
     })
@@ -146,10 +143,7 @@ describe("GET /api/photos", () => {
           lte: new Date("2024-01-31"),
         },
       },
-      orderBy: [
-        { takenAt: "desc" },
-        { createdAt: "desc" }
-      ],
+      orderBy: [{ takenAt: "desc" }, { createdAt: "desc" }],
       skip: 0,
       take: 20,
     })
@@ -181,10 +175,7 @@ describe("GET /api/photos", () => {
           gte: new Date("2024-01-01"),
         },
       },
-      orderBy: [
-        { takenAt: "desc" },
-        { createdAt: "desc" }
-      ],
+      orderBy: [{ takenAt: "desc" }, { createdAt: "desc" }],
       skip: 0,
       take: 20,
     })
@@ -227,10 +218,7 @@ describe("GET /api/photos", () => {
     // Assert
     expect(prisma.photo.findMany).toHaveBeenCalledWith({
       where: { userId: "user-123" },
-      orderBy: [
-        { title: "asc" },
-        { originalName: "asc" }
-      ],
+      orderBy: [{ title: "asc" }, { originalName: "asc" }],
       skip: 0,
       take: 20,
     })
@@ -284,10 +272,7 @@ describe("GET /api/photos", () => {
     // Assert
     expect(prisma.photo.findMany).toHaveBeenCalledWith({
       where: { userId: "user-123" },
-      orderBy: [
-        { cameraModel: "asc" },
-        { cameraMake: "asc" }
-      ],
+      orderBy: [{ cameraModel: "asc" }, { cameraMake: "asc" }],
       skip: 0,
       take: 20,
     })
@@ -323,10 +308,7 @@ describe("GET /api/photos", () => {
           { cameraModel: { contains: "Paris", mode: "insensitive" } },
         ],
       },
-      orderBy: [
-        { takenAt: "desc" },
-        { createdAt: "desc" }
-      ],
+      orderBy: [{ takenAt: "desc" }, { createdAt: "desc" }],
       skip: 0,
       take: 20,
     })
@@ -362,10 +344,7 @@ describe("GET /api/photos", () => {
           { cameraModel: { contains: "canon", mode: "insensitive" } },
         ],
       },
-      orderBy: [
-        { takenAt: "desc" },
-        { createdAt: "desc" }
-      ],
+      orderBy: [{ takenAt: "desc" }, { createdAt: "desc" }],
       skip: 0,
       take: 20,
     })
@@ -384,7 +363,9 @@ describe("GET /api/photos", () => {
     vi.mocked(prisma.photo.findMany).mockResolvedValue([])
 
     // Create request with search and sort params
-    const request = new Request("http://localhost:3000/api/photos?search=sunset&sortBy=title&sortOrder=asc")
+    const request = new Request(
+      "http://localhost:3000/api/photos?search=sunset&sortBy=title&sortOrder=asc"
+    )
 
     // Execute
     await GET(request)
@@ -401,10 +382,7 @@ describe("GET /api/photos", () => {
           { cameraModel: { contains: "sunset", mode: "insensitive" } },
         ],
       },
-      orderBy: [
-        { title: "asc" },
-        { originalName: "asc" }
-      ],
+      orderBy: [{ title: "asc" }, { originalName: "asc" }],
       skip: 0,
       take: 20,
     })
@@ -431,10 +409,7 @@ describe("GET /api/photos", () => {
     // Assert - should not include OR clause for empty/whitespace search
     expect(prisma.photo.findMany).toHaveBeenCalledWith({
       where: { userId: "user-123" },
-      orderBy: [
-        { takenAt: "desc" },
-        { createdAt: "desc" }
-      ],
+      orderBy: [{ takenAt: "desc" }, { createdAt: "desc" }],
       skip: 0,
       take: 20,
     })
@@ -476,10 +451,7 @@ describe("GET /api/photos", () => {
           { cameraModel: { contains: "vacation", mode: "insensitive" } },
         ],
       },
-      orderBy: [
-        { takenAt: "desc" },
-        { createdAt: "desc" }
-      ],
+      orderBy: [{ takenAt: "desc" }, { createdAt: "desc" }],
       skip: 0,
       take: 20,
     })
@@ -510,10 +482,7 @@ describe("GET /api/photos", () => {
     })
     expect(prisma.photo.findMany).toHaveBeenCalledWith({
       where: { userId: "user-123" },
-      orderBy: [
-        { takenAt: "desc" },
-        { createdAt: "desc" }
-      ],
+      orderBy: [{ takenAt: "desc" }, { createdAt: "desc" }],
       skip: 0,
       take: 20,
     })
@@ -547,10 +516,7 @@ describe("GET /api/photos", () => {
     // Assert - should skip 20 (page 1)
     expect(prisma.photo.findMany).toHaveBeenCalledWith({
       where: { userId: "user-123" },
-      orderBy: [
-        { takenAt: "desc" },
-        { createdAt: "desc" }
-      ],
+      orderBy: [{ takenAt: "desc" }, { createdAt: "desc" }],
       skip: 20,
       take: 20,
     })
@@ -580,10 +546,7 @@ describe("GET /api/photos", () => {
     // Assert - should skip 20 (2 pages * 10 per page)
     expect(prisma.photo.findMany).toHaveBeenCalledWith({
       where: { userId: "user-123" },
-      orderBy: [
-        { takenAt: "desc" },
-        { createdAt: "desc" }
-      ],
+      orderBy: [{ takenAt: "desc" }, { createdAt: "desc" }],
       skip: 20,
       take: 10,
     })
@@ -605,28 +568,30 @@ describe("GET /api/photos", () => {
 
     // Mock 15 total photos, requesting page 1 with 20 limit
     vi.mocked(prisma.photo.count).mockResolvedValue(15)
-    const mockPhotos = Array(15).fill(null).map((_, i) => ({
-      id: `photo-${i}`,
-      userId: "user-123",
-      filename: `photo${i}.jpg`,
-      originalName: `photo${i}.jpg`,
-      fileSize: 1000,
-      mimeType: "image/jpeg",
-      url: `https://blob.vercel-storage.com/photo${i}.jpg`,
-      latitude: null,
-      longitude: null,
-      takenAt: new Date(),
-      cameraMake: null,
-      cameraModel: null,
-      iso: null,
-      aperture: null,
-      shutterSpeed: null,
-      focalLength: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      title: null,
-      description: null,
-    }))
+    const mockPhotos = Array(15)
+      .fill(null)
+      .map((_, i) => ({
+        id: `photo-${i}`,
+        userId: "user-123",
+        filename: `photo${i}.jpg`,
+        originalName: `photo${i}.jpg`,
+        fileSize: 1000,
+        mimeType: "image/jpeg",
+        url: `https://blob.vercel-storage.com/photo${i}.jpg`,
+        latitude: null,
+        longitude: null,
+        takenAt: new Date(),
+        cameraMake: null,
+        cameraModel: null,
+        iso: null,
+        aperture: null,
+        shutterSpeed: null,
+        focalLength: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        title: null,
+        description: null,
+      }))
     vi.mocked(prisma.photo.findMany).mockResolvedValue(mockPhotos)
 
     // Create request

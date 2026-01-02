@@ -12,11 +12,11 @@ export default function Navbar() {
   if (!session) return null
 
   return (
-    <nav className="bg-card border-b border-border">
+    <nav className="bg-card border-border border-b">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-8">
-            <Link href="/gallery" className="text-xl font-bold text-primary">
+            <Link href="/gallery" className="text-primary text-xl font-bold">
               PhotoMap
             </Link>
 
@@ -24,7 +24,7 @@ export default function Navbar() {
               <Link
                 href="/gallery"
                 className={clsx(
-                  "px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   pathname === "/gallery"
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -36,7 +36,7 @@ export default function Navbar() {
               <Link
                 href="/map"
                 className={clsx(
-                  "px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   pathname === "/map"
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -48,12 +48,10 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
-              {session.user?.email}
-            </span>
+            <span className="text-muted-foreground text-sm">{session.user?.email}</span>
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-muted-foreground hover:text-foreground px-4 py-2 text-sm font-medium transition-colors"
             >
               Sign Out
             </button>

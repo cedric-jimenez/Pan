@@ -22,7 +22,7 @@ const nextAuthConfig = NextAuth({
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -34,18 +34,15 @@ const nextAuthConfig = NextAuth({
 
         const user = await prisma.user.findUnique({
           where: {
-            email
-          }
+            email,
+          },
         })
 
         if (!user || !user.password) {
           throw new Error("Invalid credentials")
         }
 
-        const isCorrectPassword = await bcrypt.compare(
-          password,
-          user.password
-        )
+        const isCorrectPassword = await bcrypt.compare(password, user.password)
 
         if (!isCorrectPassword) {
           throw new Error("Invalid credentials")
@@ -56,8 +53,8 @@ const nextAuthConfig = NextAuth({
           email: user.email,
           name: user.name,
         }
-      }
-    })
+      },
+    }),
   ],
   callbacks: {
     async jwt({ token, user }: { token: JWT; user?: User }) {
@@ -71,7 +68,7 @@ const nextAuthConfig = NextAuth({
         session.user.id = token.id as string
       }
       return session
-    }
+    },
   },
   secret: process.env.NEXTAUTH_SECRET,
 })

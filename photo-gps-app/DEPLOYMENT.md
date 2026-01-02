@@ -170,6 +170,7 @@ C'est largement suffisant pour démarrer !
 ### Si vous dépassez le niveau gratuit
 
 Vercel offre un plan Pro à $20/mois avec :
+
 - Postgres illimité
 - 100 GB de Blob Storage
 - Bandwidth illimité

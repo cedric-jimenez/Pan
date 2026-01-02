@@ -14,7 +14,7 @@ import { Photo } from "@/types/photo"
 const MapView = dynamic(() => import("@/components/MapView"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-[600px] bg-muted rounded-lg flex items-center justify-center">
+    <div className="bg-muted flex h-[600px] w-full items-center justify-center rounded-lg">
       <p className="text-muted-foreground">Loading map...</p>
     </div>
   ),
@@ -73,12 +73,8 @@ export default function MapPage() {
   }
 
   const handlePhotoUpdate = async (updatedPhoto: Photo) => {
-    setPhotos((prev) =>
-      prev.map((p) => (p.id === updatedPhoto.id ? updatedPhoto : p))
-    )
-    setFilteredPhotos((prev) =>
-      prev.map((p) => (p.id === updatedPhoto.id ? updatedPhoto : p))
-    )
+    setPhotos((prev) => prev.map((p) => (p.id === updatedPhoto.id ? updatedPhoto : p)))
+    setFilteredPhotos((prev) => prev.map((p) => (p.id === updatedPhoto.id ? updatedPhoto : p)))
     setSelectedPhoto(updatedPhoto)
   }
 
@@ -90,10 +86,10 @@ export default function MapPage() {
 
   if (status === "loading" || isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="bg-background flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
+          <div className="border-primary mx-auto h-8 w-8 animate-spin rounded-full border-4 border-t-transparent"></div>
+          <p className="text-muted-foreground mt-4">Loading...</p>
         </div>
       </div>
     )
@@ -108,22 +104,20 @@ export default function MapPage() {
   )
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background min-h-screen">
       <Navbar />
 
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Map View</h1>
-          <p className="text-muted-foreground">
-            Explore your photos on an interactive map
-          </p>
+          <h1 className="mb-2 text-3xl font-bold">Map View</h1>
+          <p className="text-muted-foreground">Explore your photos on an interactive map</p>
         </div>
 
         {/* Date Range Filter */}
-        <div className="mb-6 bg-card border border-border rounded-lg p-6">
-          <h2 className="text-lg font-semibold mb-4">Filter by Date Range</h2>
-          <div className="flex flex-wrap gap-4 items-end">
-            <div className="flex-1 min-w-[200px]">
+        <div className="bg-card border-border mb-6 rounded-lg border p-6">
+          <h2 className="mb-4 text-lg font-semibold">Filter by Date Range</h2>
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="min-w-[200px] flex-1">
               <Input
                 type="date"
                 label="Start Date"
@@ -131,7 +125,7 @@ export default function MapPage() {
                 onChange={(e) => setStartDate(e.target.value)}
               />
             </div>
-            <div className="flex-1 min-w-[200px]">
+            <div className="min-w-[200px] flex-1">
               <Input
                 type="date"
                 label="End Date"
@@ -149,7 +143,7 @@ export default function MapPage() {
             </div>
           </div>
           {photosWithLocation.length > 0 && (
-            <p className="mt-4 text-sm text-muted-foreground">
+            <p className="text-muted-foreground mt-4 text-sm">
               Showing {photosWithLocation.length} photo
               {photosWithLocation.length !== 1 ? "s" : ""} with GPS data
             </p>
@@ -157,16 +151,13 @@ export default function MapPage() {
         </div>
 
         {/* Map */}
-        <MapView
-          photos={filteredPhotos}
-          onPhotoClick={(photo: Photo) => setSelectedPhoto(photo)}
-        />
+        <MapView photos={filteredPhotos} onPhotoClick={(photo: Photo) => setSelectedPhoto(photo)} />
 
         {photos.length > 0 && photosWithLocation.length === 0 && (
-          <div className="mt-8 text-center py-8 bg-card border border-border rounded-lg">
+          <div className="bg-card border-border mt-8 rounded-lg border py-8 text-center">
             <p className="text-muted-foreground">
-              None of your photos in this date range have GPS location data.
-              Upload photos with GPS information to see them on the map.
+              None of your photos in this date range have GPS location data. Upload photos with GPS
+              information to see them on the map.
             </p>
           </div>
         )}

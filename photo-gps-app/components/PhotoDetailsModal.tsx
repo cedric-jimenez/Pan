@@ -76,10 +76,10 @@ export default function PhotoDetailsModal({
       <div className="fixed inset-0 bg-black/70" aria-hidden="true" />
 
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="mx-auto max-w-4xl w-full bg-card rounded-xl shadow-xl max-h-[90vh] overflow-y-auto">
-          <div className="grid md:grid-cols-2 gap-6 p-6">
+        <Dialog.Panel className="bg-card mx-auto max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-xl shadow-xl">
+          <div className="grid gap-6 p-6 md:grid-cols-2">
             {/* Image Section */}
-            <div className="relative aspect-square bg-muted rounded-lg overflow-hidden">
+            <div className="bg-muted relative aspect-square overflow-hidden rounded-lg">
               <Image
                 src={`${photo.croppedUrl || photo.url}?v=${photo.updatedAt || photo.createdAt}`}
                 alt={photo.originalName}
@@ -89,7 +89,7 @@ export default function PhotoDetailsModal({
                 unoptimized={photo.isCropped}
               />
               {photo.croppedUrl && (
-                <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded-md text-xs font-medium">
+                <div className="bg-primary text-primary-foreground absolute top-2 right-2 rounded-md px-2 py-1 text-xs font-medium">
                   Cropped
                 </div>
               )}
@@ -107,22 +107,12 @@ export default function PhotoDetailsModal({
                       className="mb-2"
                     />
                   ) : (
-                    <h2 className="text-2xl font-bold">
-                      {photo.title || photo.originalName}
-                    </h2>
+                    <h2 className="text-2xl font-bold">{photo.title || photo.originalName}</h2>
                   )}
                 </div>
 
-                <button
-                  onClick={onClose}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
+                <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -139,12 +129,10 @@ export default function PhotoDetailsModal({
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Add a description"
                   rows={3}
-                  className="w-full px-4 py-2 rounded-lg bg-input border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
+                  className="bg-input border-border text-foreground focus:ring-ring placeholder:text-muted-foreground w-full rounded-lg border px-4 py-2 focus:ring-2 focus:outline-none"
                 />
               ) : (
-                photo.description && (
-                  <p className="text-muted-foreground">{photo.description}</p>
-                )
+                photo.description && <p className="text-muted-foreground">{photo.description}</p>
               )}
 
               {/* EXIF Data */}
@@ -153,16 +141,14 @@ export default function PhotoDetailsModal({
 
                 {photo.takenAt && (
                   <div>
-                    <p className="text-sm text-muted-foreground">Date Taken</p>
-                    <p className="font-medium">
-                      {format(new Date(photo.takenAt), "PPpp")}
-                    </p>
+                    <p className="text-muted-foreground text-sm">Date Taken</p>
+                    <p className="font-medium">{format(new Date(photo.takenAt), "PPpp")}</p>
                   </div>
                 )}
 
                 {photo.latitude && photo.longitude && (
                   <div>
-                    <p className="text-sm text-muted-foreground">Location</p>
+                    <p className="text-muted-foreground text-sm">Location</p>
                     <p className="font-medium">
                       {photo.latitude.toFixed(6)}, {photo.longitude.toFixed(6)}
                     </p>
@@ -171,38 +157,30 @@ export default function PhotoDetailsModal({
 
                 {(photo.cameraMake || photo.cameraModel) && (
                   <div>
-                    <p className="text-sm text-muted-foreground">Camera</p>
+                    <p className="text-muted-foreground text-sm">Camera</p>
                     <p className="font-medium">
-                      {[photo.cameraMake, photo.cameraModel]
-                        .filter(Boolean)
-                        .join(" ")}
+                      {[photo.cameraMake, photo.cameraModel].filter(Boolean).join(" ")}
                     </p>
                   </div>
                 )}
 
                 {(photo.iso || photo.aperture || photo.shutterSpeed || photo.focalLength) && (
                   <div>
-                    <p className="text-sm text-muted-foreground">
-                      Camera Settings
-                    </p>
-                    <div className="flex flex-wrap gap-2 mt-1">
+                    <p className="text-muted-foreground text-sm">Camera Settings</p>
+                    <div className="mt-1 flex flex-wrap gap-2">
                       {photo.iso && (
-                        <span className="px-2 py-1 bg-muted rounded text-sm">
-                          ISO {photo.iso}
-                        </span>
+                        <span className="bg-muted rounded px-2 py-1 text-sm">ISO {photo.iso}</span>
                       )}
                       {photo.aperture && (
-                        <span className="px-2 py-1 bg-muted rounded text-sm">
-                          {photo.aperture}
-                        </span>
+                        <span className="bg-muted rounded px-2 py-1 text-sm">{photo.aperture}</span>
                       )}
                       {photo.shutterSpeed && (
-                        <span className="px-2 py-1 bg-muted rounded text-sm">
+                        <span className="bg-muted rounded px-2 py-1 text-sm">
                           {photo.shutterSpeed}
                         </span>
                       )}
                       {photo.focalLength && (
-                        <span className="px-2 py-1 bg-muted rounded text-sm">
+                        <span className="bg-muted rounded px-2 py-1 text-sm">
                           {photo.focalLength}
                         </span>
                       )}
@@ -212,14 +190,10 @@ export default function PhotoDetailsModal({
               </div>
 
               {/* Actions */}
-              <div className="flex gap-2 pt-4 border-t border-border">
+              <div className="border-border flex gap-2 border-t pt-4">
                 {isEditing ? (
                   <>
-                    <Button
-                      onClick={handleSave}
-                      variant="primary"
-                      isLoading={isSaving}
-                    >
+                    <Button onClick={handleSave} variant="primary" isLoading={isSaving}>
                       Save
                     </Button>
                     <Button
@@ -238,11 +212,7 @@ export default function PhotoDetailsModal({
                     <Button onClick={() => setIsEditing(true)} variant="primary">
                       Edit
                     </Button>
-                    <Button
-                      onClick={handleDelete}
-                      variant="destructive"
-                      isLoading={isDeleting}
-                    >
+                    <Button onClick={handleDelete} variant="destructive" isLoading={isDeleting}>
                       Delete
                     </Button>
                   </>

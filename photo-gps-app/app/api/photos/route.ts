@@ -2,8 +2,8 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/session"
 
-type SortBy = 'date' | 'title' | 'size' | 'camera'
-type SortOrder = 'asc' | 'desc'
+type SortBy = "date" | "title" | "size" | "camera"
+type SortOrder = "asc" | "desc"
 
 export async function GET(request: Request) {
   try {
@@ -12,8 +12,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const startDate = searchParams.get("startDate")
     const endDate = searchParams.get("endDate")
-    const sortBy = (searchParams.get("sortBy") || 'date') as SortBy
-    const sortOrder = (searchParams.get("sortOrder") || 'desc') as SortOrder
+    const sortBy = (searchParams.get("sortBy") || "date") as SortBy
+    const sortOrder = (searchParams.get("sortOrder") || "desc") as SortOrder
     const search = searchParams.get("search")
 
     // Pagination parameters
@@ -26,11 +26,11 @@ export async function GET(request: Request) {
       userId: string
       takenAt?: { gte?: Date; lte?: Date }
       OR?: Array<{
-        title?: { contains: string; mode: 'insensitive' }
-        originalName?: { contains: string; mode: 'insensitive' }
-        description?: { contains: string; mode: 'insensitive' }
-        cameraMake?: { contains: string; mode: 'insensitive' }
-        cameraModel?: { contains: string; mode: 'insensitive' }
+        title?: { contains: string; mode: "insensitive" }
+        originalName?: { contains: string; mode: "insensitive" }
+        description?: { contains: string; mode: "insensitive" }
+        cameraMake?: { contains: string; mode: "insensitive" }
+        cameraModel?: { contains: string; mode: "insensitive" }
       }>
     }
 
@@ -51,48 +51,48 @@ export async function GET(request: Request) {
     // Add search filter
     if (search && search.trim()) {
       where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { originalName: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-        { cameraMake: { contains: search, mode: 'insensitive' } },
-        { cameraModel: { contains: search, mode: 'insensitive' } },
+        { title: { contains: search, mode: "insensitive" } },
+        { originalName: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
+        { cameraMake: { contains: search, mode: "insensitive" } },
+        { cameraModel: { contains: search, mode: "insensitive" } },
       ]
     }
 
     // Build orderBy based on sortBy parameter
-    let orderBy: Record<string, 'asc' | 'desc'> | Record<string, 'asc' | 'desc'>[]
+    let orderBy: Record<string, "asc" | "desc"> | Record<string, "asc" | "desc">[]
 
     switch (sortBy) {
-      case 'date':
+      case "date":
         // Sort by takenAt if available, otherwise by createdAt
         orderBy = [
-          { takenAt: sortOrder === 'asc' ? 'asc' : 'desc' },
-          { createdAt: sortOrder === 'asc' ? 'asc' : 'desc' }
+          { takenAt: sortOrder === "asc" ? "asc" : "desc" },
+          { createdAt: sortOrder === "asc" ? "asc" : "desc" },
         ]
         break
 
-      case 'title':
+      case "title":
         // Sort by title if available, otherwise by originalName
         orderBy = [
-          { title: sortOrder === 'asc' ? 'asc' : 'desc' },
-          { originalName: sortOrder === 'asc' ? 'asc' : 'desc' }
+          { title: sortOrder === "asc" ? "asc" : "desc" },
+          { originalName: sortOrder === "asc" ? "asc" : "desc" },
         ]
         break
 
-      case 'size':
-        orderBy = { fileSize: sortOrder === 'asc' ? 'asc' : 'desc' }
+      case "size":
+        orderBy = { fileSize: sortOrder === "asc" ? "asc" : "desc" }
         break
 
-      case 'camera':
+      case "camera":
         // Sort by cameraModel if available, otherwise by cameraMake
         orderBy = [
-          { cameraModel: sortOrder === 'asc' ? 'asc' : 'desc' },
-          { cameraMake: sortOrder === 'asc' ? 'asc' : 'desc' }
+          { cameraModel: sortOrder === "asc" ? "asc" : "desc" },
+          { cameraMake: sortOrder === "asc" ? "asc" : "desc" },
         ]
         break
 
       default:
-        orderBy = { takenAt: 'desc' }
+        orderBy = { takenAt: "desc" }
     }
 
     // Get total count for pagination metadata
@@ -122,15 +122,9 @@ export async function GET(request: Request) {
     console.error("Fetch photos error:", error)
 
     if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    return NextResponse.json(
-      { error: "Failed to fetch photos" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Failed to fetch photos" }, { status: 500 })
   }
 }

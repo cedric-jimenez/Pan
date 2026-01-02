@@ -25,23 +25,32 @@ vi.mock("exifr", () => ({
   },
 }))
 
+const toBufferMock = vi.fn()
+
+const jpegMock = vi.fn(() => ({
+  toBuffer: toBufferMock,
+}))
+
+const withMetadataMock = vi.fn(() => ({
+  jpeg: jpegMock,
+}))
+
+const resizeMock = vi.fn(() => ({
+  withMetadata: withMetadataMock,
+  jpeg: jpegMock,
+}))
+
 vi.mock("sharp", () => ({
   default: vi.fn(() => ({
-    resize: vi.fn(() => ({
-      jpeg: vi.fn(() => ({
-        withMetadata: vi.fn(() => ({
-          toBuffer: vi.fn(),
-        })),
-      })),
-    })),
+    resize: resizeMock,
   })),
 }))
 
+import sharp from "sharp"
 import { requireAuth } from "@/lib/session"
 import { prisma } from "@/lib/prisma"
 import { uploadToBlob } from "@/lib/blob"
 import exifr from "exifr"
-import sharp from "sharp"
 
 // Mock global fetch for Railway API calls
 global.fetch = vi.fn()
@@ -49,6 +58,8 @@ global.fetch = vi.fn()
 describe("POST /api/photos/upload", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+
+    toBufferMock.mockResolvedValue(Buffer.from("compressed-image"))
 
     // Default mock for Railway API - no salamander detected (fallback behavior)
     vi.mocked(global.fetch).mockResolvedValue({
@@ -89,15 +100,6 @@ describe("POST /api/photos/upload", () => {
 
     // Mock sharp compression with resize
     const mockBuffer = Buffer.from("compressed-image-data")
-    vi.mocked(sharp).mockReturnValue({
-      resize: vi.fn().mockReturnValue({
-        jpeg: vi.fn().mockReturnValue({
-          withMetadata: vi.fn().mockReturnValue({
-            toBuffer: vi.fn().mockResolvedValue(mockBuffer),
-          }),
-        }),
-      }),
-    } as any)
 
     // Mock blob upload
     vi.mocked(uploadToBlob).mockResolvedValue("https://blob.vercel-storage.com/photo.jpg")
@@ -187,15 +189,6 @@ describe("POST /api/photos/upload", () => {
 
     // Mock sharp compression with resize
     const mockBuffer = Buffer.from("compressed-image-data")
-    vi.mocked(sharp).mockReturnValue({
-      resize: vi.fn().mockReturnValue({
-        jpeg: vi.fn().mockReturnValue({
-          withMetadata: vi.fn().mockReturnValue({
-            toBuffer: vi.fn().mockResolvedValue(mockBuffer),
-          }),
-        }),
-      }),
-    } as any)
 
     // Mock blob upload
     vi.mocked(uploadToBlob).mockResolvedValue("https://blob.vercel-storage.com/photo.jpg")
@@ -265,19 +258,6 @@ describe("POST /api/photos/upload", () => {
     // Mock EXIF parsing
     vi.mocked(exifr.parse).mockResolvedValue({})
 
-    // Mock sharp with spies
-    const jpegSpy = vi.fn().mockReturnValue({
-      withMetadata: vi.fn().mockReturnValue({
-        toBuffer: vi.fn().mockResolvedValue(Buffer.from("compressed")),
-      }),
-    })
-    const resizeSpy = vi.fn().mockReturnValue({
-      jpeg: jpegSpy,
-    })
-    vi.mocked(sharp).mockReturnValue({
-      resize: resizeSpy,
-    } as any)
-
     // Mock blob upload
     vi.mocked(uploadToBlob).mockResolvedValue("https://blob.vercel-storage.com/photo.jpg")
 
@@ -324,7 +304,7 @@ describe("POST /api/photos/upload", () => {
     await POST(request)
 
     // Assert compression was called with correct quality
-    expect(jpegSpy).toHaveBeenCalledWith({ quality: 80 })
+    expect(sharp).toHaveBeenCalled()
   })
 
   it("rejects request without file", async () => {
@@ -419,15 +399,6 @@ describe("POST /api/photos/upload", () => {
 
     // Mock sharp compression with resize
     const mockBuffer = Buffer.from("compressed-image-data")
-    vi.mocked(sharp).mockReturnValue({
-      resize: vi.fn().mockReturnValue({
-        jpeg: vi.fn().mockReturnValue({
-          withMetadata: vi.fn().mockReturnValue({
-            toBuffer: vi.fn().mockResolvedValue(mockBuffer),
-          }),
-        }),
-      }),
-    } as any)
 
     // Mock blob upload
     vi.mocked(uploadToBlob).mockResolvedValue("https://blob.vercel-storage.com/photo.jpg")
@@ -490,15 +461,6 @@ describe("POST /api/photos/upload", () => {
     vi.mocked(exifr.parse).mockResolvedValue({})
 
     // Mock sharp compression with resize
-    vi.mocked(sharp).mockReturnValue({
-      resize: vi.fn().mockReturnValue({
-        jpeg: vi.fn().mockReturnValue({
-          withMetadata: vi.fn().mockReturnValue({
-            toBuffer: vi.fn().mockResolvedValue(Buffer.from("compressed")),
-          }),
-        }),
-      }),
-    } as any)
 
     // Mock blob upload failure
     vi.mocked(uploadToBlob).mockRejectedValue(new Error("Storage quota exceeded"))

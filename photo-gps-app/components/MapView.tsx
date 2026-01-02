@@ -37,7 +37,7 @@ export default function MapView({ photos, onPhotoClick }: MapViewProps) {
 
   if (!mounted) {
     return (
-      <div className="w-full h-[600px] bg-muted rounded-lg flex items-center justify-center">
+      <div className="bg-muted flex h-[600px] w-full items-center justify-center rounded-lg">
         <p className="text-muted-foreground">Loading map...</p>
       </div>
     )
@@ -45,10 +45,10 @@ export default function MapView({ photos, onPhotoClick }: MapViewProps) {
 
   if (photosWithLocation.length === 0) {
     return (
-      <div className="w-full h-[600px] bg-muted rounded-lg flex items-center justify-center">
+      <div className="bg-muted flex h-[600px] w-full items-center justify-center rounded-lg">
         <div className="text-center">
           <svg
-            className="w-16 h-16 mx-auto text-muted-foreground mb-4"
+            className="text-muted-foreground mx-auto mb-4 h-16 w-16"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -60,9 +60,7 @@ export default function MapView({ photos, onPhotoClick }: MapViewProps) {
               d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
             />
           </svg>
-          <p className="text-muted-foreground">
-            No photos with GPS location data found
-          </p>
+          <p className="text-muted-foreground">No photos with GPS location data found</p>
         </div>
       </div>
     )
@@ -70,14 +68,12 @@ export default function MapView({ photos, onPhotoClick }: MapViewProps) {
 
   // Calculate center of all markers
   const avgLat =
-    photosWithLocation.reduce((sum, p) => sum + (p.latitude || 0), 0) /
-    photosWithLocation.length
+    photosWithLocation.reduce((sum, p) => sum + (p.latitude || 0), 0) / photosWithLocation.length
   const avgLng =
-    photosWithLocation.reduce((sum, p) => sum + (p.longitude || 0), 0) /
-    photosWithLocation.length
+    photosWithLocation.reduce((sum, p) => sum + (p.longitude || 0), 0) / photosWithLocation.length
 
   return (
-    <div className="w-full h-[600px] rounded-lg overflow-hidden border border-border">
+    <div className="border-border h-[600px] w-full overflow-hidden rounded-lg border">
       <MapContainer
         center={[avgLat, avgLng]}
         zoom={13}
@@ -90,13 +86,10 @@ export default function MapView({ photos, onPhotoClick }: MapViewProps) {
         />
 
         {photosWithLocation.map((photo) => (
-          <Marker
-            key={photo.id}
-            position={[photo.latitude!, photo.longitude!]}
-          >
+          <Marker key={photo.id} position={[photo.latitude!, photo.longitude!]}>
             <Popup>
               <div className="min-w-[200px]">
-                <div className="relative w-full h-32 mb-2 rounded overflow-hidden">
+                <div className="relative mb-2 h-32 w-full overflow-hidden rounded">
                   <Image
                     src={photo.url}
                     alt={photo.originalName}
@@ -105,11 +98,9 @@ export default function MapView({ photos, onPhotoClick }: MapViewProps) {
                     sizes="200px"
                   />
                 </div>
-                <h3 className="font-semibold mb-1">
-                  {photo.title || photo.originalName}
-                </h3>
+                <h3 className="mb-1 font-semibold">{photo.title || photo.originalName}</h3>
                 {photo.takenAt && (
-                  <p className="text-sm text-gray-600 mb-2">
+                  <p className="mb-2 text-sm text-gray-600">
                     {format(new Date(photo.takenAt), "PPp")}
                   </p>
                 )}

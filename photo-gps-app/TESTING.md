@@ -140,6 +140,7 @@ describe("Component", () => {
 ## Couverture de Code
 
 La couverture de code minimale recommandée :
+
 - **Composants UI** : 80%+ (focus sur les interactions principales)
 - **Fonctions utilitaires** : 90%+ (logique critique)
 - **API routes** : 70%+ (cas principaux + erreurs)
@@ -157,6 +158,7 @@ Le rapport sera généré dans `coverage/` et affiché dans le terminal.
 ### Server Components
 
 Les Server Components ne peuvent pas être testés directement avec React Testing Library. Testez plutôt :
+
 - La logique qu'ils contiennent (extraite dans des fonctions)
 - Les Client Components qu'ils utilisent
 
