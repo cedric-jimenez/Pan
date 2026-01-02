@@ -198,7 +198,7 @@ export async function POST(request: Request) {
     let croppedBlobUrl: string | null = null
     let isCropped = false
     let cropConfidence: number | null = null
-    let salamanderDetected = cropResult.detected
+    const salamanderDetected = cropResult.detected
 
     if (cropResult.detected && cropResult.croppedBuffer) {
       // Upload cropped version
