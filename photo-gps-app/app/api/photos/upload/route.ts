@@ -78,12 +78,25 @@ async function callRailwayCrop(buffer: Buffer): Promise<{
       const base64Data = data.cropped_image.replace(/^data:image\/\w+;base64,/, '')
       const croppedBuffer = Buffer.from(base64Data, 'base64')
 
+      console.log({
+        message: 'Using cropped image from Railway',
+        croppedBufferSize: croppedBuffer.length,
+        hasBase64Prefix: data.cropped_image.startsWith('data:image'),
+      })
+
       return {
         detected: true,
         croppedBuffer,
         confidence: data.bounding_box?.confidence || null,
       }
     }
+
+    console.log({
+      message: 'Not using cropped image',
+      detected: data.detected,
+      hasCroppedImage: !!data.cropped_image,
+      croppedImageType: typeof data.cropped_image,
+    })
 
     return {
       detected: false,
@@ -164,43 +177,67 @@ export async function POST(request: Request) {
       .toBuffer()
 
     // Call Railway YOLO API to detect and crop salamander
+    console.log({
+      message: 'Before Railway crop',
+      compressedBufferSize: compressedBuffer.length,
+    })
+
     const cropResult = await callRailwayCrop(compressedBuffer)
 
-    // Determine which buffer to use: cropped or compressed
-    let finalBuffer: Buffer
-    let isCropped = false
-    let cropConfidence: number | null = null
-    let salamanderDetected = true
-
-    if (cropResult.detected && cropResult.croppedBuffer) {
-      // Use cropped image
-      finalBuffer = cropResult.croppedBuffer
-      isCropped = true
-      cropConfidence = cropResult.confidence
-      salamanderDetected = true
-    } else {
-      // Fallback to Sharp compressed image
-      finalBuffer = compressedBuffer
-      isCropped = false
-      cropConfidence = cropResult.confidence
-      salamanderDetected = cropResult.detected
-
-      if (cropResult.error) {
-        console.log(`Using fallback image due to: ${cropResult.error}`)
-      }
-    }
-
-    // Convert Buffer to Uint8Array for compatibility with Blob/File constructors
-    const uint8Array = new Uint8Array(finalBuffer)
-    const blob = new Blob([uint8Array], { type: 'image/jpeg' })
-    const compressedFile = new File(
-      [blob],
-      file.name.replace(/\.\w+$/, '.jpg'), // Ensure .jpg extension
+    // Upload full image (always)
+    const fullImageUint8 = new Uint8Array(compressedBuffer)
+    const fullImageBlob = new Blob([fullImageUint8], { type: 'image/jpeg' })
+    const fullImageFile = new File(
+      [fullImageBlob],
+      file.name.replace(/\.\w+$/, '.jpg'),
       { type: 'image/jpeg' }
     )
+    const blobUrl = await uploadToBlob(fullImageFile)
 
-    // Upload compressed version to Vercel Blob Storage
-    const blobUrl = await uploadToBlob(compressedFile)
+    // Upload cropped image if salamander was detected
+    let croppedBlobUrl: string | null = null
+    let isCropped = false
+    let cropConfidence: number | null = null
+    const salamanderDetected = cropResult.detected
+
+    if (cropResult.detected && cropResult.croppedBuffer) {
+      // Upload cropped version
+      const croppedUint8 = new Uint8Array(cropResult.croppedBuffer)
+      const croppedBlob = new Blob([croppedUint8], { type: 'image/jpeg' })
+      const croppedFile = new File(
+        [croppedBlob],
+        file.name.replace(/\.\w+$/, '-cropped.jpg'),
+        { type: 'image/jpeg' }
+      )
+      croppedBlobUrl = await uploadToBlob(croppedFile)
+      isCropped = true
+      cropConfidence = cropResult.confidence
+
+      console.log({
+        message: 'Uploaded both full and cropped images',
+        fullImageSize: compressedBuffer.length,
+        croppedImageSize: cropResult.croppedBuffer.length,
+        sizeDiff: compressedBuffer.length - cropResult.croppedBuffer.length,
+        sizeReduction: ((1 - cropResult.croppedBuffer.length / compressedBuffer.length) * 100).toFixed(1) + '%',
+        fullUrl: blobUrl,
+        croppedUrl: croppedBlobUrl,
+      })
+    } else {
+      // No cropped version
+      cropConfidence = cropResult.confidence
+
+      console.log({
+        message: 'Uploaded only full image (no crop)',
+        fullImageSize: compressedBuffer.length,
+        detected: cropResult.detected,
+        hasCroppedBuffer: !!cropResult.croppedBuffer,
+        error: cropResult.error,
+      })
+
+      if (cropResult.error) {
+        console.log(`No cropped image due to: ${cropResult.error}`)
+      }
+    }
 
     // Generate unique filename for reference
     const timestamp = Date.now()
@@ -234,9 +271,10 @@ export async function POST(request: Request) {
         userId: user.id,
         filename,
         originalName: file.name,
-        fileSize: finalBuffer.length, // Use final buffer size (cropped or compressed)
+        fileSize: compressedBuffer.length, // Full image size
         mimeType: 'image/jpeg', // Always JPEG after compression
         url: blobUrl,
+        croppedUrl: croppedBlobUrl,
         latitude,
         longitude,
         takenAt,

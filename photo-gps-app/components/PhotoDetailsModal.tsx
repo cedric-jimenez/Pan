@@ -81,12 +81,18 @@ export default function PhotoDetailsModal({
             {/* Image Section */}
             <div className="relative aspect-square bg-muted rounded-lg overflow-hidden">
               <Image
-                src={photo.url}
+                src={`${photo.croppedUrl || photo.url}?v=${photo.updatedAt || photo.createdAt}`}
                 alt={photo.originalName}
                 fill
                 className="object-contain"
                 sizes="(max-width: 768px) 100vw, 50vw"
+                unoptimized={photo.isCropped}
               />
+              {photo.croppedUrl && (
+                <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded-md text-xs font-medium">
+                  Cropped
+                </div>
+              )}
             </div>
 
             {/* Details Section */}
