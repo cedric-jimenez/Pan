@@ -177,6 +177,11 @@ export async function POST(request: Request) {
       .toBuffer()
 
     // Call Railway YOLO API to detect and crop salamander
+    console.log({
+      message: 'Before Railway crop',
+      compressedBufferSize: compressedBuffer.length,
+    })
+
     const cropResult = await callRailwayCrop(compressedBuffer)
 
     // Determine which buffer to use: cropped or compressed
@@ -193,7 +198,10 @@ export async function POST(request: Request) {
       salamanderDetected = true
       console.log({
         message: 'Final buffer decision: using cropped image',
-        finalBufferSize: finalBuffer.length,
+        originalSize: compressedBuffer.length,
+        croppedSize: finalBuffer.length,
+        sizeDiff: compressedBuffer.length - finalBuffer.length,
+        sizeReduction: ((1 - finalBuffer.length / compressedBuffer.length) * 100).toFixed(1) + '%',
         isCropped: true,
       })
     } else {
