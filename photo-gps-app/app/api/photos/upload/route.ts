@@ -184,57 +184,60 @@ export async function POST(request: Request) {
 
     const cropResult = await callRailwayCrop(compressedBuffer)
 
-    // Determine which buffer to use: cropped or compressed
-    let finalBuffer: Buffer
+    // Upload full image (always)
+    const fullImageUint8 = new Uint8Array(compressedBuffer)
+    const fullImageBlob = new Blob([fullImageUint8], { type: 'image/jpeg' })
+    const fullImageFile = new File(
+      [fullImageBlob],
+      file.name.replace(/\.\w+$/, '.jpg'),
+      { type: 'image/jpeg' }
+    )
+    const blobUrl = await uploadToBlob(fullImageFile)
+
+    // Upload cropped image if salamander was detected
+    let croppedBlobUrl: string | null = null
     let isCropped = false
     let cropConfidence: number | null = null
-    let salamanderDetected = true
+    let salamanderDetected = cropResult.detected
 
     if (cropResult.detected && cropResult.croppedBuffer) {
-      // Use cropped image
-      finalBuffer = cropResult.croppedBuffer
+      // Upload cropped version
+      const croppedUint8 = new Uint8Array(cropResult.croppedBuffer)
+      const croppedBlob = new Blob([croppedUint8], { type: 'image/jpeg' })
+      const croppedFile = new File(
+        [croppedBlob],
+        file.name.replace(/\.\w+$/, '-cropped.jpg'),
+        { type: 'image/jpeg' }
+      )
+      croppedBlobUrl = await uploadToBlob(croppedFile)
       isCropped = true
       cropConfidence = cropResult.confidence
-      salamanderDetected = true
-      console.log({
-        message: 'Final buffer decision: using cropped image',
-        originalSize: compressedBuffer.length,
-        croppedSize: finalBuffer.length,
-        sizeDiff: compressedBuffer.length - finalBuffer.length,
-        sizeReduction: ((1 - finalBuffer.length / compressedBuffer.length) * 100).toFixed(1) + '%',
-        isCropped: true,
-      })
-    } else {
-      // Fallback to Sharp compressed image
-      finalBuffer = compressedBuffer
-      isCropped = false
-      cropConfidence = cropResult.confidence
-      salamanderDetected = cropResult.detected
 
       console.log({
-        message: 'Final buffer decision: using fallback',
-        finalBufferSize: finalBuffer.length,
-        isCropped: false,
-        cropResultDetected: cropResult.detected,
+        message: 'Uploaded both full and cropped images',
+        fullImageSize: compressedBuffer.length,
+        croppedImageSize: cropResult.croppedBuffer.length,
+        sizeDiff: compressedBuffer.length - cropResult.croppedBuffer.length,
+        sizeReduction: ((1 - cropResult.croppedBuffer.length / compressedBuffer.length) * 100).toFixed(1) + '%',
+        fullUrl: blobUrl,
+        croppedUrl: croppedBlobUrl,
+      })
+    } else {
+      // No cropped version
+      cropConfidence = cropResult.confidence
+
+      console.log({
+        message: 'Uploaded only full image (no crop)',
+        fullImageSize: compressedBuffer.length,
+        detected: cropResult.detected,
         hasCroppedBuffer: !!cropResult.croppedBuffer,
+        error: cropResult.error,
       })
 
       if (cropResult.error) {
-        console.log(`Using fallback image due to: ${cropResult.error}`)
+        console.log(`No cropped image due to: ${cropResult.error}`)
       }
     }
-
-    // Convert Buffer to Uint8Array for compatibility with Blob/File constructors
-    const uint8Array = new Uint8Array(finalBuffer)
-    const blob = new Blob([uint8Array], { type: 'image/jpeg' })
-    const compressedFile = new File(
-      [blob],
-      file.name.replace(/\.\w+$/, '.jpg'), // Ensure .jpg extension
-      { type: 'image/jpeg' }
-    )
-
-    // Upload compressed version to Vercel Blob Storage
-    const blobUrl = await uploadToBlob(compressedFile)
 
     // Generate unique filename for reference
     const timestamp = Date.now()
@@ -268,9 +271,10 @@ export async function POST(request: Request) {
         userId: user.id,
         filename,
         originalName: file.name,
-        fileSize: finalBuffer.length, // Use final buffer size (cropped or compressed)
+        fileSize: compressedBuffer.length, // Full image size
         mimeType: 'image/jpeg', // Always JPEG after compression
         url: blobUrl,
+        croppedUrl: croppedBlobUrl,
         latitude,
         longitude,
         takenAt,
