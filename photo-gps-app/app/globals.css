@@ -1,24 +1,24 @@
 @import "tailwindcss";
 
 :root {
-  /* Dark theme colors */
-  --background: #0a0a0a;
-  --foreground: #ededed;
-  --card: #141414;
-  --card-foreground: #ededed;
-  --primary: #3b82f6;
+  /* Figma dark theme colors - matching App.tsx Tailwind classes */
+  --background: #111827;
+  --foreground: #f9fafb;
+  --card: #1f2937;
+  --card-foreground: #f9fafb;
+  --primary: #059669;
   --primary-foreground: #ffffff;
-  --secondary: #1f2937;
-  --secondary-foreground: #e5e7eb;
-  --accent: #10b981;
+  --secondary: #374151;
+  --secondary-foreground: #f9fafb;
+  --accent: #0d9488;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #27272a;
-  --input: #27272a;
-  --ring: #3b82f6;
-  --muted: #18181b;
-  --muted-foreground: #a1a1aa;
+  --border: #374151;
+  --input: #374151;
+  --ring: #059669;
+  --muted: #374151;
+  --muted-foreground: #9ca3af;
 }
 
 @theme inline {

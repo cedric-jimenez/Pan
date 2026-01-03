@@ -25,10 +25,10 @@ function getMetadataQuality(photo: Photo): { label: string; color: string } {
 
   const score = [hasGPS, hasCamera, hasExif, hasDate].filter(Boolean).length
 
-  if (score >= 3) return { label: "Excellent", color: "bg-emerald-100 text-emerald-700" }
-  if (score === 2) return { label: "Bon", color: "bg-blue-100 text-blue-700" }
-  if (score === 1) return { label: "Basique", color: "bg-amber-100 text-amber-700" }
-  return { label: "Minimal", color: "bg-gray-100 text-gray-700" }
+  if (score >= 3) return { label: "excellent", color: "bg-amber-50 text-amber-700" }
+  if (score === 2) return { label: "fair", color: "bg-amber-50 text-amber-700" }
+  if (score === 1) return { label: "partial", color: "bg-slate-200 text-slate-700" }
+  return { label: "minimal", color: "bg-slate-200 text-slate-700" }
 }
 
 // Helper to format file size
@@ -57,7 +57,7 @@ export default function PhotoGrid({ photos, onPhotoClick, gridSize = "medium" }:
           <div
             key={photo.id}
             onClick={() => onPhotoClick(photo)}
-            className="group bg-card border-border cursor-pointer overflow-hidden rounded-2xl border-2 shadow-md transition-all duration-300 hover:border-teal-500"
+            className="group bg-card border-border cursor-pointer overflow-hidden rounded-2xl border-2 shadow-md transition-all duration-300 hover:border-primary hover:shadow-xl"
           >
             {/* Image container with fixed aspect ratio */}
             <div className="relative aspect-[4/3] overflow-hidden">
@@ -72,15 +72,15 @@ export default function PhotoGrid({ photos, onPhotoClick, gridSize = "medium" }:
               {/* Badges overlay */}
               <div className="absolute top-3 right-3 left-3 flex items-start justify-between gap-2">
                 {/* Quality badge */}
-                <span className={`rounded-full px-3 py-1 text-xs font-medium ${quality.color}`}>
+                <span className={`rounded-md px-2.5 py-1 text-xs font-medium lowercase ${quality.color}`}>
                   {quality.label}
                 </span>
 
-                {/* Metadata completeness percentage */}
+                {/* EXIF badge */}
                 {hasExifData && (
-                  <div className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1 shadow-sm">
+                  <div className="flex items-center gap-1.5 rounded-md bg-slate-700/90 px-2.5 py-1 shadow-sm backdrop-blur-sm">
                     <svg
-                      className="h-3 w-3 text-teal-600"
+                      className="h-3 w-3 text-white"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -92,7 +92,7 @@ export default function PhotoGrid({ photos, onPhotoClick, gridSize = "medium" }:
                         d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
                       />
                     </svg>
-                    <span className="text-xs font-semibold text-gray-700">EXIF</span>
+                    <span className="text-xs font-medium text-white">EXIF</span>
                   </div>
                 )}
               </div>
@@ -100,13 +100,13 @@ export default function PhotoGrid({ photos, onPhotoClick, gridSize = "medium" }:
 
             {/* Card content */}
             <div className="space-y-2 p-4">
-              {/* Title and ID */}
+              {/* Title and date */}
               <div className="flex items-start justify-between gap-2">
                 <h3 className="text-foreground line-clamp-1 flex-1 text-base font-semibold">
                   {photo.title || photo.originalName}
                 </h3>
                 {photo.takenAt && (
-                  <span className="shrink-0 rounded bg-teal-50 px-2 py-1 text-xs font-medium text-teal-600">
+                  <span className="shrink-0 rounded bg-accent/20 px-2 py-1 text-xs font-medium text-accent">
                     {format(new Date(photo.takenAt), "dd/MM/yy")}
                   </span>
                 )}
@@ -121,7 +121,7 @@ export default function PhotoGrid({ photos, onPhotoClick, gridSize = "medium" }:
               {location && (
                 <div className="text-muted-foreground flex items-center gap-1.5 text-sm">
                   <svg
-                    className="h-4 w-4 shrink-0 text-teal-600"
+                    className="h-4 w-4 shrink-0 text-primary"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -146,7 +146,7 @@ export default function PhotoGrid({ photos, onPhotoClick, gridSize = "medium" }:
               {/* Size info */}
               <div className="text-muted-foreground flex items-center gap-1.5 text-sm">
                 <svg
-                  className="h-4 w-4 shrink-0 text-teal-600"
+                  className="h-4 w-4 shrink-0 text-primary"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -155,10 +155,10 @@ export default function PhotoGrid({ photos, onPhotoClick, gridSize = "medium" }:
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                   />
                 </svg>
-                <span>{formatFileSize(photo.fileSize)}</span>
+                <span>Taille: {formatFileSize(photo.fileSize)}</span>
               </div>
 
               {/* Tags */}
