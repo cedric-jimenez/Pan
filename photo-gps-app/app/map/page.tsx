@@ -107,10 +107,10 @@ export default function MapPage() {
     <div className="bg-background min-h-screen">
       <Navbar />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 pt-24 pb-8">
         <div className="mb-8">
           <h1 className="mb-2 text-3xl font-bold">Map View</h1>
-          <p className="text-muted-foreground">Explore your photos on an interactive map</p>
+          <p className="text-muted-foreground">Explore your salamander observations on an interactive map</p>
         </div>
 
         {/* Date Range Filter */}

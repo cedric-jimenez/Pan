@@ -255,11 +255,11 @@ export default function GalleryPage() {
     <div className="bg-background min-h-screen">
       <Navbar />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 pt-24 pb-8">
         <div className="mb-8">
-          <h1 className="mb-2 text-3xl font-bold">Photo Gallery</h1>
+          <h1 className="mb-2 text-3xl font-bold">Salamander Database</h1>
           <p className="text-muted-foreground">
-            Upload and manage your photos with GPS and timeline data
+            {total} individual{total > 1 ? "s" : ""} found
           </p>
         </div>
 
