@@ -26,28 +26,28 @@ export default function StatsCards({ photos, total }: StatsCardsProps) {
       value: total.toString(),
       color: "text-emerald-500",
       bgColor: "bg-emerald-500/10",
-      borderColor: "border-emerald-500/20",
+      borderColor: "border-slate-700",
     },
     {
       label: "With GPS",
       value: withGPS.toString(),
       color: "text-blue-500",
       bgColor: "bg-blue-500/10",
-      borderColor: "border-blue-500/20",
+      borderColor: "border-slate-700",
     },
     {
       label: "With EXIF",
       value: withEXIF.toString(),
       color: "text-purple-500",
       bgColor: "bg-purple-500/10",
-      borderColor: "border-purple-500/20",
+      borderColor: "border-slate-700",
     },
     {
       label: "Storage Used",
       value: formatStorageSize(totalStorage),
       color: "text-orange-500",
       bgColor: "bg-orange-500/10",
-      borderColor: "border-orange-500/20",
+      borderColor: "border-slate-700",
     },
   ]
 
@@ -56,9 +56,9 @@ export default function StatsCards({ photos, total }: StatsCardsProps) {
       {stats.map((stat, index) => (
         <div
           key={index}
-          className={`bg-card border ${stat.borderColor} rounded-xl p-6 transition-all hover:shadow-lg`}
+          className={`bg-slate-800/50 border-2 ${stat.borderColor} rounded-xl p-6 transition-all hover:shadow-lg backdrop-blur-sm`}
         >
-          <p className="text-muted-foreground text-sm font-medium mb-2">{stat.label}</p>
+          <p className="text-gray-400 text-sm font-medium mb-2">{stat.label}</p>
           <p className={`text-4xl font-bold ${stat.color}`}>{stat.value}</p>
         </div>
       ))}
