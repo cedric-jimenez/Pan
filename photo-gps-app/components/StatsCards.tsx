@@ -24,42 +24,34 @@ export default function StatsCards({ photos, total }: StatsCardsProps) {
     {
       label: "Total Photos",
       value: total.toString(),
-      color: "text-emerald-500",
-      bgColor: "bg-emerald-500/10",
-      borderColor: "border-slate-700",
+      color: "text-emerald-400",
     },
     {
       label: "With GPS",
       value: withGPS.toString(),
-      color: "text-blue-500",
-      bgColor: "bg-blue-500/10",
-      borderColor: "border-slate-700",
+      color: "text-blue-400",
     },
     {
       label: "With EXIF",
       value: withEXIF.toString(),
-      color: "text-purple-500",
-      bgColor: "bg-purple-500/10",
-      borderColor: "border-slate-700",
+      color: "text-purple-400",
     },
     {
       label: "Storage Used",
       value: formatStorageSize(totalStorage),
-      color: "text-orange-500",
-      bgColor: "bg-orange-500/10",
-      borderColor: "border-slate-700",
+      color: "text-orange-400",
     },
   ]
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
       {stats.map((stat, index) => (
         <div
           key={index}
-          className={`bg-slate-800/50 border-2 ${stat.borderColor} rounded-xl p-6 transition-all hover:shadow-lg backdrop-blur-sm`}
+          className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-4 border border-gray-700 shadow-lg"
         >
-          <p className="text-gray-400 text-sm font-medium mb-2">{stat.label}</p>
-          <p className={`text-4xl font-bold ${stat.color}`}>{stat.value}</p>
+          <div className="text-sm text-gray-400">{stat.label}</div>
+          <div className={`text-3xl font-bold ${stat.color} mt-1`}>{stat.value}</div>
         </div>
       ))}
     </div>
