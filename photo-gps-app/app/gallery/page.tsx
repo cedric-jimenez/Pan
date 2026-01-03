@@ -9,6 +9,7 @@ import Navbar from "@/components/Navbar"
 import PhotoUpload from "@/components/PhotoUpload"
 import PhotoGrid, { GridSize } from "@/components/PhotoGrid"
 import PhotoDetailsModal from "@/components/PhotoDetailsModal"
+import StatsCards from "@/components/StatsCards"
 import { Photo } from "@/types/photo"
 
 type SortBy = "date" | "title" | "size" | "camera"
@@ -262,6 +263,8 @@ export default function GalleryPage() {
             {total} individual{total > 1 ? "s" : ""} found
           </p>
         </div>
+
+        <StatsCards photos={photos} total={total} />
 
         <div className="mb-8">
           <PhotoUpload
