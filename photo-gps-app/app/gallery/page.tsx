@@ -22,6 +22,7 @@ export default function GalleryPage() {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [isSearching, setIsSearching] = useState(false)
   const [gridSize, setGridSize] = useState<GridSize>("medium")
   const [sortBy, setSortBy] = useState<SortBy>("date")
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc")
@@ -34,6 +35,7 @@ export default function GalleryPage() {
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
   const [dayToDelete, setDayToDelete] = useState<{ date: Date; photos: Photo[] } | null>(null)
   const [isDeletingDay, setIsDeletingDay] = useState(false)
+  const isInitialLoad = useRef(true)
 
   // Load preferences from localStorage
   useEffect(() => {
@@ -96,7 +98,12 @@ export default function GalleryPage() {
         if (append) {
           setIsLoadingMore(true)
         } else if (!silent) {
-          setIsLoading(true)
+          // Use searching state for filters/search, loading state for initial load
+          if (isInitialLoad.current) {
+            setIsLoading(true)
+          } else {
+            setIsSearching(true)
+          }
         }
 
         // Build query params with sorting, search, and pagination
@@ -129,6 +136,8 @@ export default function GalleryPage() {
       } finally {
         setIsLoading(false)
         setIsLoadingMore(false)
+        setIsSearching(false)
+        isInitialLoad.current = false
       }
     },
     [sortBy, sortOrder, searchQuery]
@@ -138,7 +147,7 @@ export default function GalleryPage() {
   useEffect(() => {
     if (session) {
       setPage(1)
-      setPhotos([])
+      // Don't clear photos to avoid flash of empty state
       fetchPhotos(1, false)
     }
   }, [session, sortBy, sortOrder, searchQuery, fetchPhotos])
@@ -237,7 +246,7 @@ export default function GalleryPage() {
     }))
   }, [photos])
 
-  if (status === "loading" || isLoading) {
+  if (status === "loading" || (isLoading && isInitialLoad.current)) {
     return (
       <div className="bg-background flex min-h-screen items-center justify-center">
         <div className="text-center">
@@ -431,6 +440,15 @@ export default function GalleryPage() {
             </div>
           </div>
         </div>
+
+        {/* Subtle loading indicator during search/filter */}
+        {isSearching && (
+          <div className="mb-4">
+            <div className="bg-primary/20 h-1 overflow-hidden rounded-full">
+              <div className="bg-primary h-full w-1/3 animate-pulse"></div>
+            </div>
+          </div>
+        )}
 
         {photos.length === 0 ? (
           <div className="py-16 text-center">
