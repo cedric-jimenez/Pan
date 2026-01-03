@@ -275,158 +275,162 @@ export default function GalleryPage() {
           />
         </div>
 
-        {photos.length > 0 && (
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        {/* Search and controls - always visible */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          {photos.length > 0 && (
             <p className="text-muted-foreground text-sm">
               {photos.length} / {total} photo{total > 1 ? "s" : ""}
             </p>
+          )}
+          {photos.length === 0 && total > 0 && (
+            <p className="text-muted-foreground text-sm">0 / {total} photos</p>
+          )}
 
-            <div className="flex flex-wrap items-center gap-4">
-              {/* Search input */}
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder="Rechercher..."
-                  className="bg-muted text-foreground placeholder:text-muted-foreground focus:ring-ring w-48 rounded-lg border-0 py-1.5 pr-9 pl-9 text-sm focus:ring-2 focus:outline-none"
+          <div className="flex flex-wrap items-center gap-4">
+            {/* Search input */}
+            <div className="relative">
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Rechercher..."
+                className="bg-muted text-foreground placeholder:text-muted-foreground focus:ring-ring w-48 rounded-lg border-0 py-1.5 pr-9 pl-9 text-sm focus:ring-2 focus:outline-none"
+              />
+              <svg
+                className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
-                <svg
-                  className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-                {searchInput && (
-                  <button
-                    onClick={() => setSearchInput("")}
-                    className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2.5 -translate-y-1/2 transition-colors"
-                    title="Effacer la recherche"
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                )}
-              </div>
-
-              {/* Sort selector */}
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-sm">Tri :</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => handleSortChange(e.target.value as SortBy)}
-                  className="bg-muted text-foreground focus:ring-ring rounded-lg border-0 px-3 py-1.5 text-sm focus:ring-2 focus:outline-none"
-                >
-                  <option value="date">Date</option>
-                  <option value="title">Titre</option>
-                  <option value="size">Taille</option>
-                  <option value="camera">Appareil</option>
-                </select>
-
-                {/* Sort order toggle */}
+              </svg>
+              {searchInput && (
                 <button
-                  onClick={toggleSortOrder}
-                  className="bg-muted hover:bg-muted/80 rounded-lg px-3 py-1.5 transition-colors"
-                  title={sortOrder === "desc" ? "Décroissant" : "Croissant"}
+                  onClick={() => setSearchInput("")}
+                  className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2.5 -translate-y-1/2 transition-colors"
+                  title="Effacer la recherche"
                 >
-                  {sortOrder === "desc" ? (
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  ) : (
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 15l7-7 7 7"
-                      />
-                    </svg>
-                  )}
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
                 </button>
-              </div>
+              )}
+            </div>
 
-              {/* Grid size selector */}
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground mr-2 text-sm">Taille :</span>
-                <div className="bg-muted flex gap-1 rounded-lg p-1">
-                  <button
-                    onClick={() => handleGridSizeChange("small")}
-                    className={`rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-                      gridSize === "small"
-                        ? "bg-background text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                    title="Petites vignettes"
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-                      />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => handleGridSizeChange("medium")}
-                    className={`rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-                      gridSize === "medium"
-                        ? "bg-background text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                    title="Vignettes moyennes"
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"
-                      />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => handleGridSizeChange("large")}
-                    className={`rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-                      gridSize === "large"
-                        ? "bg-background text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                    title="Grandes vignettes"
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 5a1 1 0 011-1h14a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h14a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4z"
-                      />
-                    </svg>
-                  </button>
-                </div>
+            {/* Sort selector */}
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground text-sm">Tri :</span>
+              <select
+                value={sortBy}
+                onChange={(e) => handleSortChange(e.target.value as SortBy)}
+                className="bg-muted text-foreground focus:ring-ring rounded-lg border-0 px-3 py-1.5 text-sm focus:ring-2 focus:outline-none"
+              >
+                <option value="date">Date</option>
+                <option value="title">Titre</option>
+                <option value="size">Taille</option>
+                <option value="camera">Appareil</option>
+              </select>
+
+              {/* Sort order toggle */}
+              <button
+                onClick={toggleSortOrder}
+                className="bg-muted hover:bg-muted/80 rounded-lg px-3 py-1.5 transition-colors"
+                title={sortOrder === "desc" ? "Décroissant" : "Croissant"}
+              >
+                {sortOrder === "desc" ? (
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                ) : (
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 15l7-7 7 7"
+                    />
+                  </svg>
+                )}
+              </button>
+            </div>
+
+            {/* Grid size selector */}
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground mr-2 text-sm">Taille :</span>
+              <div className="bg-muted flex gap-1 rounded-lg p-1">
+                <button
+                  onClick={() => handleGridSizeChange("small")}
+                  className={`rounded px-3 py-1.5 text-xs font-medium transition-colors ${
+                    gridSize === "small"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  title="Petites vignettes"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+                    />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => handleGridSizeChange("medium")}
+                  className={`rounded px-3 py-1.5 text-xs font-medium transition-colors ${
+                    gridSize === "medium"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  title="Vignettes moyennes"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"
+                    />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => handleGridSizeChange("large")}
+                  className={`rounded px-3 py-1.5 text-xs font-medium transition-colors ${
+                    gridSize === "large"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  title="Grandes vignettes"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 5a1 1 0 011-1h14a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h14a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4z"
+                    />
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
-        )}
+        </div>
 
         {photos.length === 0 ? (
           <div className="py-16 text-center">
@@ -443,8 +447,25 @@ export default function GalleryPage() {
                 d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
               />
             </svg>
-            <h3 className="mb-2 text-xl font-medium">No photos yet</h3>
-            <p className="text-muted-foreground">Upload your first photo to get started</p>
+            {searchQuery.trim() ? (
+              <>
+                <h3 className="mb-2 text-xl font-medium">Aucun résultat</h3>
+                <p className="text-muted-foreground mb-4">
+                  Aucune photo ne correspond à &quot;{searchQuery}&quot;
+                </p>
+                <button
+                  onClick={() => setSearchInput("")}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 text-sm transition-colors"
+                >
+                  Effacer la recherche
+                </button>
+              </>
+            ) : (
+              <>
+                <h3 className="mb-2 text-xl font-medium">No photos yet</h3>
+                <p className="text-muted-foreground">Upload your first photo to get started</p>
+              </>
+            )}
           </div>
         ) : (
           <div className="space-y-8">
