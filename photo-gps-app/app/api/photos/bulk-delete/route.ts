@@ -31,15 +31,21 @@ export async function POST(request: Request) {
       )
     }
 
-    // Delete files from Vercel Blob Storage
-    const deletionResults = await Promise.allSettled(
-      photos.map((photo) => deleteFromBlob(photo.url))
-    )
+    // Delete files from Vercel Blob Storage (both original and cropped)
+    const deletionPromises = photos.flatMap((photo) => {
+      const promises = [deleteFromBlob(photo.url)]
+      if (photo.croppedUrl) {
+        promises.push(deleteFromBlob(photo.croppedUrl))
+      }
+      return promises
+    })
+
+    const deletionResults = await Promise.allSettled(deletionPromises)
 
     // Log any blob deletion errors, but continue with database deletion
     deletionResults.forEach((result, index) => {
       if (result.status === "rejected") {
-        console.error(`Failed to delete blob for photo ${photos[index].id}:`, result.reason)
+        console.error(`Failed to delete blob ${index}:`, result.reason)
       }
     })
 

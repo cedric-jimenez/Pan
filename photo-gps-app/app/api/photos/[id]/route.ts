@@ -88,11 +88,20 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       return NextResponse.json({ error: "Photo not found" }, { status: 404 })
     }
 
-    // Delete file from Vercel Blob Storage
+    // Delete files from Vercel Blob Storage
     try {
       await deleteFromBlob(photo.url)
     } catch (error) {
       console.error("Failed to delete blob:", error)
+    }
+
+    // Also delete cropped image if it exists
+    if (photo.croppedUrl) {
+      try {
+        await deleteFromBlob(photo.croppedUrl)
+      } catch (error) {
+        console.error("Failed to delete cropped blob:", error)
+      }
     }
 
     // Delete from database
