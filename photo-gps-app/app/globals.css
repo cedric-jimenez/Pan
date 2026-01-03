@@ -1,24 +1,24 @@
 @import "tailwindcss";
 
 :root {
-  /* Slate-based dark theme colors inspired by Figma design */
-  --background: #1e293b;
-  --foreground: #e2e8f0;
-  --card: #334155;
-  --card-foreground: #e2e8f0;
+  /* Figma dark theme colors using OKLCH */
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.145 0 0);
+  --card-foreground: oklch(0.985 0 0);
   --primary: #10b981;
-  --primary-foreground: #ffffff;
-  --secondary: #475569;
-  --secondary-foreground: #e2e8f0;
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
   --accent: #14b8a6;
-  --accent-foreground: #ffffff;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --border: #475569;
-  --input: #334155;
-  --ring: #10b981;
-  --muted: #334155;
-  --muted-foreground: #94a3b8;
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --border: oklch(0.269 0 0);
+  --input: oklch(0.269 0 0);
+  --ring: oklch(0.439 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
 }
 
 @theme inline {
