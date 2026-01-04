@@ -6,6 +6,7 @@ import { signIn } from "next-auth/react"
 import Link from "next/link"
 import Input from "@/components/Input"
 import Button from "@/components/Button"
+import { fetchWithCsrf } from "@/lib/fetch-with-csrf"
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -33,7 +34,7 @@ export default function RegisterPage() {
     setIsLoading(true)
 
     try {
-      const response = await fetch("/api/register", {
+      const response = await fetchWithCsrf("/api/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
