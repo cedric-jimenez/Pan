@@ -5,6 +5,7 @@ import { useDropzone } from "react-dropzone"
 import imageCompression from "browser-image-compression"
 import { IMAGE_CONFIG } from "@/lib/constants"
 import { logger } from "@/lib/logger"
+import { fetchWithCsrf } from "@/lib/fetch-with-csrf"
 
 interface PhotoUploadProps {
   onUploadComplete: () => void
@@ -70,7 +71,7 @@ export default function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
           const formData = new FormData()
           formData.append("file", compressedFile)
 
-          const response = await fetch("/api/photos/upload", {
+          const response = await fetchWithCsrf("/api/photos/upload", {
             method: "POST",
             body: formData,
           })

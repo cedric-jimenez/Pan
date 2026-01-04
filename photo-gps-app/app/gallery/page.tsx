@@ -13,6 +13,7 @@ import StatsCards from "@/components/StatsCards"
 import { Photo } from "@/types/photo"
 import { PAGINATION } from "@/lib/constants"
 import { logger } from "@/lib/logger"
+import { fetchWithCsrf } from "@/lib/fetch-with-csrf"
 
 type SortBy = "date" | "title" | "size" | "camera"
 type SortOrder = "asc" | "desc"
@@ -203,7 +204,7 @@ export default function GalleryPage() {
     setIsDeletingDay(true)
     try {
       const photoIds = dayPhotos.map((p) => p.id)
-      const response = await fetch("/api/photos/bulk-delete", {
+      const response = await fetchWithCsrf("/api/photos/bulk-delete", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

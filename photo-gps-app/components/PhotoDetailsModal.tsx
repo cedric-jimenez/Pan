@@ -8,6 +8,7 @@ import Input from "./Input"
 import Button from "./Button"
 import { Photo } from "@/types/photo"
 import { logger } from "@/lib/logger"
+import { fetchWithCsrf } from "@/lib/fetch-with-csrf"
 
 interface PhotoDetailsModalProps {
   photo: Photo
@@ -31,7 +32,7 @@ export default function PhotoDetailsModal({
   const handleSave = async () => {
     setIsSaving(true)
     try {
-      const response = await fetch(`/api/photos/${photo.id}`, {
+      const response = await fetchWithCsrf(`/api/photos/${photo.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -58,7 +59,7 @@ export default function PhotoDetailsModal({
 
     setIsDeleting(true)
     try {
-      const response = await fetch(`/api/photos/${photo.id}`, {
+      const response = await fetchWithCsrf(`/api/photos/${photo.id}`, {
         method: "DELETE",
       })
 

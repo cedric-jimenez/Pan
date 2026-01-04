@@ -118,6 +118,25 @@ export async function csrfMiddleware(request: NextRequest): Promise<NextResponse
   }
 
   // For unsafe methods (POST, PUT, PATCH, DELETE), validate token
+  // Step 1: Verify Origin header matches Host (recommended by Next.js)
+  const requestOrigin = request.headers.get("origin")
+  const requestHost = request.headers.get("host")
+
+  if (requestOrigin && requestHost) {
+    const originUrl = new URL(requestOrigin)
+    // Check if origin's host matches request host
+    if (originUrl.host !== requestHost) {
+      return NextResponse.json(
+        {
+          error: "Origin validation failed",
+          message: "Request origin does not match host",
+        },
+        { status: 403 }
+      )
+    }
+  }
+
+  // Step 2: Validate CSRF token (double-submit cookie pattern)
   const cookieToken = request.cookies.get(CSRF_TOKEN_NAME)?.value
   const headerToken = request.headers.get(CSRF_HEADER_NAME)
 
