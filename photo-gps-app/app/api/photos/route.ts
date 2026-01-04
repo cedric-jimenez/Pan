@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/session"
+import { PAGINATION } from "@/lib/constants"
+import { logger } from "@/lib/logger"
 
 type SortBy = "date" | "title" | "size" | "camera"
 type SortOrder = "asc" | "desc"
@@ -18,7 +20,10 @@ export async function GET(request: Request) {
 
     // Pagination parameters
     const page = parseInt(searchParams.get("page") || "1", 10)
-    const limit = parseInt(searchParams.get("limit") || "20", 10)
+    const limit = parseInt(
+      searchParams.get("limit") || PAGINATION.PHOTOS_PER_PAGE.toString(),
+      10
+    )
     const skip = (page - 1) * limit
 
     // Build query filters
@@ -119,7 +124,7 @@ export async function GET(request: Request) {
       },
     })
   } catch (error: unknown) {
-    console.error("Fetch photos error:", error)
+    logger.error("Fetch photos error:", error)
 
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

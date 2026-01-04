@@ -2,6 +2,9 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/session"
 import { deleteFromBlob } from "@/lib/blob"
+import { logger } from "@/lib/logger"
+import { photoUpdateSchema, validateSafe } from "@/lib/validations"
+import { ZodError } from "zod"
 
 // GET single photo
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -35,7 +38,21 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   try {
     const user = await requireAuth()
     const { id } = await params
-    const { title, description } = await request.json()
+    const body = await request.json()
+
+    // Validate input with Zod
+    const validation = validateSafe(photoUpdateSchema, body)
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          error: "Validation failed",
+          details: validation.errors.format(),
+        },
+        { status: 400 }
+      )
+    }
+
+    const { title, description } = validation.data
 
     // Check if photo belongs to user
     const existingPhoto = await prisma.photo.findFirst({
@@ -62,6 +79,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     return NextResponse.json({ photo })
   } catch (error: unknown) {
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        {
+          error: "Validation failed",
+          details: error.format(),
+        },
+        { status: 400 }
+      )
+    }
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -92,7 +118,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     try {
       await deleteFromBlob(photo.url)
     } catch (error) {
-      console.error("Failed to delete blob:", error)
+      logger.error("Failed to delete blob:", error)
     }
 
     // Also delete cropped image if it exists
@@ -100,7 +126,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       try {
         await deleteFromBlob(photo.croppedUrl)
       } catch (error) {
-        console.error("Failed to delete cropped blob:", error)
+        logger.error("Failed to delete cropped blob:", error)
       }
     }
 

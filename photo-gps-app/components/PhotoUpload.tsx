@@ -3,6 +3,8 @@
 import { useCallback, useState } from "react"
 import { useDropzone } from "react-dropzone"
 import imageCompression from "browser-image-compression"
+import { IMAGE_CONFIG } from "@/lib/constants"
+import { logger } from "@/lib/logger"
 
 interface PhotoUploadProps {
   onUploadComplete: () => void
@@ -14,15 +16,15 @@ export default function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
 
   // Compress image on client side while preserving EXIF data
   const compressImage = async (file: File): Promise<File> => {
-    // If file is already small enough (< 4MB), return as-is
-    if (file.size < 4 * 1024 * 1024) {
+    // If file is already small enough, return as-is
+    if (file.size < IMAGE_CONFIG.MAX_UPLOAD_SIZE_BYTES) {
       return file
     }
 
     try {
       const options = {
-        maxSizeMB: 3.5, // Target max size: 3.5MB (under Vercel's 4.5MB limit)
-        maxWidthOrHeight: 800, // Max dimension (proportional resize)
+        maxSizeMB: IMAGE_CONFIG.TARGET_SIZE_MB,
+        maxWidthOrHeight: IMAGE_CONFIG.THUMBNAIL_SIZE,
         useWebWorker: true,
         preserveExif: true, // CRITICAL: Preserve EXIF data (GPS, date, camera info)
       }
@@ -39,7 +41,7 @@ export default function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
 
       return compressedFile
     } catch (error) {
-      console.error("Compression failed:", error)
+      logger.error("Compression failed:", error)
       // If compression fails, return original file
       return file
     }

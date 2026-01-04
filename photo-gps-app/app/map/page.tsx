@@ -9,6 +9,7 @@ import PhotoDetailsModal from "@/components/PhotoDetailsModal"
 import Input from "@/components/Input"
 import Button from "@/components/Button"
 import { Photo } from "@/types/photo"
+import { logger } from "@/lib/logger"
 
 // Dynamically import MapView to avoid SSR issues with Leaflet
 const MapView = dynamic(() => import("@/components/MapView"), {
@@ -50,7 +51,7 @@ export default function MapPage() {
         setFilteredPhotos(data.photos)
       }
     } catch (error) {
-      console.error("Failed to fetch photos:", error)
+      logger.error("Failed to fetch photos:", error)
     } finally {
       setIsLoading(false)
     }
