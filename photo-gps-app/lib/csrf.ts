@@ -1,39 +1,24 @@
-import { createHash, randomBytes } from "crypto"
 import { NextRequest, NextResponse } from "next/server"
 
 /**
  * CSRF Protection Implementation
  * Generates and validates CSRF tokens to prevent Cross-Site Request Forgery attacks
+ * Uses Web Crypto API for Edge Runtime compatibility
  */
 
 const CSRF_TOKEN_NAME = "csrf-token"
 const CSRF_HEADER_NAME = "x-csrf-token"
 const TOKEN_LENGTH = 32
-const TOKEN_SALT = process.env.CSRF_SECRET || process.env.NEXTAUTH_SECRET || "fallback-secret"
 
 /**
- * Generate a cryptographically secure CSRF token
+ * Generate a cryptographically secure CSRF token using Web Crypto API
+ * Compatible with Edge Runtime
  */
 export function generateCsrfToken(): string {
-  return randomBytes(TOKEN_LENGTH).toString("hex")
-}
-
-/**
- * Hash a token with a secret for verification
- */
-function hashToken(token: string): string {
-  return createHash("sha256")
-    .update(`${token}${TOKEN_SALT}`)
-    .digest("hex")
-}
-
-/**
- * Verify that a token matches its hashed version
- */
-function verifyToken(token: string, hashedToken: string): boolean {
-  const expectedHash = hashToken(token)
-  // Use timing-safe comparison
-  return expectedHash === hashedToken
+  // Use Web Crypto API (available in Edge Runtime)
+  const array = new Uint8Array(TOKEN_LENGTH)
+  crypto.getRandomValues(array)
+  return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("")
 }
 
 /**
