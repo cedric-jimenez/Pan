@@ -25,6 +25,33 @@ function getCsrfToken(): string | null {
 }
 
 /**
+ * Ensure CSRF token exists by making a GET request if needed
+ * This fetches a token from the server by making a lightweight GET request
+ */
+async function ensureCsrfToken(): Promise<string | null> {
+  // Check if token already exists
+  let token = getCsrfToken()
+  if (token) {
+    return token
+  }
+
+  // Token doesn't exist, fetch it with a lightweight GET request
+  try {
+    await fetch("/api/photos", {
+      method: "GET",
+      credentials: "same-origin",
+    })
+
+    // Token should now be in cookies
+    token = getCsrfToken()
+    return token
+  } catch (error) {
+    console.error("Failed to fetch CSRF token:", error)
+    return null
+  }
+}
+
+/**
  * Fetch with automatic CSRF token injection
  * Usage: fetchWithCsrf('/api/photos', { method: 'POST', body: JSON.stringify(data) })
  */
@@ -38,12 +65,12 @@ export async function fetchWithCsrf(
   const needsCsrf = ["POST", "PUT", "PATCH", "DELETE"].includes(method)
 
   if (needsCsrf) {
-    const token = getCsrfToken()
+    // Ensure we have a token (fetch it if necessary)
+    const token = await ensureCsrfToken()
 
     if (!token) {
-      // No token available - this might be the first request
-      // Try to fetch anyway, the server will reject if needed
-      console.warn("CSRF token not found in cookies")
+      console.error("Failed to obtain CSRF token")
+      // Proceed anyway - let the server reject it with proper error
     }
 
     // Add CSRF token to headers
@@ -67,28 +94,11 @@ export async function fetchWithCsrf(
 }
 
 /**
- * Fetch CSRF token from API (useful for initial page load)
- * This makes a GET request to any API endpoint to receive a token
+ * Pre-fetch CSRF token (useful for initial page load)
+ * Call this when the app initializes to ensure token is ready
  */
-export async function fetchCsrfToken(): Promise<string | null> {
-  try {
-    // Make a lightweight GET request to get the token
-    // The middleware will set it in cookies and headers
-    const response = await fetch("/api/photos", {
-      method: "GET",
-      credentials: "same-origin",
-    })
-
-    if (response.ok) {
-      // Token should now be in cookies
-      return getCsrfToken()
-    }
-
-    return null
-  } catch (error) {
-    console.error("Failed to fetch CSRF token:", error)
-    return null
-  }
+export async function initializeCsrfToken(): Promise<void> {
+  await ensureCsrfToken()
 }
 
 /**
