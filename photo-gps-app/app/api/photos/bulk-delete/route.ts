@@ -2,6 +2,9 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/session"
 import { deleteFromBlob } from "@/lib/blob"
+import { logger } from "@/lib/logger"
+import { bulkDeleteSchema, validateSafe } from "@/lib/validations"
+import { ZodError } from "zod"
 
 export const maxDuration = 60 // Allow up to 60 seconds for bulk deletion
 
@@ -9,11 +12,21 @@ export const maxDuration = 60 // Allow up to 60 seconds for bulk deletion
 export async function POST(request: Request) {
   try {
     const user = await requireAuth()
-    const { photoIds } = await request.json()
+    const body = await request.json()
 
-    if (!Array.isArray(photoIds) || photoIds.length === 0) {
-      return NextResponse.json({ error: "photoIds doit être un tableau non vide" }, { status: 400 })
+    // Validate input with Zod
+    const validation = validateSafe(bulkDeleteSchema, body)
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          error: "Validation failed",
+          details: validation.errors.format(),
+        },
+        { status: 400 }
+      )
     }
+
+    const { photoIds } = validation.data
 
     // Fetch all photos that belong to the user
     const photos = await prisma.photo.findMany({
@@ -45,7 +58,7 @@ export async function POST(request: Request) {
     // Log any blob deletion errors, but continue with database deletion
     deletionResults.forEach((result, index) => {
       if (result.status === "rejected") {
-        console.error(`Failed to delete blob ${index}:`, result.reason)
+        logger.error(`Failed to delete blob ${index}:`, result.reason)
       }
     })
 
@@ -62,11 +75,20 @@ export async function POST(request: Request) {
       deletedCount: deleteResult.count,
     })
   } catch (error: unknown) {
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        {
+          error: "Validation failed",
+          details: error.format(),
+        },
+        { status: 400 }
+      )
+    }
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    console.error("Bulk delete error:", error)
+    logger.error("Bulk delete error:", error)
     return NextResponse.json({ error: "Échec de la suppression des photos" }, { status: 500 })
   }
 }

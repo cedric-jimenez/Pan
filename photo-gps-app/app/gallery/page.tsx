@@ -11,6 +11,8 @@ import PhotoGrid, { GridSize } from "@/components/PhotoGrid"
 import PhotoDetailsModal from "@/components/PhotoDetailsModal"
 import StatsCards from "@/components/StatsCards"
 import { Photo } from "@/types/photo"
+import { PAGINATION } from "@/lib/constants"
+import { logger } from "@/lib/logger"
 
 type SortBy = "date" | "title" | "size" | "camera"
 type SortOrder = "asc" | "desc"
@@ -111,7 +113,7 @@ export default function GalleryPage() {
           sortBy,
           sortOrder,
           page: pageNum.toString(),
-          limit: "20",
+          limit: PAGINATION.PHOTOS_PER_PAGE.toString(),
         })
 
         if (searchQuery.trim()) {
@@ -132,7 +134,7 @@ export default function GalleryPage() {
           setTotal(data.pagination.total)
         }
       } catch (error) {
-        console.error("Failed to fetch photos:", error)
+        logger.error("Failed to fetch photos:", error)
       } finally {
         setIsLoading(false)
         setIsLoadingMore(false)
@@ -219,7 +221,7 @@ export default function GalleryPage() {
         alert(`Erreur lors de la suppression : ${data.error || "Erreur inconnue"}`)
       }
     } catch (error) {
-      console.error("Failed to delete day:", error)
+      logger.error("Failed to delete day:", error)
       alert("Erreur lors de la suppression de la journée")
     } finally {
       setIsDeletingDay(false)

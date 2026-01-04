@@ -4,6 +4,8 @@ import { requireAuth } from "@/lib/session"
 import { uploadToBlob } from "@/lib/blob"
 import exifr from "exifr"
 import sharp from "sharp"
+import { IMAGE_CONFIG, API_TIMEOUTS, CROP_DETECTION } from "@/lib/constants"
+import { logger } from "@/lib/logger"
 
 // Configure route to handle larger file uploads
 export const runtime = "nodejs"
@@ -21,11 +23,16 @@ async function callRailwayCrop(buffer: Buffer): Promise<{
   error?: string
 }> {
   const railwayUrl = process.env.RAILWAY_API_URL
-  const confidenceThreshold = parseFloat(process.env.YOLO_CONFIDENCE_THRESHOLD || "0.5")
-  const timeoutMs = parseInt(process.env.YOLO_TIMEOUT_MS || "10000", 10)
+  const confidenceThreshold = parseFloat(
+    process.env.YOLO_CONFIDENCE_THRESHOLD || String(CROP_DETECTION.MIN_CONFIDENCE)
+  )
+  const timeoutMs = parseInt(
+    process.env.YOLO_TIMEOUT_MS || String(API_TIMEOUTS.DEFAULT_TIMEOUT_MS),
+    10
+  )
 
   if (!railwayUrl) {
-    console.warn("RAILWAY_API_URL not configured, skipping YOLO crop")
+    logger.warn("RAILWAY_API_URL not configured, skipping YOLO crop")
     return {
       detected: false,
       croppedBuffer: null,
@@ -59,7 +66,7 @@ async function callRailwayCrop(buffer: Buffer): Promise<{
     const duration = Date.now() - startTime
 
     if (!response.ok) {
-      console.warn(`Railway API error: ${response.status} ${response.statusText}`)
+      logger.warn(`Railway API error: ${response.status} ${response.statusText}`)
       return {
         detected: false,
         croppedBuffer: null,
@@ -70,7 +77,7 @@ async function callRailwayCrop(buffer: Buffer): Promise<{
 
     const data = await response.json()
 
-    console.log({
+    logger.log({
       action: "yolo_crop",
       success: data.success,
       detected: data.detected,
@@ -83,7 +90,7 @@ async function callRailwayCrop(buffer: Buffer): Promise<{
       const base64Data = data.cropped_image.replace(/^data:image\/\w+;base64,/, "")
       const croppedBuffer = Buffer.from(base64Data, "base64")
 
-      console.log({
+      logger.log({
         message: "Using cropped image from Railway",
         croppedBufferSize: croppedBuffer.length,
         hasBase64Prefix: data.cropped_image.startsWith("data:image"),
@@ -96,7 +103,7 @@ async function callRailwayCrop(buffer: Buffer): Promise<{
       }
     }
 
-    console.log({
+    logger.log({
       message: "Not using cropped image",
       detected: data.detected,
       hasCroppedImage: !!data.cropped_image,
@@ -111,10 +118,10 @@ async function callRailwayCrop(buffer: Buffer): Promise<{
   } catch (error) {
     if (error instanceof Error) {
       if (error.name === "AbortError") {
-        console.warn(`Railway API timeout after ${timeoutMs}ms`)
+        logger.warn(`Railway API timeout after ${timeoutMs}ms`)
         return { detected: false, croppedBuffer: null, confidence: null, error: "Timeout" }
       }
-      console.error("Railway API error:", error.message)
+      logger.error("Railway API error:", error.message)
       return { detected: false, croppedBuffer: null, confidence: null, error: error.message }
     }
     return { detected: false, croppedBuffer: null, confidence: null, error: "Unknown error" }
@@ -130,7 +137,12 @@ async function compressImage(
     keepMetadata?: boolean
   }
 ): Promise<Buffer> {
-  const { maxWidth = 600, maxHeight = 600, quality = 70, keepMetadata = false } = options || {}
+  const {
+    maxWidth = IMAGE_CONFIG.FULL_IMAGE_SIZE,
+    maxHeight = IMAGE_CONFIG.FULL_IMAGE_SIZE,
+    quality = IMAGE_CONFIG.COMPRESSION_QUALITY,
+    keepMetadata = false,
+  } = options || {}
 
   let image = sharp(buffer).resize(maxWidth, maxHeight, {
     fit: "inside",
@@ -185,19 +197,19 @@ export async function POST(request: Request) {
     try {
       exifData = await exifr.parse(buffer)
     } catch (error) {
-      console.log("No EXIF data found or error parsing:", error)
+      logger.log("No EXIF data found or error parsing:", error)
     }
 
-    // Resize and compress image to JPEG at 80% quality while keeping EXIF metadata
+    // Resize and compress image to JPEG while keeping EXIF metadata
     const compressedBuffer = await compressImage(buffer, {
-      maxWidth: 600,
-      maxHeight: 600,
-      quality: 70,
+      maxWidth: IMAGE_CONFIG.FULL_IMAGE_SIZE,
+      maxHeight: IMAGE_CONFIG.FULL_IMAGE_SIZE,
+      quality: IMAGE_CONFIG.COMPRESSION_QUALITY,
       keepMetadata: true,
     })
 
     // Call Railway YOLO API to detect and crop salamander
-    console.log({
+    logger.log({
       message: "Before Railway crop",
       compressedBufferSize: compressedBuffer.length,
     })
@@ -222,9 +234,9 @@ export async function POST(request: Request) {
       // Upload cropped version
       // Re-compress cropped image
       const compressedCroppedBuffer = await compressImage(cropResult.croppedBuffer, {
-        maxWidth: 400, // ou plus petit si tu veux (ex: 400)
-        maxHeight: 400,
-        quality: 70,
+        maxWidth: IMAGE_CONFIG.CROPPED_IMAGE_SIZE,
+        maxHeight: IMAGE_CONFIG.CROPPED_IMAGE_SIZE,
+        quality: IMAGE_CONFIG.COMPRESSION_QUALITY,
         keepMetadata: false,
       })
 
@@ -238,7 +250,7 @@ export async function POST(request: Request) {
       isCropped = true
       cropConfidence = cropResult.confidence
 
-      console.log({
+      logger.log({
         message: "Uploaded both full and cropped images",
         fullImageSize: compressedBuffer.length,
         croppedImageOriginalSize: cropResult.croppedBuffer.length,
@@ -252,7 +264,7 @@ export async function POST(request: Request) {
       // No cropped version
       cropConfidence = cropResult.confidence
 
-      console.log({
+      logger.log({
         message: "Uploaded only full image (no crop)",
         fullImageSize: compressedBuffer.length,
         detected: cropResult.detected,
@@ -261,7 +273,7 @@ export async function POST(request: Request) {
       })
 
       if (cropResult.error) {
-        console.log(`No cropped image due to: ${cropResult.error}`)
+        logger.log(`No cropped image due to: ${cropResult.error}`)
       }
     }
 
@@ -319,7 +331,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ photo }, { status: 201 })
   } catch (error: unknown) {
-    console.error("Upload error:", error)
+    logger.error("Upload error:", error)
 
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

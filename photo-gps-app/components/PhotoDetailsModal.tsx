@@ -7,6 +7,7 @@ import Image from "next/image"
 import Input from "./Input"
 import Button from "./Button"
 import { Photo } from "@/types/photo"
+import { logger } from "@/lib/logger"
 
 interface PhotoDetailsModalProps {
   photo: Photo
@@ -44,7 +45,7 @@ export default function PhotoDetailsModal({
         setIsEditing(false)
       }
     } catch (error) {
-      console.error("Failed to update photo:", error)
+      logger.error("Failed to update photo:", error)
     } finally {
       setIsSaving(false)
     }
@@ -65,7 +66,7 @@ export default function PhotoDetailsModal({
         onDelete(photo.id)
       }
     } catch (error) {
-      console.error("Failed to delete photo:", error)
+      logger.error("Failed to delete photo:", error)
     } finally {
       setIsDeleting(false)
     }
