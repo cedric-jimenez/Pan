@@ -60,3 +60,21 @@ export const AUTH = {
   SESSION_MAX_AGE_DAYS: 30,
   SESSION_MAX_AGE_SECONDS: 30 * 24 * 60 * 60,
 } as const
+
+// Rate Limiting
+export const RATE_LIMIT_WINDOWS = {
+  FIFTEEN_MINUTES: 15 * 60 * 1000,
+  ONE_HOUR: 60 * 60 * 1000,
+  ONE_DAY: 24 * 60 * 60 * 1000,
+  ONE_MINUTE: 60 * 1000,
+} as const
+
+export const RATE_LIMIT_MAX = {
+  REGISTER: 5, // per 15 minutes
+  LOGIN: 10, // per 15 minutes
+  UPLOAD_HOURLY: 60, // per hour
+  UPLOAD_DAILY: 200, // per day
+  MODIFY: 100, // per hour
+  BULK_DELETE: 20, // per hour
+  GLOBAL: 200, // per minute
+} as const
