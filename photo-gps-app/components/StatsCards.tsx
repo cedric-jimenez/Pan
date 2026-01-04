@@ -18,6 +18,7 @@ export default function StatsCards({ photos, total }: StatsCardsProps) {
   const withEXIF = photos.filter(
     (p) => p.aperture || p.shutterSpeed || p.iso || p.focalLength
   ).length
+  const croppedPhotos = photos.filter((p) => p.croppedUrl !== null).length
   const totalStorage = photos.reduce((sum, p) => sum + p.fileSize, 0)
 
   const stats = [
@@ -37,6 +38,11 @@ export default function StatsCards({ photos, total }: StatsCardsProps) {
       color: "text-purple-400",
     },
     {
+      label: "Cropped Photos",
+      value: croppedPhotos.toString(),
+      color: "text-pink-400",
+    },
+    {
       label: "Storage Used",
       value: formatStorageSize(totalStorage),
       color: "text-orange-400",
@@ -44,7 +50,7 @@ export default function StatsCards({ photos, total }: StatsCardsProps) {
   ]
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
       {stats.map((stat, index) => (
         <div
           key={index}
