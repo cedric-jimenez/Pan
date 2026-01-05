@@ -56,7 +56,7 @@ export const STORAGE = {
 
 // Authentication
 export const AUTH = {
-  MIN_PASSWORD_LENGTH: 6, // TODO: Increase to 12 in security improvements
+  MIN_PASSWORD_LENGTH: 12,
   SESSION_MAX_AGE_DAYS: 30,
   SESSION_MAX_AGE_SECONDS: 30 * 24 * 60 * 60,
 } as const
