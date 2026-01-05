@@ -7,6 +7,7 @@ import Link from "next/link"
 import Input from "@/components/Input"
 import Button from "@/components/Button"
 import { fetchWithCsrf } from "@/lib/fetch-with-csrf"
+import { AUTH } from "@/lib/constants"
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -26,8 +27,8 @@ export default function RegisterPage() {
       return
     }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters")
+    if (password.length < AUTH.MIN_PASSWORD_LENGTH) {
+      setError(`Password must be at least ${AUTH.MIN_PASSWORD_LENGTH} characters`)
       return
     }
 
