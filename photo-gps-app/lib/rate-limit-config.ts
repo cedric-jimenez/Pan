@@ -51,6 +51,13 @@ export const RATE_LIMITS = {
     message: "Trop de suppressions en masse. Réessayez dans une heure.",
   },
 
+  // GET endpoints
+  getPhotos: {
+    max: 100,
+    window: 60 * 1000, // 1 minute
+    message: "Trop de requêtes de lecture. Veuillez ralentir.",
+  },
+
   // Global limit (by IP)
   global: {
     max: 200,
@@ -84,6 +91,11 @@ export function getRateLimitForRoute(
   // Bulk delete
   if (pathname === "/api/photos/bulk-delete" && method === "POST") {
     return RATE_LIMITS.bulkDelete
+  }
+
+  // Get photos list
+  if (pathname === "/api/photos" && method === "GET") {
+    return RATE_LIMITS.getPhotos
   }
 
   // Modify photo (update or delete)

@@ -6,6 +6,13 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "./prisma"
 import bcrypt from "bcryptjs"
 
+// Validate required environment variables
+if (!process.env.NEXTAUTH_SECRET) {
+  throw new Error(
+    "NEXTAUTH_SECRET environment variable is not set. This is required for session security."
+  )
+}
+
 // @ts-expect-error - NextAuth v5 beta has type resolution issues with TypeScript
 // The code works correctly at runtime, this is a known issue with the beta version
 const nextAuthConfig = NextAuth({

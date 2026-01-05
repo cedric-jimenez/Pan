@@ -12,6 +12,49 @@ export const runtime = "nodejs"
 export const maxDuration = 60 // Maximum execution time in seconds
 
 /**
+ * Validate Railway API URL to prevent SSRF attacks
+ * @param url - URL to validate
+ * @returns true if URL is valid and safe
+ */
+function validateRailwayUrl(url: string): boolean {
+  try {
+    const parsedUrl = new URL(url)
+
+    // Only allow HTTPS in production, HTTP allowed in development
+    if (process.env.NODE_ENV === "production" && parsedUrl.protocol !== "https:") {
+      logger.error("Railway URL must use HTTPS in production")
+      return false
+    }
+
+    if (parsedUrl.protocol !== "https:" && parsedUrl.protocol !== "http:") {
+      logger.error("Railway URL must use HTTP or HTTPS protocol")
+      return false
+    }
+
+    // Prevent access to localhost and private IP ranges (basic check)
+    const hostname = parsedUrl.hostname.toLowerCase()
+    if (
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname === "0.0.0.0" ||
+      hostname.startsWith("192.168.") ||
+      hostname.startsWith("10.") ||
+      hostname.startsWith("172.16.") ||
+      hostname === "::1" ||
+      hostname === "::"
+    ) {
+      logger.error("Railway URL cannot point to private/local addresses")
+      return false
+    }
+
+    return true
+  } catch (error) {
+    logger.error("Invalid Railway URL format:", error)
+    return false
+  }
+}
+
+/**
  * Call Railway YOLO API to detect and crop salamander
  * @param buffer - Image buffer to process
  * @returns Crop result with detected flag, cropped buffer, and confidence
@@ -41,6 +84,17 @@ async function callRailwayCrop(buffer: Buffer): Promise<{
     }
   }
 
+  // Validate Railway URL to prevent SSRF attacks
+  if (!validateRailwayUrl(railwayUrl)) {
+    logger.error("Invalid or unsafe Railway URL, skipping YOLO crop")
+    return {
+      detected: false,
+      croppedBuffer: null,
+      confidence: null,
+      error: "Invalid Railway URL configuration",
+    }
+  }
+
   try {
     const startTime = Date.now()
 
@@ -66,12 +120,14 @@ async function callRailwayCrop(buffer: Buffer): Promise<{
     const duration = Date.now() - startTime
 
     if (!response.ok) {
+      // Log detailed error server-side only
       logger.warn(`Railway API error: ${response.status} ${response.statusText}`)
       return {
         detected: false,
         croppedBuffer: null,
         confidence: null,
-        error: `Railway API error: ${response.status}`,
+        // Generic error message to prevent information disclosure
+        error: "Detection service unavailable",
       }
     }
 
@@ -119,12 +175,29 @@ async function callRailwayCrop(buffer: Buffer): Promise<{
     if (error instanceof Error) {
       if (error.name === "AbortError") {
         logger.warn(`Railway API timeout after ${timeoutMs}ms`)
-        return { detected: false, croppedBuffer: null, confidence: null, error: "Timeout" }
+        return {
+          detected: false,
+          croppedBuffer: null,
+          confidence: null,
+          error: "Detection service timeout",
+        }
       }
+      // Log detailed error server-side only
       logger.error("Railway API error:", error.message)
-      return { detected: false, croppedBuffer: null, confidence: null, error: error.message }
+      // Generic error message to prevent information disclosure
+      return {
+        detected: false,
+        croppedBuffer: null,
+        confidence: null,
+        error: "Detection service error",
+      }
     }
-    return { detected: false, croppedBuffer: null, confidence: null, error: "Unknown error" }
+    return {
+      detected: false,
+      croppedBuffer: null,
+      confidence: null,
+      error: "Detection service error",
+    }
   }
 }
 
