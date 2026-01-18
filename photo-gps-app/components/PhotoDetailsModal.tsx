@@ -28,6 +28,7 @@ export default function PhotoDetailsModal({
   const [description, setDescription] = useState(photo.description || "")
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [showSegmented, setShowSegmented] = useState(false)
 
   const handleSave = async () => {
     setIsSaving(true)
@@ -83,17 +84,29 @@ export default function PhotoDetailsModal({
             {/* Image Section */}
             <div className="bg-muted relative aspect-square overflow-hidden rounded-lg">
               <Image
-                src={`${photo.croppedUrl || photo.url}?v=${photo.updatedAt || photo.createdAt}`}
+                src={`${
+                  showSegmented && photo.segmentedUrl
+                    ? photo.segmentedUrl
+                    : photo.croppedUrl || photo.url
+                }?v=${photo.updatedAt || photo.createdAt}`}
                 alt={photo.originalName}
                 fill
                 className="object-contain"
                 sizes="(max-width: 768px) 100vw, 50vw"
                 unoptimized={photo.isCropped}
               />
-              {photo.croppedUrl && (
+              {(photo.croppedUrl || photo.segmentedUrl) && (
                 <div className="bg-primary text-primary-foreground absolute top-2 right-2 rounded-md px-2 py-1 text-xs font-medium">
-                  Cropped
+                  {showSegmented && photo.segmentedUrl ? "Segmented" : "Cropped"}
                 </div>
+              )}
+              {photo.croppedUrl && photo.segmentedUrl && (
+                <button
+                  onClick={() => setShowSegmented(!showSegmented)}
+                  className="bg-card/90 text-foreground hover:bg-card absolute bottom-2 right-2 rounded-md px-3 py-2 text-xs font-medium shadow-md transition-colors"
+                >
+                  {showSegmented ? "Show Cropped" : "Show Segmented"}
+                </button>
               )}
             </div>
 

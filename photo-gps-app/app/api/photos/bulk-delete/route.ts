@@ -44,11 +44,14 @@ export async function POST(request: Request) {
       )
     }
 
-    // Delete files from Vercel Blob Storage (both original and cropped)
+    // Delete files from Vercel Blob Storage (original, cropped, and segmented)
     const deletionPromises = photos.flatMap((photo) => {
       const promises = [deleteFromBlob(photo.url)]
       if (photo.croppedUrl) {
         promises.push(deleteFromBlob(photo.croppedUrl))
+      }
+      if (photo.segmentedUrl) {
+        promises.push(deleteFromBlob(photo.segmentedUrl))
       }
       return promises
     })

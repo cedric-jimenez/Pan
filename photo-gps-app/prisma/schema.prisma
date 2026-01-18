@@ -68,6 +68,7 @@ model Photo {
   mimeType    String
   url         String    // Full image (resized to 800px)
   croppedUrl  String?   // YOLO cropped version (if salamander detected)
+  segmentedUrl String?  // Segmented version with background removed (if salamander detected)
 
   // EXIF data
   latitude    Float?
