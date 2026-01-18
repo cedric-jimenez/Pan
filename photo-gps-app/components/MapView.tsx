@@ -24,6 +24,7 @@ interface MapViewProps {
 
 export default function MapView({ photos, onPhotoClick }: MapViewProps) {
   const [mounted, setMounted] = useState(false)
+  const [mapType, setMapType] = useState<"street" | "satellite">("street")
 
   useEffect(() => {
     // Check if component is mounted on client-side for SSR compatibility
@@ -73,17 +74,50 @@ export default function MapView({ photos, onPhotoClick }: MapViewProps) {
     photosWithLocation.reduce((sum, p) => sum + (p.longitude || 0), 0) / photosWithLocation.length
 
   return (
-    <div className="border-border h-[600px] w-full overflow-hidden rounded-lg border">
-      <MapContainer
-        center={[avgLat, avgLng]}
-        zoom={13}
-        style={{ height: "100%", width: "100%" }}
-        className="z-0"
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+    <div className="w-full space-y-3">
+      {/* Map Type Toggle */}
+      <div className="flex w-full gap-2">
+        <button
+          onClick={() => setMapType("street")}
+          className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
+            mapType === "street"
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+          }`}
+        >
+          Street
+        </button>
+        <button
+          onClick={() => setMapType("satellite")}
+          className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
+            mapType === "satellite"
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+          }`}
+        >
+          Satellite
+        </button>
+      </div>
+
+      {/* Map Container */}
+      <div className="border-border h-[600px] w-full overflow-hidden rounded-lg border">
+        <MapContainer
+          center={[avgLat, avgLng]}
+          zoom={13}
+          style={{ height: "100%", width: "100%" }}
+          className="z-0"
+        >
+          {mapType === "street" ? (
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+          ) : (
+            <TileLayer
+              attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            />
+          )}
 
         {photosWithLocation.map((photo) => (
           <Marker key={photo.id} position={[photo.latitude!, photo.longitude!]}>
@@ -114,7 +148,8 @@ export default function MapView({ photos, onPhotoClick }: MapViewProps) {
             </Popup>
           </Marker>
         ))}
-      </MapContainer>
+        </MapContainer>
+      </div>
     </div>
   )
 }
