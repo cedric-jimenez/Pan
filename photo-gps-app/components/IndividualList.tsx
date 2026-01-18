@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { IndividualWithCount } from "@/types/individual"
 import Button from "./Button"
 
@@ -18,11 +18,7 @@ export default function IndividualList({
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
 
-  useEffect(() => {
-    fetchIndividuals()
-  }, [search])
-
-  const fetchIndividuals = async () => {
+  const fetchIndividuals = useCallback(async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
@@ -42,7 +38,11 @@ export default function IndividualList({
     } finally {
       setLoading(false)
     }
-  }
+  }, [search])
+
+  useEffect(() => {
+    fetchIndividuals()
+  }, [fetchIndividuals])
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this individual?")) {

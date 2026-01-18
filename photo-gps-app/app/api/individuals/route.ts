@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/session"
 import { individualCreateSchema, individualQuerySchema, validateSafe } from "@/lib/validations"
 import { ZodError } from "zod"
+import { Prisma } from "@prisma/client"
 
 // GET all individuals for current user
 export async function GET(request: Request) {
@@ -31,15 +32,14 @@ export async function GET(request: Request) {
     const skip = (page - 1) * limit
 
     // Build where clause
-    const where: any = {
+    const where: Prisma.IndividualWhereInput = {
       userId: user.id,
-    }
-
-    if (search) {
-      where.name = {
-        contains: search,
-        mode: "insensitive",
-      }
+      ...(search && {
+        name: {
+          contains: search,
+          mode: "insensitive",
+        },
+      }),
     }
 
     // Get individuals with photo count

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import IndividualList from "@/components/IndividualList"
 import IndividualModal from "@/components/IndividualModal"
 import { IndividualWithCount, IndividualWithPhotos } from "@/types/individual"
@@ -80,10 +81,12 @@ export default function IndividualsPage() {
                       className="aspect-square relative rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
                       onClick={() => router.push(`/gallery?photo=${photo.id}`)}
                     >
-                      <img
+                      <Image
                         src={photo.croppedUrl || photo.url}
                         alt={photo.title || "Photo"}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                       />
                       {photo.title && (
                         <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-2 text-sm">
