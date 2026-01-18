@@ -114,10 +114,10 @@ export default function PhotoDetailsModal({
             {/* Image Section */}
             <div className="space-y-3">
               {/* View Tabs */}
-              <div className="flex gap-2">
+              <div className="flex w-full gap-2">
                 <button
                   onClick={() => setCurrentView("original")}
-                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
+                  className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
                     currentView === "original"
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -128,7 +128,7 @@ export default function PhotoDetailsModal({
                 {photo.croppedUrl && (
                   <button
                     onClick={() => setCurrentView("cropped")}
-                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
+                    className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
                       currentView === "cropped"
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -140,7 +140,7 @@ export default function PhotoDetailsModal({
                 {photo.segmentedUrl && (
                   <button
                     onClick={() => setCurrentView("segmented")}
-                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
+                    className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
                       currentView === "segmented"
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
