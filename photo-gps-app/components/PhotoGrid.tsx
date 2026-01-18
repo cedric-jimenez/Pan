@@ -57,7 +57,7 @@ export default function PhotoGrid({ photos, onPhotoClick, gridSize = "medium" }:
           <div
             key={photo.id}
             onClick={() => onPhotoClick(photo)}
-            className="group bg-card border-border cursor-pointer overflow-hidden rounded-2xl border-2 shadow-md transition-all duration-300 hover:border-primary hover:shadow-xl"
+            className="group bg-card border-border hover:border-primary cursor-pointer overflow-hidden rounded-2xl border-2 shadow-md transition-all duration-300 hover:shadow-xl"
           >
             {/* Image container with fixed aspect ratio */}
             <div className="relative aspect-[4/3] overflow-hidden">
@@ -72,7 +72,9 @@ export default function PhotoGrid({ photos, onPhotoClick, gridSize = "medium" }:
               {/* Badges overlay */}
               <div className="absolute top-3 right-3 left-3 flex items-start justify-between gap-2">
                 {/* Quality badge */}
-                <span className={`rounded-md px-2.5 py-1 text-xs font-medium lowercase ${quality.color}`}>
+                <span
+                  className={`rounded-md px-2.5 py-1 text-xs font-medium lowercase ${quality.color}`}
+                >
                   {quality.label}
                 </span>
 
@@ -106,7 +108,7 @@ export default function PhotoGrid({ photos, onPhotoClick, gridSize = "medium" }:
                   {photo.title || photo.originalName}
                 </h3>
                 {photo.takenAt && (
-                  <span className="shrink-0 rounded bg-accent/20 px-2 py-1 text-xs font-medium text-accent">
+                  <span className="bg-accent/20 text-accent shrink-0 rounded px-2 py-1 text-xs font-medium">
                     {format(new Date(photo.takenAt), "dd/MM/yy")}
                   </span>
                 )}
@@ -121,7 +123,7 @@ export default function PhotoGrid({ photos, onPhotoClick, gridSize = "medium" }:
               {location && (
                 <div className="text-muted-foreground flex items-center gap-1.5 text-sm">
                   <svg
-                    className="h-4 w-4 shrink-0 text-primary"
+                    className="text-primary h-4 w-4 shrink-0"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -146,7 +148,7 @@ export default function PhotoGrid({ photos, onPhotoClick, gridSize = "medium" }:
               {/* Size info */}
               <div className="text-muted-foreground flex items-center gap-1.5 text-sm">
                 <svg
-                  className="h-4 w-4 shrink-0 text-primary"
+                  className="text-primary h-4 w-4 shrink-0"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"

@@ -11,13 +11,20 @@ export const registerSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z
     .string()
-    .min(AUTH.MIN_PASSWORD_LENGTH, `Password must be at least ${AUTH.MIN_PASSWORD_LENGTH} characters`),
+    .min(
+      AUTH.MIN_PASSWORD_LENGTH,
+      `Password must be at least ${AUTH.MIN_PASSWORD_LENGTH} characters`
+    ),
   name: z.string().max(FILE_VALIDATION.MAX_NAME_LENGTH).optional().nullable(),
 })
 
 // Photo update schema
 export const photoUpdateSchema = z.object({
-  title: z.string().max(FILE_VALIDATION.MAX_TITLE_LENGTH, "Title is too long").optional().nullable(),
+  title: z
+    .string()
+    .max(FILE_VALIDATION.MAX_TITLE_LENGTH, "Title is too long")
+    .optional()
+    .nullable(),
   description: z
     .string()
     .max(FILE_VALIDATION.MAX_DESCRIPTION_LENGTH, "Description is too long")

@@ -90,6 +90,12 @@ model Photo {
   cropConfidence     Float?
   salamanderDetected Boolean   @default(true)
 
+  // Embedding stored with pgvector (DINOv2 produces 384-dim vectors)
+  // Using Unsupported type for pgvector compatibility
+  embedding    Unsupported("vector(384)")?
+  embeddingDim Int?
+  embedModel   String?
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 

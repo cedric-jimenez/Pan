@@ -20,10 +20,7 @@ export async function GET(request: Request) {
 
     // Pagination parameters
     const page = parseInt(searchParams.get("page") || "1", 10)
-    const limit = parseInt(
-      searchParams.get("limit") || PAGINATION.PHOTOS_PER_PAGE.toString(),
-      10
-    )
+    const limit = parseInt(searchParams.get("limit") || PAGINATION.PHOTOS_PER_PAGE.toString(), 10)
     const skip = (page - 1) * limit
 
     // Build query filters

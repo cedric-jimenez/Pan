@@ -17,7 +17,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Salamander Gallery - AI-Powered Species Management",
-  description: "Upload and explore your salamander photos with GPS mapping and AI-powered species identification",
+  description:
+    "Upload and explore your salamander photos with GPS mapping and AI-powered species identification",
 }
 
 export default function RootLayout({

@@ -48,14 +48,11 @@ async function callRailwaySegment(buffer: Buffer): Promise<{
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
 
-    const response = await fetch(
-      `${railwayUrl}/segment-salamander`,
-      {
-        method: "POST",
-        body: formData,
-        signal: controller.signal,
-      }
-    )
+    const response = await fetch(`${railwayUrl}/segment-salamander`, {
+      method: "POST",
+      body: formData,
+      signal: controller.signal,
+    })
 
     clearTimeout(timeoutId)
     const duration = Date.now() - startTime
@@ -235,6 +232,102 @@ async function callRailwayCrop(buffer: Buffer): Promise<{
   }
 }
 
+/**
+ * Call Railway embed endpoint to get DINOv2 embedding
+ * @param buffer - Image buffer to process (segmented image)
+ * @returns embedding array and metadata
+ */
+async function callRailwayEmbed(buffer: Buffer): Promise<{
+  success: boolean
+  embedding: number[] | null
+  embedding_dim: number | null
+  model?: string | null
+  error?: string
+}> {
+  const railwayUrl = process.env.RAILWAY_API_URL
+  const timeoutMs = parseInt(
+    process.env.YOLO_TIMEOUT_MS || String(API_TIMEOUTS.DEFAULT_TIMEOUT_MS),
+    10
+  )
+
+  if (!railwayUrl) {
+    logger.warn("RAILWAY_API_URL not configured, skipping embedding")
+    return {
+      success: false,
+      embedding: null,
+      embedding_dim: null,
+      error: "Railway URL not configured",
+    }
+  }
+
+  try {
+    const startTime = Date.now()
+
+    const formData = new FormData()
+    // Use JPEG blob (consistent with other flows); fine for embeddings
+    const blob = new Blob([Uint8Array.from(buffer)], { type: "image/jpeg" })
+    formData.append("file", blob, "segmented.jpg")
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+
+    const response = await fetch(`${railwayUrl}/embed`, {
+      method: "POST",
+      body: formData,
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeoutId)
+    const duration = Date.now() - startTime
+
+    if (!response.ok) {
+      logger.warn(`Railway embed API error: ${response.status} ${response.statusText}`)
+      return {
+        success: false,
+        embedding: null,
+        embedding_dim: null,
+        error: `Railway embed API error: ${response.status}`,
+      }
+    }
+
+    const data = await response.json()
+
+    logger.log({
+      action: "embed_image",
+      success: data.success,
+      embedding_dim: data.embedding_dim,
+      duration_ms: duration,
+    })
+
+    if (data.success && Array.isArray(data.embedding)) {
+      return {
+        success: true,
+        embedding: data.embedding,
+        embedding_dim: data.embedding_dim ?? null,
+        model: data.model ?? null,
+      }
+    }
+
+    return {
+      success: false,
+      embedding: null,
+      embedding_dim: data.embedding_dim ?? null,
+      model: data.model ?? null,
+      error: "No embedding returned",
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.name === "AbortError") {
+        logger.warn(`Railway embed API timeout after ${timeoutMs}ms`)
+        return { success: false, embedding: null, embedding_dim: null, error: "Timeout" }
+      }
+      logger.error("Railway embed API error:", error.message)
+      return { success: false, embedding: null, embedding_dim: null, error: error.message }
+    }
+    return { success: false, embedding: null, embedding_dim: null, error: "Unknown error" }
+  }
+}
+
 async function compressImage(
   buffer: Buffer,
   options?: {
@@ -387,6 +480,11 @@ export async function POST(request: Request) {
     // Upload segmented image if salamander was detected
     let segmentedBlobUrl: string | null = null
 
+    // Embedding placeholders (filled if embedding generated)
+    let segmentedEmbedding: number[] | null = null
+    let embeddingDim: number | null = null
+    let embedModel: string | null = null
+
     if (salamanderDetected) {
       logger.log({
         message: "Calling segmentation API for detected salamander",
@@ -402,6 +500,29 @@ export async function POST(request: Request) {
           quality: IMAGE_CONFIG.COMPRESSION_QUALITY,
           keepMetadata: false,
         })
+
+        // Generate embedding for the segmented version
+        try {
+          const embedResult = await callRailwayEmbed(compressedSegmentedBuffer)
+          if (embedResult.success && Array.isArray(embedResult.embedding)) {
+            segmentedEmbedding = embedResult.embedding
+            embeddingDim = embedResult.embedding_dim
+            embedModel = embedResult.model ?? null
+
+            logger.log({
+              message: "Embedding generated for segmented image",
+              embeddingDim,
+              model: embedModel,
+            })
+          } else {
+            logger.log({
+              message: "No embedding returned",
+              error: embedResult.error,
+            })
+          }
+        } catch (err) {
+          logger.error("Error generating embedding:", err)
+        }
 
         const segmentedUint8 = new Uint8Array(compressedSegmentedBuffer)
         const segmentedBlob = new Blob([segmentedUint8], { type: "image/jpeg" })
@@ -465,7 +586,7 @@ export async function POST(request: Request) {
     const shutterSpeed = exifData?.ExposureTime ? `${Number(exifData.ExposureTime)}s` : null
     const focalLength = exifData?.FocalLength ? `${Number(exifData.FocalLength)}mm` : null
 
-    // Save to database
+    // Save to database (without embedding - pgvector requires raw SQL)
     const photo = await prisma.photo.create({
       data: {
         userId: user.id,
@@ -489,8 +610,29 @@ export async function POST(request: Request) {
         isCropped,
         cropConfidence,
         salamanderDetected,
+        // Embedding metadata (vector stored separately via raw SQL)
+        embeddingDim,
+        embedModel,
       },
     })
+
+    // Store embedding via raw SQL (pgvector requires Unsupported type workaround)
+    const EXPECTED_EMBEDDING_DIM = 384
+    if (segmentedEmbedding && segmentedEmbedding.length === EXPECTED_EMBEDDING_DIM) {
+      const vectorString = `[${segmentedEmbedding.join(",")}]`
+      await prisma.$executeRawUnsafe(
+        `UPDATE "Photo" SET embedding = $1::vector WHERE id = $2`,
+        vectorString,
+        photo.id
+      )
+      logger.log({ message: "Embedding stored via pgvector", photoId: photo.id })
+    } else if (segmentedEmbedding) {
+      logger.warn({
+        message: "Embedding dimension mismatch, skipping storage",
+        expected: EXPECTED_EMBEDDING_DIM,
+        received: segmentedEmbedding.length,
+      })
+    }
 
     return NextResponse.json({ photo }, { status: 201 })
   } catch (error: unknown) {

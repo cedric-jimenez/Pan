@@ -55,10 +55,7 @@ async function ensureCsrfToken(): Promise<string | null> {
  * Fetch with automatic CSRF token injection
  * Usage: fetchWithCsrf('/api/photos', { method: 'POST', body: JSON.stringify(data) })
  */
-export async function fetchWithCsrf(
-  url: string | URL,
-  options?: RequestInit
-): Promise<Response> {
+export async function fetchWithCsrf(url: string | URL, options?: RequestInit): Promise<Response> {
   const method = options?.method?.toUpperCase() || "GET"
 
   // Only add CSRF token for mutating methods
