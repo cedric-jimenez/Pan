@@ -7,6 +7,7 @@ import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 import Image from "next/image"
 import { Photo } from "@/types/photo"
+import HeatmapLayer from "./HeatmapLayer"
 
 // Fix for default markers in react-leaflet
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -24,7 +25,7 @@ interface MapViewProps {
 
 export default function MapView({ photos, onPhotoClick }: MapViewProps) {
   const [mounted, setMounted] = useState(false)
-  const [mapType, setMapType] = useState<"street" | "satellite">("street")
+  const [mapType, setMapType] = useState<"street" | "satellite" | "heatmap">("street")
 
   useEffect(() => {
     // Check if component is mounted on client-side for SSR compatibility
@@ -73,6 +74,13 @@ export default function MapView({ photos, onPhotoClick }: MapViewProps) {
   const avgLng =
     photosWithLocation.reduce((sum, p) => sum + (p.longitude || 0), 0) / photosWithLocation.length
 
+  // Prepare heatmap data
+  const heatmapPoints: [number, number, number][] = photosWithLocation.map((photo) => [
+    photo.latitude!,
+    photo.longitude!,
+    1.0, // intensity
+  ])
+
   return (
     <div className="w-full space-y-3">
       {/* Map Type Toggle */}
@@ -97,6 +105,16 @@ export default function MapView({ photos, onPhotoClick }: MapViewProps) {
         >
           Satellite
         </button>
+        <button
+          onClick={() => setMapType("heatmap")}
+          className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
+            mapType === "heatmap"
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+          }`}
+        >
+          Heatmap
+        </button>
       </div>
 
       {/* Map Container */}
@@ -107,47 +125,53 @@ export default function MapView({ photos, onPhotoClick }: MapViewProps) {
           style={{ height: "100%", width: "100%" }}
           className="z-0"
         >
-          {mapType === "street" ? (
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-          ) : (
+          {/* Tile Layer based on map type */}
+          {mapType === "satellite" ? (
             <TileLayer
               attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
               url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
             />
+          ) : (
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
           )}
 
-        {photosWithLocation.map((photo) => (
-          <Marker key={photo.id} position={[photo.latitude!, photo.longitude!]}>
-            <Popup>
-              <div className="min-w-[200px]">
-                <div className="relative mb-2 h-32 w-full overflow-hidden rounded">
-                  <Image
-                    src={photo.url}
-                    alt={photo.originalName}
-                    fill
-                    className="object-cover"
-                    sizes="200px"
-                  />
-                </div>
-                <h3 className="mb-1 font-semibold">{photo.title || photo.originalName}</h3>
-                {photo.takenAt && (
-                  <p className="mb-2 text-sm text-gray-600">
-                    {format(new Date(photo.takenAt), "PPp")}
-                  </p>
-                )}
-                <button
-                  onClick={() => onPhotoClick(photo)}
-                  className="text-sm text-blue-600 hover:underline"
-                >
-                  View Details
-                </button>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+          {/* Render heatmap or markers based on view type */}
+          {mapType === "heatmap" ? (
+            <HeatmapLayer points={heatmapPoints} />
+          ) : (
+            photosWithLocation.map((photo) => (
+              <Marker key={photo.id} position={[photo.latitude!, photo.longitude!]}>
+                <Popup>
+                  <div className="min-w-[200px]">
+                    <div className="relative mb-2 h-32 w-full overflow-hidden rounded">
+                      <Image
+                        src={photo.url}
+                        alt={photo.originalName}
+                        fill
+                        className="object-cover"
+                        sizes="200px"
+                      />
+                    </div>
+                    <h3 className="mb-1 font-semibold">{photo.title || photo.originalName}</h3>
+                    {photo.takenAt && (
+                      <p className="mb-2 text-sm text-gray-600">
+                        {format(new Date(photo.takenAt), "PPp")}
+                      </p>
+                    )}
+                    <button
+                      onClick={() => onPhotoClick(photo)}
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      View Details
+                    </button>
+                  </div>
+                </Popup>
+              </Marker>
+            ))
+          )}
         </MapContainer>
       </div>
     </div>
