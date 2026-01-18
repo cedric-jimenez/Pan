@@ -59,14 +59,16 @@ export const individualUpdateSchema = z.object({
 })
 
 export const individualQuerySchema = z.object({
-  search: z.string().max(200).optional(),
+  search: z.string().max(200).nullable().optional(),
   page: z
     .string()
+    .nullable()
     .optional()
     .transform((val) => (val ? parseInt(val, 10) : 1))
     .pipe(z.number().int().positive()),
   limit: z
     .string()
+    .nullable()
     .optional()
     .transform((val) => (val ? parseInt(val, 10) : 20))
     .pipe(z.number().int().positive().max(100)),
@@ -78,18 +80,20 @@ export const assignPhotoSchema = z.object({
 
 // Query parameters schemas
 export const photoQuerySchema = z.object({
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
-  sortBy: z.enum(["date", "title", "size", "camera"]).optional().default("date"),
-  sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
-  search: z.string().max(200).optional(),
+  startDate: z.string().datetime().nullable().optional(),
+  endDate: z.string().datetime().nullable().optional(),
+  sortBy: z.enum(["date", "title", "size", "camera"]).nullable().optional().default("date"),
+  sortOrder: z.enum(["asc", "desc"]).nullable().optional().default("desc"),
+  search: z.string().max(200).nullable().optional(),
   page: z
     .string()
+    .nullable()
     .optional()
     .transform((val) => (val ? parseInt(val, 10) : 1))
     .pipe(z.number().int().positive()),
   limit: z
     .string()
+    .nullable()
     .optional()
     .transform((val) => (val ? parseInt(val, 10) : 20))
     .pipe(z.number().int().positive().max(100)),
