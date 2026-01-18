@@ -17,6 +17,8 @@ interface PhotoDetailsModalProps {
   onDelete: (photoId: string) => void
 }
 
+type ImageView = "original" | "cropped" | "segmented"
+
 export default function PhotoDetailsModal({
   photo,
   onClose,
@@ -28,7 +30,35 @@ export default function PhotoDetailsModal({
   const [description, setDescription] = useState(photo.description || "")
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [showSegmented, setShowSegmented] = useState(false)
+
+  // Determine default view: cropped if available, otherwise original
+  const defaultView: ImageView = photo.croppedUrl ? "cropped" : "original"
+  const [currentView, setCurrentView] = useState<ImageView>(defaultView)
+
+  // Get current image URL based on selected view
+  const getCurrentImageUrl = () => {
+    switch (currentView) {
+      case "segmented":
+        return photo.segmentedUrl || photo.croppedUrl || photo.url
+      case "cropped":
+        return photo.croppedUrl || photo.url
+      case "original":
+      default:
+        return photo.url
+    }
+  }
+
+  // Get label for current view
+  const getViewLabel = (view: ImageView) => {
+    switch (view) {
+      case "original":
+        return "Original"
+      case "cropped":
+        return "Crop"
+      case "segmented":
+        return "Segment"
+    }
+  }
 
   const handleSave = async () => {
     setIsSaving(true)
@@ -82,32 +112,61 @@ export default function PhotoDetailsModal({
         <Dialog.Panel className="bg-card mx-auto max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-xl shadow-xl">
           <div className="grid gap-6 p-6 md:grid-cols-2">
             {/* Image Section */}
-            <div className="bg-muted relative aspect-square overflow-hidden rounded-lg">
-              <Image
-                src={`${
-                  showSegmented && photo.segmentedUrl
-                    ? photo.segmentedUrl
-                    : photo.croppedUrl || photo.url
-                }?v=${photo.updatedAt || photo.createdAt}`}
-                alt={photo.originalName}
-                fill
-                className="object-contain"
-                sizes="(max-width: 768px) 100vw, 50vw"
-                unoptimized={photo.isCropped}
-              />
-              {(photo.croppedUrl || photo.segmentedUrl) && (
-                <div className="bg-primary text-primary-foreground absolute top-2 right-2 rounded-md px-2 py-1 text-xs font-medium">
-                  {showSegmented && photo.segmentedUrl ? "Segmented" : "Cropped"}
-                </div>
-              )}
-              {photo.croppedUrl && photo.segmentedUrl && (
+            <div className="space-y-3">
+              {/* View Tabs */}
+              <div className="flex w-full gap-2">
                 <button
-                  onClick={() => setShowSegmented(!showSegmented)}
-                  className="bg-card/90 text-foreground hover:bg-card absolute bottom-2 right-2 rounded-md px-3 py-2 text-xs font-medium shadow-md transition-colors"
+                  onClick={() => setCurrentView("original")}
+                  className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
+                    currentView === "original"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
                 >
-                  {showSegmented ? "Show Cropped" : "Show Segmented"}
+                  Original
                 </button>
-              )}
+                {photo.croppedUrl && (
+                  <button
+                    onClick={() => setCurrentView("cropped")}
+                    className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
+                      currentView === "cropped"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    Crop
+                  </button>
+                )}
+                {photo.segmentedUrl && (
+                  <button
+                    onClick={() => setCurrentView("segmented")}
+                    className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
+                      currentView === "segmented"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    Segment
+                  </button>
+                )}
+              </div>
+
+              {/* Image Container */}
+              <div className="bg-muted relative aspect-square overflow-hidden rounded-lg">
+                <Image
+                  src={`${getCurrentImageUrl()}?v=${photo.updatedAt || photo.createdAt}`}
+                  alt={photo.originalName}
+                  fill
+                  className="object-contain"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  unoptimized={photo.isCropped}
+                />
+                {currentView !== "original" && (
+                  <div className="bg-primary text-primary-foreground absolute top-2 right-2 rounded-md px-2 py-1 text-xs font-medium">
+                    {getViewLabel(currentView)}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Details Section */}
