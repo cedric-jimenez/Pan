@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { IndividualWithCount } from "@/types/individual"
 import Button from "./Button"
+import { fetchWithCsrf } from "@/lib/fetch-with-csrf"
 
 interface AssignIndividualModalProps {
   isOpen: boolean
@@ -60,7 +61,7 @@ export default function AssignIndividualModal({
 
     try {
       // Create individual
-      const createResponse = await fetch("/api/individuals", {
+      const createResponse = await fetchWithCsrf("/api/individuals", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -76,7 +77,7 @@ export default function AssignIndividualModal({
       const { individual } = await createResponse.json()
 
       // Assign photo
-      const assignResponse = await fetch(`/api/individuals/${individual.id}/assign`, {
+      const assignResponse = await fetchWithCsrf(`/api/individuals/${individual.id}/assign`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -115,7 +116,7 @@ export default function AssignIndividualModal({
 
       // Unassign from current if exists
       if (currentIndividualId) {
-        await fetch(`/api/individuals/${currentIndividualId}/unassign`, {
+        await fetchWithCsrf(`/api/individuals/${currentIndividualId}/unassign`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -125,7 +126,7 @@ export default function AssignIndividualModal({
       }
 
       // Assign to new individual
-      const response = await fetch(`/api/individuals/${selectedId}/assign`, {
+      const response = await fetchWithCsrf(`/api/individuals/${selectedId}/assign`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -153,7 +154,7 @@ export default function AssignIndividualModal({
     setError(null)
 
     try {
-      const response = await fetch(`/api/individuals/${currentIndividualId}/unassign`, {
+      const response = await fetchWithCsrf(`/api/individuals/${currentIndividualId}/unassign`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

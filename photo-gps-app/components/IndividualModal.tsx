@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Individual } from "@/types/individual"
 import Button from "./Button"
 import Input from "./Input"
+import { fetchWithCsrf } from "@/lib/fetch-with-csrf"
 
 interface IndividualModalProps {
   isOpen: boolean
@@ -40,7 +41,7 @@ export default function IndividualModal({
       const url = individual ? `/api/individuals/${individual.id}` : "/api/individuals"
       const method = individual ? "PATCH" : "POST"
 
-      const response = await fetch(url, {
+      const response = await fetchWithCsrf(url, {
         method,
         headers: {
           "Content-Type": "application/json",

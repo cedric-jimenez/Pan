@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { IndividualWithCount } from "@/types/individual"
 import Button from "./Button"
+import { fetchWithCsrf } from "@/lib/fetch-with-csrf"
 
 interface IndividualListProps {
   onSelectIndividual?: (individual: IndividualWithCount) => void
@@ -50,7 +51,7 @@ export default function IndividualList({
     }
 
     try {
-      const response = await fetch(`/api/individuals/${id}`, {
+      const response = await fetchWithCsrf(`/api/individuals/${id}`, {
         method: "DELETE",
       })
 
