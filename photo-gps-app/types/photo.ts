@@ -8,6 +8,7 @@ export interface Photo {
   mimeType: string
   url: string // Full image (resized to 800px)
   croppedUrl: string | null // YOLO cropped version (if salamander detected)
+  segmentedUrl: string | null // Segmented version with background removed (if salamander detected)
 
   // EXIF data
   latitude: number | null

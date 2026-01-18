@@ -130,6 +130,15 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       }
     }
 
+    // Also delete segmented image if it exists
+    if (photo.segmentedUrl) {
+      try {
+        await deleteFromBlob(photo.segmentedUrl)
+      } catch (error) {
+        logger.error("Failed to delete segmented blob:", error)
+      }
+    }
+
     // Delete from database
     await prisma.photo.delete({
       where: {

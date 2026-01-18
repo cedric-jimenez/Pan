@@ -12,6 +12,113 @@ export const runtime = "nodejs"
 export const maxDuration = 60 // Maximum execution time in seconds
 
 /**
+ * Call Railway API to segment salamander (remove background)
+ * @param buffer - Image buffer to process
+ * @returns Segmented result with detected flag and segmented buffer
+ */
+async function callRailwaySegment(buffer: Buffer): Promise<{
+  detected: boolean
+  segmentedBuffer: Buffer | null
+  error?: string
+}> {
+  const railwayUrl = process.env.RAILWAY_API_URL
+  const timeoutMs = parseInt(
+    process.env.YOLO_TIMEOUT_MS || String(API_TIMEOUTS.DEFAULT_TIMEOUT_MS),
+    10
+  )
+
+  if (!railwayUrl) {
+    logger.warn("RAILWAY_API_URL not configured, skipping segmentation")
+    return {
+      detected: false,
+      segmentedBuffer: null,
+      error: "Railway URL not configured",
+    }
+  }
+
+  try {
+    const startTime = Date.now()
+
+    // Create FormData with image
+    const formData = new FormData()
+    const blob = new Blob([Uint8Array.from(buffer)], { type: "image/jpeg" })
+    formData.append("file", blob, "image.jpg")
+
+    // Call Railway API with timeout (using default params: confidence=0.25, background=gray, JPEG 85)
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+
+    const response = await fetch(
+      `${railwayUrl}/segment-salamander`,
+      {
+        method: "POST",
+        body: formData,
+        signal: controller.signal,
+      }
+    )
+
+    clearTimeout(timeoutId)
+    const duration = Date.now() - startTime
+
+    if (!response.ok) {
+      logger.warn(`Railway segmentation API error: ${response.status} ${response.statusText}`)
+      return {
+        detected: false,
+        segmentedBuffer: null,
+        error: `Railway API error: ${response.status}`,
+      }
+    }
+
+    const data = await response.json()
+
+    logger.log({
+      action: "salamander_segment",
+      success: data.success,
+      detected: data.detected,
+      duration_ms: duration,
+    })
+
+    if (data.detected && data.segmented_image) {
+      // Convert base64 to Buffer
+      const base64Data = data.segmented_image.replace(/^data:image\/\w+;base64,/, "")
+      const segmentedBuffer = Buffer.from(base64Data, "base64")
+
+      logger.log({
+        message: "Using segmented image from Railway",
+        segmentedBufferSize: segmentedBuffer.length,
+        hasBase64Prefix: data.segmented_image.startsWith("data:image"),
+      })
+
+      return {
+        detected: true,
+        segmentedBuffer,
+      }
+    }
+
+    logger.log({
+      message: "Not using segmented image",
+      detected: data.detected,
+      hasSegmentedImage: !!data.segmented_image,
+    })
+
+    return {
+      detected: false,
+      segmentedBuffer: null,
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.name === "AbortError") {
+        logger.warn(`Railway segmentation API timeout after ${timeoutMs}ms`)
+        return { detected: false, segmentedBuffer: null, error: "Timeout" }
+      }
+      logger.error("Railway segmentation API error:", error.message)
+      return { detected: false, segmentedBuffer: null, error: error.message }
+    }
+    return { detected: false, segmentedBuffer: null, error: "Unknown error" }
+  }
+}
+
+/**
  * Call Railway YOLO API to detect and crop salamander
  * @param buffer - Image buffer to process
  * @returns Crop result with detected flag, cropped buffer, and confidence
@@ -277,6 +384,61 @@ export async function POST(request: Request) {
       }
     }
 
+    // Upload segmented image if salamander was detected
+    let segmentedBlobUrl: string | null = null
+
+    if (salamanderDetected) {
+      logger.log({
+        message: "Calling segmentation API for detected salamander",
+      })
+
+      const segmentResult = await callRailwaySegment(compressedBuffer)
+
+      if (segmentResult.detected && segmentResult.segmentedBuffer) {
+        // Re-compress segmented image
+        const compressedSegmentedBuffer = await compressImage(segmentResult.segmentedBuffer, {
+          maxWidth: IMAGE_CONFIG.CROPPED_IMAGE_SIZE,
+          maxHeight: IMAGE_CONFIG.CROPPED_IMAGE_SIZE,
+          quality: IMAGE_CONFIG.COMPRESSION_QUALITY,
+          keepMetadata: false,
+        })
+
+        const segmentedUint8 = new Uint8Array(compressedSegmentedBuffer)
+        const segmentedBlob = new Blob([segmentedUint8], { type: "image/jpeg" })
+
+        const segmentedFile = new File(
+          [segmentedBlob],
+          file.name.replace(/\.\w+$/, "-segmented.jpg"),
+          {
+            type: "image/jpeg",
+          }
+        )
+        segmentedBlobUrl = await uploadToBlob(segmentedFile)
+
+        logger.log({
+          message: "Uploaded segmented image",
+          segmentedImageOriginalSize: segmentResult.segmentedBuffer.length,
+          segmentedImageCompressedSize: compressedSegmentedBuffer.length,
+          segmentedReduction:
+            (
+              (1 - compressedSegmentedBuffer.length / segmentResult.segmentedBuffer.length) *
+              100
+            ).toFixed(1) + "%",
+        })
+      } else {
+        logger.log({
+          message: "No segmented image generated",
+          detected: segmentResult.detected,
+          hasSegmentedBuffer: !!segmentResult.segmentedBuffer,
+          error: segmentResult.error,
+        })
+
+        if (segmentResult.error) {
+          logger.log(`No segmented image due to: ${segmentResult.error}`)
+        }
+      }
+    }
+
     // Generate unique filename for reference
     const timestamp = Date.now()
     const filename = `${timestamp}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`
@@ -313,6 +475,7 @@ export async function POST(request: Request) {
         mimeType: "image/jpeg", // Always JPEG after compression
         url: blobUrl,
         croppedUrl: croppedBlobUrl,
+        segmentedUrl: segmentedBlobUrl,
         latitude,
         longitude,
         takenAt,
