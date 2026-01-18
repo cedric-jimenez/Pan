@@ -28,7 +28,7 @@ export const photoUpdateSchema = z.object({
 // Bulk delete schema
 export const bulkDeleteSchema = z.object({
   photoIds: z
-    .array(z.string().uuid("Invalid photo ID"))
+    .array(z.string().min(1, "Photo ID cannot be empty"))
     .min(1, "At least one photo ID is required")
     .max(100, "Cannot delete more than 100 photos at once"),
 })
