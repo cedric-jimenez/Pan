@@ -62,10 +62,7 @@ export const RATE_LIMITS = {
 /**
  * Get rate limit config for a specific route
  */
-export function getRateLimitForRoute(
-  pathname: string,
-  method: string
-): RateLimitConfig | null {
+export function getRateLimitForRoute(pathname: string, method: string): RateLimitConfig | null {
   // Register
   if (pathname === "/api/register" && method === "POST") {
     return RATE_LIMITS.register

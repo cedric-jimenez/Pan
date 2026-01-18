@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { GET } from "@/app/api/photos/route"
 import { GET as GET_BY_ID, PATCH, DELETE } from "@/app/api/photos/[id]/route"
+import { createMockPhoto, createMinimalMockPhoto } from "../../fixtures/photo"
 
 // Mock modules
 vi.mock("@/lib/session", () => ({
@@ -42,50 +43,17 @@ describe("GET /api/photos", () => {
 
     // Mock photos
     const mockPhotos = [
-      {
+      createMockPhoto({
         id: "photo-1",
-        userId: "user-123",
-        filename: "photo1.jpg",
-        originalName: "vacation.jpg",
-        fileSize: 1000,
-        mimeType: "image/jpeg",
-        url: "https://blob.vercel-storage.com/photo1.jpg",
-        latitude: 48.8566,
-        longitude: 2.3522,
         takenAt: new Date("2024-01-15"),
-        cameraMake: "Canon",
-        cameraModel: "EOS R5",
-        iso: 400,
-        aperture: "f/2.8",
-        shutterSpeed: "1/250s",
-        focalLength: "50mm",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        title: "Paris Trip",
-        description: "Eiffel Tower",
-      },
-      {
+      }),
+      createMinimalMockPhoto({
         id: "photo-2",
-        userId: "user-123",
         filename: "photo2.jpg",
         originalName: "sunset.jpg",
         fileSize: 1500,
-        mimeType: "image/jpeg",
-        url: "https://blob.vercel-storage.com/photo2.jpg",
-        latitude: null,
-        longitude: null,
         takenAt: new Date("2024-01-14"),
-        cameraMake: null,
-        cameraModel: null,
-        iso: null,
-        aperture: null,
-        shutterSpeed: null,
-        focalLength: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        title: null,
-        description: null,
-      },
+      }),
     ]
     vi.mocked(prisma.photo.count).mockResolvedValue(2)
     vi.mocked(prisma.photo.findMany).mockResolvedValue(mockPhotos)
@@ -570,28 +538,14 @@ describe("GET /api/photos", () => {
     vi.mocked(prisma.photo.count).mockResolvedValue(15)
     const mockPhotos = Array(15)
       .fill(null)
-      .map((_, i) => ({
-        id: `photo-${i}`,
-        userId: "user-123",
-        filename: `photo${i}.jpg`,
-        originalName: `photo${i}.jpg`,
-        fileSize: 1000,
-        mimeType: "image/jpeg",
-        url: `https://blob.vercel-storage.com/photo${i}.jpg`,
-        latitude: null,
-        longitude: null,
-        takenAt: new Date(),
-        cameraMake: null,
-        cameraModel: null,
-        iso: null,
-        aperture: null,
-        shutterSpeed: null,
-        focalLength: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        title: null,
-        description: null,
-      }))
+      .map((_, i) =>
+        createMinimalMockPhoto({
+          id: `photo-${i}`,
+          filename: `photo${i}.jpg`,
+          originalName: `photo${i}.jpg`,
+          url: `https://blob.vercel-storage.com/photo${i}.jpg`,
+        })
+      )
     vi.mocked(prisma.photo.findMany).mockResolvedValue(mockPhotos)
 
     // Create request
@@ -625,28 +579,12 @@ describe("GET /api/photos/[id]", () => {
     })
 
     // Mock photo
-    const mockPhoto = {
+    const mockPhoto = createMockPhoto({
       id: "photo-123",
-      userId: "user-123",
       filename: "photo.jpg",
-      originalName: "vacation.jpg",
-      fileSize: 1000,
-      mimeType: "image/jpeg",
       url: "https://blob.vercel-storage.com/photo.jpg",
-      latitude: 48.8566,
-      longitude: 2.3522,
       takenAt: new Date("2024-01-15"),
-      cameraMake: "Canon",
-      cameraModel: "EOS R5",
-      iso: 400,
-      aperture: "f/2.8",
-      shutterSpeed: "1/250s",
-      focalLength: "50mm",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      title: "Paris Trip",
-      description: "Eiffel Tower",
-    }
+    })
     vi.mocked(prisma.photo.findFirst).mockResolvedValue(mockPhoto)
 
     // Create request
@@ -737,28 +675,14 @@ describe("PATCH /api/photos/[id]", () => {
     })
 
     // Mock existing photo
-    const existingPhoto = {
+    const existingPhoto = createMockPhoto({
       id: "photo-123",
-      userId: "user-123",
       filename: "photo.jpg",
-      originalName: "vacation.jpg",
-      fileSize: 1000,
-      mimeType: "image/jpeg",
       url: "https://blob.vercel-storage.com/photo.jpg",
-      latitude: 48.8566,
-      longitude: 2.3522,
       takenAt: new Date("2024-01-15"),
-      cameraMake: "Canon",
-      cameraModel: "EOS R5",
-      iso: 400,
-      aperture: "f/2.8",
-      shutterSpeed: "1/250s",
-      focalLength: "50mm",
-      createdAt: new Date(),
-      updatedAt: new Date(),
       title: null,
       description: null,
-    }
+    })
     vi.mocked(prisma.photo.findFirst).mockResolvedValue(existingPhoto)
 
     // Mock updated photo
@@ -805,52 +729,26 @@ describe("PATCH /api/photos/[id]", () => {
     })
 
     // Mock existing photo
-    vi.mocked(prisma.photo.findFirst).mockResolvedValue({
-      id: "photo-123",
-      userId: "user-123",
-      filename: "photo.jpg",
-      originalName: "vacation.jpg",
-      fileSize: 1000,
-      mimeType: "image/jpeg",
-      url: "https://blob.vercel-storage.com/photo.jpg",
-      latitude: null,
-      longitude: null,
-      takenAt: new Date(),
-      cameraMake: null,
-      cameraModel: null,
-      iso: null,
-      aperture: null,
-      shutterSpeed: null,
-      focalLength: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      title: "Old Title",
-      description: "Old Description",
-    })
+    vi.mocked(prisma.photo.findFirst).mockResolvedValue(
+      createMinimalMockPhoto({
+        id: "photo-123",
+        filename: "photo.jpg",
+        url: "https://blob.vercel-storage.com/photo.jpg",
+        title: "Old Title",
+        description: "Old Description",
+      })
+    )
 
     // Mock updated photo
-    vi.mocked(prisma.photo.update).mockResolvedValue({
-      id: "photo-123",
-      userId: "user-123",
-      filename: "photo.jpg",
-      originalName: "vacation.jpg",
-      fileSize: 1000,
-      mimeType: "image/jpeg",
-      url: "https://blob.vercel-storage.com/photo.jpg",
-      latitude: null,
-      longitude: null,
-      takenAt: new Date(),
-      cameraMake: null,
-      cameraModel: null,
-      iso: null,
-      aperture: null,
-      shutterSpeed: null,
-      focalLength: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      title: "New Title",
-      description: "Old Description",
-    })
+    vi.mocked(prisma.photo.update).mockResolvedValue(
+      createMinimalMockPhoto({
+        id: "photo-123",
+        filename: "photo.jpg",
+        url: "https://blob.vercel-storage.com/photo.jpg",
+        title: "New Title",
+        description: "Old Description",
+      })
+    )
 
     // Create request
     const request = new Request("http://localhost:3000/api/photos/photo-123", {
@@ -930,28 +828,12 @@ describe("DELETE /api/photos/[id]", () => {
     })
 
     // Mock existing photo
-    const mockPhoto = {
+    const mockPhoto = createMockPhoto({
       id: "photo-123",
-      userId: "user-123",
       filename: "photo.jpg",
-      originalName: "vacation.jpg",
-      fileSize: 1000,
-      mimeType: "image/jpeg",
       url: "https://blob.vercel-storage.com/photo.jpg",
-      latitude: 48.8566,
-      longitude: 2.3522,
       takenAt: new Date("2024-01-15"),
-      cameraMake: "Canon",
-      cameraModel: "EOS R5",
-      iso: 400,
-      aperture: "f/2.8",
-      shutterSpeed: "1/250s",
-      focalLength: "50mm",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      title: "Paris Trip",
-      description: "Eiffel Tower",
-    }
+    })
     vi.mocked(prisma.photo.findFirst).mockResolvedValue(mockPhoto)
 
     // Mock blob deletion
@@ -988,28 +870,11 @@ describe("DELETE /api/photos/[id]", () => {
     })
 
     // Mock existing photo
-    const mockPhoto = {
+    const mockPhoto = createMinimalMockPhoto({
       id: "photo-123",
-      userId: "user-123",
       filename: "photo.jpg",
-      originalName: "vacation.jpg",
-      fileSize: 1000,
-      mimeType: "image/jpeg",
       url: "https://blob.vercel-storage.com/photo.jpg",
-      latitude: null,
-      longitude: null,
-      takenAt: new Date(),
-      cameraMake: null,
-      cameraModel: null,
-      iso: null,
-      aperture: null,
-      shutterSpeed: null,
-      focalLength: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      title: null,
-      description: null,
-    }
+    })
     vi.mocked(prisma.photo.findFirst).mockResolvedValue(mockPhoto)
 
     // Mock blob deletion failure

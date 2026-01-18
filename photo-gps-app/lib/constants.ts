@@ -42,7 +42,7 @@ export const CROP_DETECTION = {
 
 // File validation
 export const FILE_VALIDATION = {
-  ALLOWED_IMAGE_TYPES: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+  ALLOWED_IMAGE_TYPES: ["image/jpeg", "image/jpg", "image/png", "image/webp"],
   MAX_TITLE_LENGTH: 200,
   MAX_DESCRIPTION_LENGTH: 2000,
   MAX_NAME_LENGTH: 100,
