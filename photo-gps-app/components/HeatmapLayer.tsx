@@ -3,6 +3,21 @@ import { useMap } from "react-leaflet"
 import L from "leaflet"
 import "leaflet.heat"
 
+// Extend Leaflet type to include heatLayer
+declare module "leaflet" {
+  function heatLayer(
+    latlngs: Array<[number, number, number]>,
+    options?: {
+      radius?: number
+      blur?: number
+      maxZoom?: number
+      max?: number
+      minOpacity?: number
+      gradient?: { [key: number]: string }
+    }
+  ): L.Layer
+}
+
 interface HeatmapLayerProps {
   points: [number, number, number][] // [latitude, longitude, intensity]
   options?: {
@@ -22,7 +37,7 @@ export default function HeatmapLayer({ points, options }: HeatmapLayerProps) {
     if (!map || points.length === 0) return
 
     // Create heatmap layer
-    const heatLayer = (L as any).heatLayer(points, {
+    const heatLayer = L.heatLayer(points, {
       radius: options?.radius || 25,
       blur: options?.blur || 15,
       maxZoom: options?.maxZoom || 17,
