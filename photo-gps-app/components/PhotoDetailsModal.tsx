@@ -6,6 +6,7 @@ import { format } from "date-fns"
 import Image from "next/image"
 import Input from "./Input"
 import Button from "./Button"
+import AssignIndividualModal from "./AssignIndividualModal"
 import { Photo } from "@/types/photo"
 import { logger } from "@/lib/logger"
 import { fetchWithCsrf } from "@/lib/fetch-with-csrf"
@@ -30,6 +31,7 @@ export default function PhotoDetailsModal({
   const [description, setDescription] = useState(photo.description || "")
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [showAssignModal, setShowAssignModal] = useState(false)
 
   // Determine default view: cropped if available, otherwise original
   const defaultView: ImageView = photo.croppedUrl ? "cropped" : "original"
@@ -286,6 +288,9 @@ export default function PhotoDetailsModal({
                     <Button onClick={() => setIsEditing(true)} variant="primary">
                       Edit
                     </Button>
+                    <Button onClick={() => setShowAssignModal(true)} variant="secondary">
+                      Assign Individual
+                    </Button>
                     <Button onClick={handleDelete} variant="destructive" isLoading={isDeleting}>
                       Delete
                     </Button>
@@ -296,6 +301,18 @@ export default function PhotoDetailsModal({
           </div>
         </Dialog.Panel>
       </div>
+
+      {/* Assign Individual Modal */}
+      <AssignIndividualModal
+        isOpen={showAssignModal}
+        onClose={() => setShowAssignModal(false)}
+        photoId={photo.id}
+        currentIndividualId={photo.individualId}
+        onSuccess={() => {
+          setShowAssignModal(false)
+          // Optionally refresh photo data here
+        }}
+      />
     </Dialog>
   )
 }

@@ -2,6 +2,7 @@
 export interface Photo {
   id: string
   userId: string
+  individualId: string | null
   filename: string
   originalName: string
   fileSize: number

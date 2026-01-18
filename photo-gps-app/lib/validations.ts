@@ -40,6 +40,42 @@ export const bulkDeleteSchema = z.object({
     .max(100, "Cannot delete more than 100 photos at once"),
 })
 
+// Individual schemas
+export const individualCreateSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Name is required")
+    .max(100, "Name is too long")
+    .trim(),
+})
+
+export const individualUpdateSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Name is required")
+    .max(100, "Name is too long")
+    .trim()
+    .optional(),
+})
+
+export const individualQuerySchema = z.object({
+  search: z.string().max(200).optional(),
+  page: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 1))
+    .pipe(z.number().int().positive()),
+  limit: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 20))
+    .pipe(z.number().int().positive().max(100)),
+})
+
+export const assignPhotoSchema = z.object({
+  photoId: z.string().min(1, "Photo ID is required"),
+})
+
 // Query parameters schemas
 export const photoQuerySchema = z.object({
   startDate: z.string().datetime().optional(),
