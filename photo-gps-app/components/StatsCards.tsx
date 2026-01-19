@@ -50,11 +50,13 @@ export default function StatsCards({ photos, total }: StatsCardsProps) {
   ]
 
   return (
-    <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-5">
+    <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-5">
       {stats.map((stat, index) => (
         <div
           key={index}
-          className="rounded-xl border border-gray-700 bg-gradient-to-br from-gray-800 to-gray-900 p-4 shadow-lg"
+          className={`rounded-xl border border-gray-700 bg-gradient-to-br from-gray-800 to-gray-900 p-4 shadow-lg ${
+            index === stats.length - 1 ? "col-span-2 md:col-span-1" : ""
+          }`}
         >
           <div className="text-sm text-gray-400">{stat.label}</div>
           <div className={`text-3xl font-bold ${stat.color} mt-1`}>{stat.value}</div>
