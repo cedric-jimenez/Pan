@@ -9,24 +9,36 @@ interface IndividualListProps {
   onSelectIndividual?: (individual: IndividualWithCount) => void
   onCreateIndividual?: () => void
   onEditIndividual?: (individual: IndividualWithCount) => void
+  refreshTrigger?: number
 }
 
 export default function IndividualList({
   onSelectIndividual,
   onCreateIndividual,
   onEditIndividual,
+  refreshTrigger,
 }: IndividualListProps) {
   const [individuals, setIndividuals] = useState<IndividualWithCount[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+    }, 300) // 300ms debounce
+
+    return () => clearTimeout(timer)
+  }, [search])
 
   const fetchIndividuals = useCallback(async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
-      if (search) {
-        params.append("search", search)
+      if (debouncedSearch) {
+        params.append("search", debouncedSearch)
       }
 
       const response = await fetch(`/api/individuals?${params}`)
@@ -41,11 +53,18 @@ export default function IndividualList({
     } finally {
       setLoading(false)
     }
-  }, [search])
+  }, [debouncedSearch])
 
   useEffect(() => {
     fetchIndividuals()
   }, [fetchIndividuals])
+
+  // Refresh when refreshTrigger changes
+  useEffect(() => {
+    if (refreshTrigger !== undefined && refreshTrigger > 0) {
+      fetchIndividuals()
+    }
+  }, [refreshTrigger, fetchIndividuals])
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this individual?")) {

@@ -67,10 +67,10 @@ export default function IndividualsPage() {
         </div>
 
         <IndividualList
-          key={refreshKey}
           onSelectIndividual={handleSelectIndividual}
           onCreateIndividual={handleCreateIndividual}
           onEditIndividual={handleEditIndividual}
+          refreshTrigger={refreshKey}
         />
 
         <IndividualModal
