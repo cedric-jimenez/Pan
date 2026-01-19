@@ -1,8 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Dialog } from "@headlessui/react"
 import { IndividualWithCount } from "@/types/individual"
 import Button from "./Button"
+import Input from "./Input"
 import { fetchWithCsrf } from "@/lib/fetch-with-csrf"
 
 interface AssignIndividualModalProps {
@@ -175,12 +177,32 @@ export default function AssignIndividualModal({
     }
   }
 
-  if (!isOpen) return null
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 max-h-[80vh] overflow-y-auto">
-        <h2 className="text-2xl font-bold mb-4">Assign to Individual</h2>
+    <Dialog open={isOpen} onClose={onClose} className="relative z-50">
+      <div className="fixed inset-0 bg-black/70" aria-hidden="true" />
+
+      <div className="fixed inset-0 flex items-center justify-center p-4">
+        <Dialog.Panel className="bg-card mx-auto w-full max-w-md rounded-xl shadow-xl max-h-[90vh] overflow-y-auto">
+          <div className="p-6">
+            <div className="flex items-start justify-between mb-4">
+              <Dialog.Title className="text-2xl font-bold">
+                Assign to Individual
+              </Dialog.Title>
+              <button
+                onClick={onClose}
+                className="text-muted-foreground hover:text-foreground"
+                disabled={loading}
+              >
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
 
         {showCreateForm ? (
           <div className="space-y-4">
@@ -188,13 +210,12 @@ export default function AssignIndividualModal({
               <label htmlFor="newName" className="block text-sm font-medium mb-2">
                 New Individual Name
               </label>
-              <input
+              <Input
                 id="newName"
                 type="text"
                 value={newIndividualName}
                 onChange={(e) => setNewIndividualName(e.target.value)}
                 placeholder="Enter name"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                 disabled={loading}
               />
             </div>
@@ -205,7 +226,7 @@ export default function AssignIndividualModal({
               </div>
             )}
 
-            <div className="flex gap-2 justify-end">
+            <div className="flex gap-2 justify-end border-t border-border pt-4">
               <Button
                 type="button"
                 variant="secondary"
@@ -264,7 +285,7 @@ export default function AssignIndividualModal({
               </div>
             )}
 
-            <div className="flex gap-2 justify-end">
+            <div className="flex gap-2 justify-end border-t border-border pt-4">
               {currentIndividualId && (
                 <Button variant="destructive" onClick={handleUnassign} isLoading={loading}>
                   Unassign
@@ -279,7 +300,9 @@ export default function AssignIndividualModal({
             </div>
           </div>
         )}
+          </div>
+        </Dialog.Panel>
       </div>
-    </div>
+    </Dialog>
   )
 }

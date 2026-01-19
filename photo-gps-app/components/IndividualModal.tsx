@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Dialog } from "@headlessui/react"
 import { Individual } from "@/types/individual"
 import Button from "./Button"
 import Input from "./Input"
@@ -64,47 +65,67 @@ export default function IndividualModal({
     }
   }
 
-  if (!isOpen) return null
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
-        <h2 className="text-2xl font-bold mb-4">
-          {individual ? "Edit Individual" : "Create Individual"}
-        </h2>
+    <Dialog open={isOpen} onClose={onClose} className="relative z-50">
+      <div className="fixed inset-0 bg-black/70" aria-hidden="true" />
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium mb-2">
-              Name
-            </label>
-            <Input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter individual name"
-              required
-              disabled={loading}
-            />
-          </div>
-
-          {error && (
-            <div className="text-destructive text-sm bg-destructive/10 p-3 rounded">
-              {error}
+      <div className="fixed inset-0 flex items-center justify-center p-4">
+        <Dialog.Panel className="bg-card mx-auto w-full max-w-md rounded-xl shadow-xl">
+          <div className="p-6">
+            <div className="flex items-start justify-between mb-4">
+              <Dialog.Title className="text-2xl font-bold">
+                {individual ? "Edit Individual" : "Create Individual"}
+              </Dialog.Title>
+              <button
+                onClick={onClose}
+                className="text-muted-foreground hover:text-foreground"
+                disabled={loading}
+              >
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
             </div>
-          )}
 
-          <div className="flex gap-2 justify-end">
-            <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>
-              Cancel
-            </Button>
-            <Button type="submit" isLoading={loading}>
-              {individual ? "Update" : "Create"}
-            </Button>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium mb-2">
+                  Name
+                </label>
+                <Input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Enter individual name"
+                  required
+                  disabled={loading}
+                />
+              </div>
+
+              {error && (
+                <div className="text-destructive text-sm bg-destructive/10 p-3 rounded">
+                  {error}
+                </div>
+              )}
+
+              <div className="flex gap-2 justify-end border-t border-border pt-4">
+                <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>
+                  Cancel
+                </Button>
+                <Button type="submit" isLoading={loading}>
+                  {individual ? "Update" : "Create"}
+                </Button>
+              </div>
+            </form>
           </div>
-        </form>
+        </Dialog.Panel>
       </div>
-    </div>
+    </Dialog>
   )
 }

@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
+import { Dialog } from "@headlessui/react"
 import IndividualList from "@/components/IndividualList"
 import IndividualModal from "@/components/IndividualModal"
 import { IndividualWithCount, IndividualWithPhotos } from "@/types/individual"
@@ -56,54 +57,73 @@ export default function IndividualsPage() {
           onSuccess={handleModalSuccess}
         />
 
-        {selectedIndividual && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl p-6 max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-3xl font-bold">{selectedIndividual.name}</h2>
-                <button
-                  onClick={() => setSelectedIndividual(null)}
-                  className="text-2xl hover:text-gray-600"
-                >
-                  ×
-                </button>
-              </div>
+        <Dialog
+          open={selectedIndividual !== null}
+          onClose={() => setSelectedIndividual(null)}
+          className="relative z-50"
+        >
+          <div className="fixed inset-0 bg-black/70" aria-hidden="true" />
 
-              <p className="text-muted-foreground mb-6">
-                {selectedIndividual.photoCount} photo{selectedIndividual.photoCount !== 1 ? "s" : ""}
-              </p>
-
-              {selectedIndividual.photos.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {selectedIndividual.photos.map((photo) => (
-                    <div
-                      key={photo.id}
-                      className="aspect-square relative rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
-                      onClick={() => router.push(`/gallery?photo=${photo.id}`)}
-                    >
-                      <Image
-                        src={photo.croppedUrl || photo.url}
-                        alt={photo.title || "Photo"}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          <div className="fixed inset-0 flex items-center justify-center p-4">
+            <Dialog.Panel className="bg-card mx-auto w-full max-w-4xl rounded-xl shadow-xl max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <Dialog.Title className="text-3xl font-bold">
+                      {selectedIndividual?.name}
+                    </Dialog.Title>
+                    <p className="text-muted-foreground mt-2">
+                      {selectedIndividual?.photoCount} photo
+                      {selectedIndividual?.photoCount !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedIndividual(null)}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
                       />
-                      {photo.title && (
-                        <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-2 text-sm">
-                          {photo.title}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    </svg>
+                  </button>
                 </div>
-              ) : (
-                <div className="text-center py-12 text-muted-foreground">
-                  No photos assigned to this individual yet.
-                </div>
-              )}
-            </div>
+
+                {selectedIndividual && selectedIndividual.photos.length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-6">
+                    {selectedIndividual.photos.map((photo) => (
+                      <div
+                        key={photo.id}
+                        className="aspect-square relative rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => router.push(`/gallery?photo=${photo.id}`)}
+                      >
+                        <Image
+                          src={photo.croppedUrl || photo.url}
+                          alt={photo.title || "Photo"}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                        />
+                        {photo.title && (
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-2 text-sm">
+                            {photo.title}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    No photos assigned to this individual yet.
+                  </div>
+                )}
+              </div>
+            </Dialog.Panel>
           </div>
-        )}
+        </Dialog>
       </main>
     </div>
   )
