@@ -34,28 +34,28 @@ export default function Navbar() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/gallery" className="flex items-center gap-2 md:gap-3">
-            <div className="bg-primary flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-lg">
+            <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-lg md:h-10 md:w-10">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="currentColor"
-                className="h-5 w-5 md:h-6 md:w-6 text-white"
+                className="h-5 w-5 text-white md:h-6 md:w-6"
               >
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
               </svg>
             </div>
             <div className="flex flex-col">
-              <span className="text-foreground text-sm md:text-lg leading-tight font-bold">
+              <span className="text-foreground text-sm leading-tight font-bold md:text-lg">
                 Salamander Gallery
               </span>
-              <span className="text-muted-foreground text-[10px] md:text-xs leading-tight hidden sm:block">
+              <span className="text-muted-foreground hidden text-[10px] leading-tight sm:block md:text-xs">
                 AI-Powered Species Management
               </span>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden items-center gap-8 md:flex">
             <div className="flex gap-2">
               <Link
                 href="/gallery"
@@ -116,7 +116,7 @@ export default function Navbar() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden text-muted-foreground hover:text-foreground p-2"
+            className="text-muted-foreground hover:text-foreground p-2 md:hidden"
             aria-label="Toggle menu"
           >
             {mobileMenuOpen ? (
@@ -143,7 +143,7 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-border py-4">
+          <div className="border-border border-t py-4 md:hidden">
             <div className="flex flex-col gap-2">
               <Link
                 href="/gallery"
@@ -192,11 +192,11 @@ export default function Navbar() {
                 Map
               </Link>
 
-              <div className="border-t border-border mt-2 pt-2">
-                <div className="text-muted-foreground text-sm px-4 py-2">{session.user?.email}</div>
+              <div className="border-border mt-2 border-t pt-2">
+                <div className="text-muted-foreground px-4 py-2 text-sm">{session.user?.email}</div>
                 <button
                   onClick={() => signOut({ callbackUrl: "/login" })}
-                  className="text-muted-foreground hover:text-foreground w-full text-left px-4 py-3 text-sm font-medium transition-colors rounded-md hover:bg-muted"
+                  className="text-muted-foreground hover:text-foreground hover:bg-muted w-full rounded-md px-4 py-3 text-left text-sm font-medium transition-colors"
                 >
                   Sign Out
                 </button>
