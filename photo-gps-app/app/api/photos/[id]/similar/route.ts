@@ -18,13 +18,6 @@ async function fetchImageAsBuffer(url: string): Promise<Buffer> {
 
 /**
  * Call Railway /verify API to perform geometric matching
- *
- * The API returns a score between 0.0 and 1.0 based on SIFT keypoint matching with RANSAC filtering.
- * Score thresholds used by the API:
- * - score ≥ 0.10: Same individual, high confidence
- * - score ≥ 0.05: Same individual, medium confidence
- * - score ≥ 0.03: Different individual, low confidence
- * - score < 0.03: Different individual, high confidence
  */
 async function callRailwayVerify(
   queryBuffer: Buffer,
@@ -244,7 +237,7 @@ export async function GET(
       const photo = similarPhotos[result.candidate_index];
       return {
         ...photo,
-        similarityScore: result.score * 100, // Convert from 0-1 to 0-100 percentage
+        similarityScore: result.score,
         confidence: result.confidence,
         isSame: result.is_same,
         matches: result.matches,
