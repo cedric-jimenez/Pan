@@ -31,6 +31,12 @@ export interface Photo {
   cropConfidence: number | null
   salamanderDetected: boolean
 
+  // Individual relationship
+  individual?: {
+    id: string
+    name: string
+  } | null
+
   createdAt: Date | string
   updatedAt: Date | string
 }

@@ -17,6 +17,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         id,
         userId: user.id,
       },
+      include: {
+        individual: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     })
 
     if (!photo) {
