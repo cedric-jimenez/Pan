@@ -67,6 +67,16 @@ async function callRailwayVerify(
       formData.append("candidates", candidateBlob, `candidate_${i}.jpg`);
     }
 
+    // Log request details before calling API
+    logger.log({
+      action: "railway_verify_request",
+      endpoint: `${railwayUrl}/verify`,
+      method: "POST",
+      candidates_count: candidateBuffers.length,
+      query_size_bytes: queryBuffer.length,
+      timeout_ms: timeoutMs,
+    });
+
     // Call Railway API with timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -81,7 +91,12 @@ async function callRailwayVerify(
     const duration = Date.now() - startTime;
 
     if (!response.ok) {
-      logger.warn(`Railway verify API error: ${response.status} ${response.statusText}`);
+      logger.warn({
+        action: "railway_verify_error",
+        status: response.status,
+        statusText: response.statusText,
+        duration_ms: duration,
+      });
       return {
         success: false,
         results: [],
@@ -91,11 +106,20 @@ async function callRailwayVerify(
 
     const data = await response.json();
 
+    // Log detailed results
     logger.log({
-      action: "salamander_verify",
+      action: "railway_verify_response",
       success: data.success,
       results_count: data.results?.length || 0,
       duration_ms: duration,
+      results: data.results?.map((r: typeof data.results[0]) => ({
+        candidate_index: r.candidate_index,
+        is_same: r.is_same,
+        score: r.score,
+        confidence: r.confidence,
+        matches: r.matches,
+        inliers: r.inliers,
+      })),
     });
 
     return {
@@ -122,6 +146,12 @@ export async function GET(
   try {
     const user = await requireAuth();
     const { id: photoId } = await params;
+
+    logger.log({
+      action: "similar_photos_request",
+      photoId,
+      userId: user.id,
+    });
 
     // Get the source photo with its embedding
     const sourcePhoto = await prisma.photo.findFirst({
@@ -229,6 +259,19 @@ export async function GET(
         matches: 0,
         inliers: 0,
       }));
+
+      logger.log({
+        action: "similar_photos_response",
+        photoId,
+        results_count: photosWithScores.length,
+        fallback: true,
+        results: photosWithScores.map((photo) => ({
+          id: photo.id,
+          similarityScore: photo.similarityScore,
+          distance: photo.distance,
+        })),
+      });
+
       return NextResponse.json(photosWithScores);
     }
 
@@ -247,6 +290,20 @@ export async function GET(
 
     // Sort by verification score (descending)
     photosWithVerification.sort((a, b) => b.similarityScore - a.similarityScore);
+
+    logger.log({
+      action: "similar_photos_response",
+      photoId,
+      results_count: photosWithVerification.length,
+      results: photosWithVerification.map((photo) => ({
+        id: photo.id,
+        similarityScore: photo.similarityScore,
+        confidence: photo.confidence,
+        isSame: photo.isSame,
+        matches: photo.matches,
+        inliers: photo.inliers,
+      })),
+    });
 
     return NextResponse.json(photosWithVerification);
   } catch (error: unknown) {
