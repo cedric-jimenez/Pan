@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog } from "@headlessui/react"
 import { format } from "date-fns"
 import Image from "next/image"
@@ -10,6 +10,21 @@ import AssignIndividualModal from "./AssignIndividualModal"
 import { Photo } from "@/types/photo"
 import { logger } from "@/lib/logger"
 import { fetchWithCsrf } from "@/lib/fetch-with-csrf"
+
+interface SimilarPhoto {
+  id: string
+  filename: string
+  url: string
+  croppedUrl: string | null
+  segmentedUrl: string | null
+  title: string | null
+  description: string | null
+  takenAt: Date | null
+  latitude: number | null
+  longitude: number | null
+  distance: number
+  similarityScore: number
+}
 
 interface PhotoDetailsModalProps {
   photo: Photo
@@ -32,10 +47,35 @@ export default function PhotoDetailsModal({
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showAssignModal, setShowAssignModal] = useState(false)
+  const [similarPhotos, setSimilarPhotos] = useState<SimilarPhoto[]>([])
+  const [isLoadingSimilar, setIsLoadingSimilar] = useState(false)
 
   // Determine default view: cropped if available, otherwise original
   const defaultView: ImageView = photo.croppedUrl ? "cropped" : "original"
   const [currentView, setCurrentView] = useState<ImageView>(defaultView)
+
+  // Load similar photos on mount
+  useEffect(() => {
+    const loadSimilarPhotos = async () => {
+      setIsLoadingSimilar(true)
+      try {
+        const response = await fetch(`/api/photos/${photo.id}/similar`)
+        if (response.ok) {
+          const data = await response.json()
+          setSimilarPhotos(data)
+        } else if (response.status === 400) {
+          // Photo doesn't have an embedding vector
+          setSimilarPhotos([])
+        }
+      } catch (error) {
+        logger.error("Failed to load similar photos:", error)
+      } finally {
+        setIsLoadingSimilar(false)
+      }
+    }
+
+    loadSimilarPhotos()
+  }, [photo.id])
 
   // Get current image URL based on selected view
   const getCurrentImageUrl = () => {
@@ -169,6 +209,44 @@ export default function PhotoDetailsModal({
                   </div>
                 )}
               </div>
+
+              {/* Similar Photos Section */}
+              {isLoadingSimilar ? (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold">Images similaires</h3>
+                  <div className="text-muted-foreground text-sm">Chargement...</div>
+                </div>
+              ) : similarPhotos.length > 0 ? (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold">Images similaires</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {similarPhotos.map((similar) => (
+                      <div
+                        key={similar.id}
+                        className="bg-muted group relative aspect-square overflow-hidden rounded-lg transition-transform hover:scale-105"
+                      >
+                        <Image
+                          src={similar.segmentedUrl || similar.croppedUrl || similar.url}
+                          alt={similar.title || similar.filename}
+                          fill
+                          className="object-cover"
+                          sizes="150px"
+                        />
+                        {/* Similarity Score Badge */}
+                        <div className="bg-primary/90 text-primary-foreground absolute top-1 right-1 rounded-md px-2 py-0.5 text-xs font-semibold backdrop-blur-sm">
+                          {similar.similarityScore.toFixed(0)}%
+                        </div>
+                        {/* Hover Overlay */}
+                        <div className="absolute inset-0 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                          <div className="flex h-full items-center justify-center p-2 text-center text-xs text-white">
+                            {similar.title || similar.filename}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             {/* Details Section */}
