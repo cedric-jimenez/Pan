@@ -86,14 +86,6 @@ export default function IndividualList({
     }
   }
 
-  if (loading) {
-    return <div className="text-center py-8">Loading individuals...</div>
-  }
-
-  if (error) {
-    return <div className="text-center py-8 text-destructive">{error}</div>
-  }
-
   return (
     <div className="space-y-4">
       <div className="flex gap-4">
@@ -109,7 +101,11 @@ export default function IndividualList({
         )}
       </div>
 
-      {individuals.length === 0 ? (
+      {loading ? (
+        <div className="text-center py-8">Loading individuals...</div>
+      ) : error ? (
+        <div className="text-center py-8 text-destructive">{error}</div>
+      ) : individuals.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
           No individuals found. Create your first individual to get started.
         </div>
