@@ -8,11 +8,13 @@ import { fetchWithCsrf } from "@/lib/fetch-with-csrf"
 interface IndividualListProps {
   onSelectIndividual?: (individual: IndividualWithCount) => void
   onCreateIndividual?: () => void
+  onEditIndividual?: (individual: IndividualWithCount) => void
 }
 
 export default function IndividualList({
   onSelectIndividual,
   onCreateIndividual,
+  onEditIndividual,
 }: IndividualListProps) {
   const [individuals, setIndividuals] = useState<IndividualWithCount[]>([])
   const [loading, setLoading] = useState(true)
@@ -116,6 +118,17 @@ export default function IndividualList({
                 >
                   View
                 </Button>
+                {onEditIndividual && (
+                  <Button
+                    variant="primary"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onEditIndividual(individual)
+                    }}
+                  >
+                    Edit
+                  </Button>
+                )}
                 <Button
                   variant="destructive"
                   onClick={(e) => {

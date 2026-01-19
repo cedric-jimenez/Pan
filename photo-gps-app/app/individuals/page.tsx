@@ -4,17 +4,31 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { Dialog } from "@headlessui/react"
+import Navbar from "@/components/Navbar"
 import IndividualList from "@/components/IndividualList"
 import IndividualModal from "@/components/IndividualModal"
-import { IndividualWithCount, IndividualWithPhotos } from "@/types/individual"
+import { IndividualWithCount, IndividualWithPhotos, Individual } from "@/types/individual"
 
 export default function IndividualsPage() {
   const router = useRouter()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingIndividual, setEditingIndividual] = useState<Individual | null>(null)
   const [selectedIndividual, setSelectedIndividual] = useState<IndividualWithPhotos | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
 
   const handleCreateIndividual = () => {
+    setEditingIndividual(null)
+    setIsModalOpen(true)
+  }
+
+  const handleEditIndividual = (individual: IndividualWithCount) => {
+    setEditingIndividual({
+      id: individual.id,
+      name: individual.name,
+      userId: "",
+      createdAt: individual.createdAt,
+      updatedAt: individual.updatedAt,
+    })
     setIsModalOpen(true)
   }
 
@@ -33,11 +47,18 @@ export default function IndividualsPage() {
 
   const handleModalSuccess = () => {
     setRefreshKey((prev) => prev + 1)
+    setEditingIndividual(null)
+  }
+
+  const handleModalClose = () => {
+    setIsModalOpen(false)
+    setEditingIndividual(null)
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-4 py-8">
+      <Navbar />
+      <main className="container mx-auto px-4 py-8 pt-24">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Individuals</h1>
           <p className="text-muted-foreground">
@@ -49,12 +70,14 @@ export default function IndividualsPage() {
           key={refreshKey}
           onSelectIndividual={handleSelectIndividual}
           onCreateIndividual={handleCreateIndividual}
+          onEditIndividual={handleEditIndividual}
         />
 
         <IndividualModal
           isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          onClose={handleModalClose}
           onSuccess={handleModalSuccess}
+          individual={editingIndividual || undefined}
         />
 
         <Dialog
