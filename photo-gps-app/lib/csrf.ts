@@ -60,7 +60,7 @@ function isExcludedPath(pathname: string): boolean {
  * - Validates token for POST/PUT/PATCH/DELETE requests
  */
 export async function csrfMiddleware(request: NextRequest): Promise<NextResponse | null> {
-  const { pathname, origin } = request.nextUrl
+  const { pathname } = request.nextUrl
 
   // Skip CSRF for excluded paths
   if (isExcludedPath(pathname)) {

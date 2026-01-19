@@ -20,6 +20,7 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   photos        Photo[]
+  individuals   Individual[]
   sessions      Session[]
   accounts      Account[]
 }
@@ -59,9 +60,24 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+model Individual {
+  id          String   @id @default(cuid())
+  name        String
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photos      Photo[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
 model Photo {
   id          String    @id @default(cuid())
   userId      String
+  individualId String?
   filename    String
   originalName String
   fileSize    Int
@@ -99,9 +115,11 @@ model Photo {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  individual  Individual? @relation(fields: [individualId], references: [id], onDelete: SetNull)
 
   @@index([userId])
+  @@index([individualId])
   @@index([takenAt])
   @@index([latitude, longitude])
 }

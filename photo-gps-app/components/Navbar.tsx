@@ -67,6 +67,18 @@ export default function Navbar() {
               </Link>
 
               <Link
+                href="/individuals"
+                className={clsx(
+                  "rounded-md px-4 py-2 text-sm font-medium transition-colors",
+                  pathname === "/individuals"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                )}
+              >
+                Individuals
+              </Link>
+
+              <Link
                 href="/map"
                 className={clsx(
                   "flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors",

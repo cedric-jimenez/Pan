@@ -106,6 +106,14 @@ export async function GET(request: Request) {
       orderBy,
       skip,
       take: limit,
+      include: {
+        individual: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     })
 
     // Calculate if there are more pages

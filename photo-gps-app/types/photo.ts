@@ -2,6 +2,7 @@
 export interface Photo {
   id: string
   userId: string
+  individualId: string | null
   filename: string
   originalName: string
   fileSize: number
@@ -29,6 +30,12 @@ export interface Photo {
   isCropped: boolean
   cropConfidence: number | null
   salamanderDetected: boolean
+
+  // Individual relationship
+  individual?: {
+    id: string
+    name: string
+  } | null
 
   createdAt: Date | string
   updatedAt: Date | string

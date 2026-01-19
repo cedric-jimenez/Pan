@@ -40,20 +40,51 @@ export const bulkDeleteSchema = z.object({
     .max(100, "Cannot delete more than 100 photos at once"),
 })
 
-// Query parameters schemas
-export const photoQuerySchema = z.object({
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
-  sortBy: z.enum(["date", "title", "size", "camera"]).optional().default("date"),
-  sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
-  search: z.string().max(200).optional(),
+// Individual schemas
+export const individualCreateSchema = z.object({
+  name: z.string().min(1, "Name is required").max(100, "Name is too long").trim(),
+})
+
+export const individualUpdateSchema = z.object({
+  name: z.string().min(1, "Name is required").max(100, "Name is too long").trim().optional(),
+})
+
+export const individualQuerySchema = z.object({
+  search: z.string().max(200).nullable().optional(),
   page: z
     .string()
+    .nullable()
     .optional()
     .transform((val) => (val ? parseInt(val, 10) : 1))
     .pipe(z.number().int().positive()),
   limit: z
     .string()
+    .nullable()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 20))
+    .pipe(z.number().int().positive().max(100)),
+})
+
+export const assignPhotoSchema = z.object({
+  photoId: z.string().min(1, "Photo ID is required"),
+})
+
+// Query parameters schemas
+export const photoQuerySchema = z.object({
+  startDate: z.string().datetime().nullable().optional(),
+  endDate: z.string().datetime().nullable().optional(),
+  sortBy: z.enum(["date", "title", "size", "camera"]).nullable().optional().default("date"),
+  sortOrder: z.enum(["asc", "desc"]).nullable().optional().default("desc"),
+  search: z.string().max(200).nullable().optional(),
+  page: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 1))
+    .pipe(z.number().int().positive()),
+  limit: z
+    .string()
+    .nullable()
     .optional()
     .transform((val) => (val ? parseInt(val, 10) : 20))
     .pipe(z.number().int().positive().max(100)),

@@ -76,6 +76,14 @@ describe("GET /api/photos", () => {
     })
     expect(prisma.photo.findMany).toHaveBeenCalledWith({
       where: { userId: "user-123" },
+      include: {
+        individual: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
       orderBy: [{ takenAt: "desc" }, { createdAt: "desc" }],
       skip: 0,
       take: 20,
@@ -111,6 +119,14 @@ describe("GET /api/photos", () => {
           lte: new Date("2024-01-31"),
         },
       },
+      include: {
+        individual: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
       orderBy: [{ takenAt: "desc" }, { createdAt: "desc" }],
       skip: 0,
       take: 20,
@@ -141,6 +157,14 @@ describe("GET /api/photos", () => {
         userId: "user-123",
         takenAt: {
           gte: new Date("2024-01-01"),
+        },
+      },
+      include: {
+        individual: {
+          select: {
+            id: true,
+            name: true,
+          },
         },
       },
       orderBy: [{ takenAt: "desc" }, { createdAt: "desc" }],
@@ -186,6 +210,14 @@ describe("GET /api/photos", () => {
     // Assert
     expect(prisma.photo.findMany).toHaveBeenCalledWith({
       where: { userId: "user-123" },
+      include: {
+        individual: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
       orderBy: [{ title: "asc" }, { originalName: "asc" }],
       skip: 0,
       take: 20,
@@ -213,6 +245,14 @@ describe("GET /api/photos", () => {
     // Assert
     expect(prisma.photo.findMany).toHaveBeenCalledWith({
       where: { userId: "user-123" },
+      include: {
+        individual: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
       orderBy: { fileSize: "desc" },
       skip: 0,
       take: 20,
@@ -240,6 +280,14 @@ describe("GET /api/photos", () => {
     // Assert
     expect(prisma.photo.findMany).toHaveBeenCalledWith({
       where: { userId: "user-123" },
+      include: {
+        individual: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
       orderBy: [{ cameraModel: "asc" }, { cameraMake: "asc" }],
       skip: 0,
       take: 20,
@@ -276,6 +324,14 @@ describe("GET /api/photos", () => {
           { cameraModel: { contains: "Paris", mode: "insensitive" } },
         ],
       },
+      include: {
+        individual: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
       orderBy: [{ takenAt: "desc" }, { createdAt: "desc" }],
       skip: 0,
       take: 20,
@@ -311,6 +367,14 @@ describe("GET /api/photos", () => {
           { cameraMake: { contains: "canon", mode: "insensitive" } },
           { cameraModel: { contains: "canon", mode: "insensitive" } },
         ],
+      },
+      include: {
+        individual: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
       orderBy: [{ takenAt: "desc" }, { createdAt: "desc" }],
       skip: 0,
@@ -350,6 +414,14 @@ describe("GET /api/photos", () => {
           { cameraModel: { contains: "sunset", mode: "insensitive" } },
         ],
       },
+      include: {
+        individual: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
       orderBy: [{ title: "asc" }, { originalName: "asc" }],
       skip: 0,
       take: 20,
@@ -377,6 +449,14 @@ describe("GET /api/photos", () => {
     // Assert - should not include OR clause for empty/whitespace search
     expect(prisma.photo.findMany).toHaveBeenCalledWith({
       where: { userId: "user-123" },
+      include: {
+        individual: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
       orderBy: [{ takenAt: "desc" }, { createdAt: "desc" }],
       skip: 0,
       take: 20,
@@ -419,6 +499,14 @@ describe("GET /api/photos", () => {
           { cameraModel: { contains: "vacation", mode: "insensitive" } },
         ],
       },
+      include: {
+        individual: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
       orderBy: [{ takenAt: "desc" }, { createdAt: "desc" }],
       skip: 0,
       take: 20,
@@ -450,6 +538,14 @@ describe("GET /api/photos", () => {
     })
     expect(prisma.photo.findMany).toHaveBeenCalledWith({
       where: { userId: "user-123" },
+      include: {
+        individual: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
       orderBy: [{ takenAt: "desc" }, { createdAt: "desc" }],
       skip: 0,
       take: 20,
@@ -484,6 +580,14 @@ describe("GET /api/photos", () => {
     // Assert - should skip 20 (page 1)
     expect(prisma.photo.findMany).toHaveBeenCalledWith({
       where: { userId: "user-123" },
+      include: {
+        individual: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
       orderBy: [{ takenAt: "desc" }, { createdAt: "desc" }],
       skip: 20,
       take: 20,
@@ -514,6 +618,14 @@ describe("GET /api/photos", () => {
     // Assert - should skip 20 (2 pages * 10 per page)
     expect(prisma.photo.findMany).toHaveBeenCalledWith({
       where: { userId: "user-123" },
+      include: {
+        individual: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
       orderBy: [{ takenAt: "desc" }, { createdAt: "desc" }],
       skip: 20,
       take: 10,
@@ -608,6 +720,14 @@ describe("GET /api/photos/[id]", () => {
       where: {
         id: "photo-123",
         userId: "user-123",
+      },
+      include: {
+        individual: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     })
   })
