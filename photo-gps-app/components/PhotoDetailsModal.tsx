@@ -225,17 +225,6 @@ export default function PhotoDetailsModal({
                   <h3 className="text-sm font-semibold">Images similaires</h3>
                   <div className="grid grid-cols-2 gap-2">
                     {similarPhotos.map((similar) => {
-                      // Determine confidence badge color
-                      const confidenceColors = {
-                        high: "bg-green-500/90",
-                        medium: "bg-yellow-500/90",
-                        low: "bg-orange-500/90",
-                        unknown: "bg-gray-500/90",
-                      };
-                      const confidenceColor =
-                        confidenceColors[similar.confidence as keyof typeof confidenceColors] ||
-                        confidenceColors.unknown;
-
                       return (
                         <div
                           key={similar.id}
@@ -248,12 +237,6 @@ export default function PhotoDetailsModal({
                             className="object-cover"
                             sizes="150px"
                           />
-                          {/* Similarity Score Badge */}
-                          <div
-                            className={`${confidenceColor} text-white absolute top-1 right-1 rounded-md px-2 py-0.5 text-xs font-semibold backdrop-blur-sm`}
-                          >
-                            {similar.similarityScore.toFixed(0)}%
-                          </div>
                           {/* Confidence Badge */}
                           {similar.confidence && similar.confidence !== "unknown" && (
                             <div className="bg-black/70 text-white absolute top-1 left-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium backdrop-blur-sm">
