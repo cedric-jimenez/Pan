@@ -56,11 +56,11 @@ export default function IndividualsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background min-h-screen">
       <Navbar />
       <main className="container mx-auto px-4 py-8 pt-24">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Individuals</h1>
+          <h1 className="mb-2 text-4xl font-bold">Individuals</h1>
           <p className="text-muted-foreground">
             Manage individuals and organize your photos by assigning them to specific individuals.
           </p>
@@ -88,9 +88,9 @@ export default function IndividualsPage() {
           <div className="fixed inset-0 bg-black/70" aria-hidden="true" />
 
           <div className="fixed inset-0 flex items-center justify-center p-4">
-            <Dialog.Panel className="bg-card mx-auto w-full max-w-4xl rounded-xl shadow-xl max-h-[90vh] overflow-y-auto">
+            <Dialog.Panel className="bg-card mx-auto max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-xl shadow-xl">
               <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
+                <div className="mb-4 flex items-start justify-between">
                   <div>
                     <Dialog.Title className="text-3xl font-bold">
                       {selectedIndividual?.name}
@@ -116,11 +116,11 @@ export default function IndividualsPage() {
                 </div>
 
                 {selectedIndividual && selectedIndividual.photos.length > 0 ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-6">
+                  <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
                     {selectedIndividual.photos.map((photo) => (
                       <div
                         key={photo.id}
-                        className="aspect-square relative rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                        className="relative aspect-square cursor-pointer overflow-hidden rounded-lg transition-opacity hover:opacity-80"
                         onClick={() => router.push(`/gallery?photo=${photo.id}`)}
                       >
                         <Image
@@ -131,7 +131,7 @@ export default function IndividualsPage() {
                           sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                         />
                         {photo.title && (
-                          <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-2 text-sm">
+                          <div className="absolute right-0 bottom-0 left-0 bg-black/50 p-2 text-sm text-white">
                             {photo.title}
                           </div>
                         )}
@@ -139,7 +139,7 @@ export default function IndividualsPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-12 text-muted-foreground">
+                  <div className="text-muted-foreground py-12 text-center">
                     No photos assigned to this individual yet.
                   </div>
                 )}

@@ -94,19 +94,17 @@ export default function IndividualList({
           placeholder="Search individuals..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+          className="focus:ring-primary flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:outline-none"
         />
-        {onCreateIndividual && (
-          <Button onClick={onCreateIndividual}>Create Individual</Button>
-        )}
+        {onCreateIndividual && <Button onClick={onCreateIndividual}>Create Individual</Button>}
       </div>
 
       {loading ? (
-        <div className="text-center py-8">Loading individuals...</div>
+        <div className="py-8 text-center">Loading individuals...</div>
       ) : error ? (
-        <div className="text-center py-8 text-destructive">{error}</div>
+        <div className="text-destructive py-8 text-center">{error}</div>
       ) : individuals.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">
+        <div className="text-muted-foreground py-8 text-center">
           No individuals found. Create your first individual to get started.
         </div>
       ) : (
@@ -114,12 +112,12 @@ export default function IndividualList({
           {individuals.map((individual) => (
             <div
               key={individual.id}
-              className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-primary transition-colors cursor-pointer"
+              className="hover:border-primary flex cursor-pointer items-center justify-between rounded-lg border border-gray-200 p-4 transition-colors"
               onClick={() => onSelectIndividual?.(individual)}
             >
               <div>
-                <h3 className="font-semibold text-lg">{individual.name}</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="text-lg font-semibold">{individual.name}</h3>
+                <p className="text-muted-foreground text-sm">
                   {individual.photoCount} photo{individual.photoCount !== 1 ? "s" : ""}
                 </p>
               </div>

@@ -72,7 +72,7 @@ export default function IndividualModal({
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <Dialog.Panel className="bg-card mx-auto w-full max-w-md rounded-xl shadow-xl">
           <div className="p-6">
-            <div className="flex items-start justify-between mb-4">
+            <div className="mb-4 flex items-start justify-between">
               <Dialog.Title className="text-2xl font-bold">
                 {individual ? "Edit Individual" : "Create Individual"}
               </Dialog.Title>
@@ -94,7 +94,7 @@ export default function IndividualModal({
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium mb-2">
+                <label htmlFor="name" className="mb-2 block text-sm font-medium">
                   Name
                 </label>
                 <Input
@@ -109,12 +109,12 @@ export default function IndividualModal({
               </div>
 
               {error && (
-                <div className="text-destructive text-sm bg-destructive/10 p-3 rounded">
+                <div className="text-destructive bg-destructive/10 rounded p-3 text-sm">
                   {error}
                 </div>
               )}
 
-              <div className="flex gap-2 justify-end border-t border-border pt-4">
+              <div className="border-border flex justify-end gap-2 border-t pt-4">
                 <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>
                   Cancel
                 </Button>

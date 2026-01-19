@@ -42,20 +42,11 @@ export const bulkDeleteSchema = z.object({
 
 // Individual schemas
 export const individualCreateSchema = z.object({
-  name: z
-    .string()
-    .min(1, "Name is required")
-    .max(100, "Name is too long")
-    .trim(),
+  name: z.string().min(1, "Name is required").max(100, "Name is too long").trim(),
 })
 
 export const individualUpdateSchema = z.object({
-  name: z
-    .string()
-    .min(1, "Name is required")
-    .max(100, "Name is too long")
-    .trim()
-    .optional(),
+  name: z.string().min(1, "Name is required").max(100, "Name is too long").trim().optional(),
 })
 
 export const individualQuerySchema = z.object({

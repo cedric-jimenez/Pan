@@ -121,7 +121,7 @@ export default function PhotoGrid({ photos, onPhotoClick, gridSize = "medium" }:
 
               {/* Individual name */}
               {photo.individual && (
-                <div className="flex items-center gap-1.5 text-sm text-primary font-medium">
+                <div className="text-primary flex items-center gap-1.5 text-sm font-medium">
                   <svg
                     className="h-4 w-4 shrink-0"
                     fill="none"

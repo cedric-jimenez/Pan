@@ -218,7 +218,7 @@ export default function PhotoDetailsModal({
                 {photo.individual && (
                   <div>
                     <p className="text-muted-foreground text-sm">Individual</p>
-                    <div className="flex items-center gap-2 font-medium text-primary">
+                    <div className="text-primary flex items-center gap-2 font-medium">
                       <svg
                         className="h-5 w-5"
                         fill="none"

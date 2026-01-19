@@ -182,12 +182,10 @@ export default function AssignIndividualModal({
       <div className="fixed inset-0 bg-black/70" aria-hidden="true" />
 
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="bg-card mx-auto w-full max-w-md rounded-xl shadow-xl max-h-[90vh] overflow-y-auto">
+        <Dialog.Panel className="bg-card mx-auto max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl shadow-xl">
           <div className="p-6">
-            <div className="flex items-start justify-between mb-4">
-              <Dialog.Title className="text-2xl font-bold">
-                Assign to Individual
-              </Dialog.Title>
+            <div className="mb-4 flex items-start justify-between">
+              <Dialog.Title className="text-2xl font-bold">Assign to Individual</Dialog.Title>
               <button
                 onClick={onClose}
                 className="text-muted-foreground hover:text-foreground"
@@ -204,102 +202,102 @@ export default function AssignIndividualModal({
               </button>
             </div>
 
-        {showCreateForm ? (
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="newName" className="block text-sm font-medium mb-2">
-                New Individual Name
-              </label>
-              <Input
-                id="newName"
-                type="text"
-                value={newIndividualName}
-                onChange={(e) => setNewIndividualName(e.target.value)}
-                placeholder="Enter name"
-                disabled={loading}
-              />
-            </div>
+            {showCreateForm ? (
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="newName" className="mb-2 block text-sm font-medium">
+                    New Individual Name
+                  </label>
+                  <Input
+                    id="newName"
+                    type="text"
+                    value={newIndividualName}
+                    onChange={(e) => setNewIndividualName(e.target.value)}
+                    placeholder="Enter name"
+                    disabled={loading}
+                  />
+                </div>
 
-            {error && (
-              <div className="text-destructive text-sm bg-destructive/10 p-3 rounded">
-                {error}
+                {error && (
+                  <div className="text-destructive bg-destructive/10 rounded p-3 text-sm">
+                    {error}
+                  </div>
+                )}
+
+                <div className="border-border flex justify-end gap-2 border-t pt-4">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setShowCreateForm(false)}
+                    disabled={loading}
+                  >
+                    Back
+                  </Button>
+                  <Button onClick={handleCreateAndAssign} isLoading={loading}>
+                    Create & Assign
+                  </Button>
+                </div>
               </div>
-            )}
+            ) : (
+              <div className="space-y-4">
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowCreateForm(true)}
+                  className="w-full"
+                >
+                  + Create New Individual
+                </Button>
 
-            <div className="flex gap-2 justify-end border-t border-border pt-4">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setShowCreateForm(false)}
-                disabled={loading}
-              >
-                Back
-              </Button>
-              <Button onClick={handleCreateAndAssign} isLoading={loading}>
-                Create & Assign
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <Button
-              variant="secondary"
-              onClick={() => setShowCreateForm(true)}
-              className="w-full"
-            >
-              + Create New Individual
-            </Button>
+                {individuals.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Select existing individual:</p>
+                    <div className="max-h-60 space-y-2 overflow-y-auto">
+                      {individuals.map((individual) => (
+                        <label
+                          key={individual.id}
+                          className="hover:border-primary flex cursor-pointer items-center rounded-lg border border-gray-200 p-3 transition-colors"
+                        >
+                          <input
+                            type="radio"
+                            name="individual"
+                            value={individual.id}
+                            checked={selectedId === individual.id}
+                            onChange={(e) => setSelectedId(e.target.value)}
+                            className="mr-3"
+                          />
+                          <div className="flex-1">
+                            <div className="font-medium">{individual.name}</div>
+                            <div className="text-muted-foreground text-sm">
+                              {individual.photoCount} photo{individual.photoCount !== 1 ? "s" : ""}
+                            </div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-            {individuals.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Select existing individual:</p>
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {individuals.map((individual) => (
-                    <label
-                      key={individual.id}
-                      className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-primary transition-colors"
-                    >
-                      <input
-                        type="radio"
-                        name="individual"
-                        value={individual.id}
-                        checked={selectedId === individual.id}
-                        onChange={(e) => setSelectedId(e.target.value)}
-                        className="mr-3"
-                      />
-                      <div className="flex-1">
-                        <div className="font-medium">{individual.name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {individual.photoCount} photo{individual.photoCount !== 1 ? "s" : ""}
-                        </div>
-                      </div>
-                    </label>
-                  ))}
+                {error && (
+                  <div className="text-destructive bg-destructive/10 rounded p-3 text-sm">
+                    {error}
+                  </div>
+                )}
+
+                <div className="border-border flex justify-end gap-2 border-t pt-4">
+                  {currentIndividualId && (
+                    <Button variant="destructive" onClick={handleUnassign} isLoading={loading}>
+                      Unassign
+                    </Button>
+                  )}
+                  <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleAssign} isLoading={loading}>
+                    Assign
+                  </Button>
                 </div>
               </div>
             )}
-
-            {error && (
-              <div className="text-destructive text-sm bg-destructive/10 p-3 rounded">
-                {error}
-              </div>
-            )}
-
-            <div className="flex gap-2 justify-end border-t border-border pt-4">
-              {currentIndividualId && (
-                <Button variant="destructive" onClick={handleUnassign} isLoading={loading}>
-                  Unassign
-                </Button>
-              )}
-              <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>
-                Cancel
-              </Button>
-              <Button onClick={handleAssign} isLoading={loading}>
-                Assign
-              </Button>
-            </div>
-          </div>
-        )}
           </div>
         </Dialog.Panel>
       </div>
