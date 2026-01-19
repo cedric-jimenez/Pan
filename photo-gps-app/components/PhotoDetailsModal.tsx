@@ -24,6 +24,10 @@ interface SimilarPhoto {
   longitude: number | null
   distance: number
   similarityScore: number
+  confidence?: string
+  isSame?: boolean
+  matches?: number
+  inliers?: number
 }
 
 interface PhotoDetailsModalProps {
@@ -220,30 +224,64 @@ export default function PhotoDetailsModal({
                 <div className="space-y-2">
                   <h3 className="text-sm font-semibold">Images similaires</h3>
                   <div className="grid grid-cols-2 gap-2">
-                    {similarPhotos.map((similar) => (
-                      <div
-                        key={similar.id}
-                        className="bg-muted group relative aspect-square overflow-hidden rounded-lg transition-transform hover:scale-105"
-                      >
-                        <Image
-                          src={similar.segmentedUrl || similar.croppedUrl || similar.url}
-                          alt={similar.title || similar.filename}
-                          fill
-                          className="object-cover"
-                          sizes="150px"
-                        />
-                        {/* Similarity Score Badge */}
-                        <div className="bg-primary/90 text-primary-foreground absolute top-1 right-1 rounded-md px-2 py-0.5 text-xs font-semibold backdrop-blur-sm">
-                          {similar.similarityScore.toFixed(0)}%
-                        </div>
-                        {/* Hover Overlay */}
-                        <div className="absolute inset-0 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                          <div className="flex h-full items-center justify-center p-2 text-center text-xs text-white">
-                            {similar.title || similar.filename}
+                    {similarPhotos.map((similar) => {
+                      // Determine confidence badge color
+                      const confidenceColors = {
+                        high: "bg-green-500/90",
+                        medium: "bg-yellow-500/90",
+                        low: "bg-orange-500/90",
+                        unknown: "bg-gray-500/90",
+                      };
+                      const confidenceColor =
+                        confidenceColors[similar.confidence as keyof typeof confidenceColors] ||
+                        confidenceColors.unknown;
+
+                      return (
+                        <div
+                          key={similar.id}
+                          className="bg-muted group relative aspect-square overflow-hidden rounded-lg transition-transform hover:scale-105"
+                        >
+                          <Image
+                            src={similar.segmentedUrl || similar.croppedUrl || similar.url}
+                            alt={similar.title || similar.filename}
+                            fill
+                            className="object-cover"
+                            sizes="150px"
+                          />
+                          {/* Similarity Score Badge */}
+                          <div
+                            className={`${confidenceColor} text-white absolute top-1 right-1 rounded-md px-2 py-0.5 text-xs font-semibold backdrop-blur-sm`}
+                          >
+                            {similar.similarityScore.toFixed(0)}%
+                          </div>
+                          {/* Confidence Badge */}
+                          {similar.confidence && similar.confidence !== "unknown" && (
+                            <div className="bg-black/70 text-white absolute top-1 left-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium backdrop-blur-sm">
+                              {similar.confidence.toUpperCase()}
+                            </div>
+                          )}
+                          {/* Same Individual Indicator */}
+                          {similar.isSame && (
+                            <div className="bg-blue-500/90 text-white absolute bottom-1 left-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium backdrop-blur-sm">
+                              ✓ MÊME INDIVIDU
+                            </div>
+                          )}
+                          {/* Hover Overlay */}
+                          <div className="absolute inset-0 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                            <div className="flex h-full flex-col items-center justify-center gap-1 p-2 text-center text-xs text-white">
+                              <div className="font-medium">
+                                {similar.title || similar.filename}
+                              </div>
+                              {similar.matches !== undefined && similar.inliers !== undefined && (
+                                <div className="text-[10px] opacity-80">
+                                  {similar.matches} matches, {similar.inliers} inliers
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ) : null}
