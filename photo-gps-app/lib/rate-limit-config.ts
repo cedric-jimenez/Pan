@@ -17,15 +17,15 @@ export interface RateLimitConfig {
 export const RATE_LIMITS = {
   // Public routes (by IP)
   register: {
-    max: 5,
+    max: RATE_LIMIT_MAX.REGISTER,
     window: 15 * 60 * 1000, // 15 minutes
-    message: "Trop de tentatives d'inscription. Réessayez dans 15 minutes.",
+    message: `Trop de tentatives d'inscription. Réessayez dans 15 minutes.`,
   },
 
   login: {
-    max: 10,
+    max: RATE_LIMIT_MAX.LOGIN,
     window: 15 * 60 * 1000, // 15 minutes
-    message: "Trop de tentatives de connexion. Réessayez dans 15 minutes.",
+    message: `Trop de tentatives de connexion. Réessayez dans 15 minutes.`,
   },
 
   // Authenticated routes (by user ID)
@@ -36,30 +36,30 @@ export const RATE_LIMITS = {
   },
 
   uploadDaily: {
-    max: 200,
+    max: RATE_LIMIT_MAX.UPLOAD_DAILY,
     window: 24 * 60 * 60 * 1000, // 24 hours
-    message: "Limite d'upload journalière atteinte (200 photos par jour).",
+    message: `Limite d'upload journalière atteinte (${RATE_LIMIT_MAX.UPLOAD_DAILY} photos par jour).`,
   },
 
   modify: {
-    max: 100,
+    max: RATE_LIMIT_MAX.MODIFY,
     window: 60 * 60 * 1000, // 1 hour
-    message: "Trop de modifications. Réessayez dans une heure.",
+    message: `Trop de modifications (${RATE_LIMIT_MAX.MODIFY}/heure). Réessayez plus tard.`,
   },
 
   bulkDelete: {
-    max: 20,
+    max: RATE_LIMIT_MAX.BULK_DELETE,
     window: 60 * 60 * 1000, // 1 hour
-    message: "Trop de suppressions en masse. Réessayez dans une heure.",
+    message: `Trop de suppressions en masse (${RATE_LIMIT_MAX.BULK_DELETE}/heure). Réessayez plus tard.`,
   },
 
   // Global limit (by IP)
   global: {
-    max: 200,
+    max: RATE_LIMIT_MAX.GLOBAL,
     window: 60 * 1000, // 1 minute
-    message: "Trop de requêtes. Veuillez ralentir.",
+    message: `Trop de requêtes (${RATE_LIMIT_MAX.GLOBAL}/minute). Veuillez ralentir.`,
   },
-} as const
+}
 
 /**
  * Get rate limit config for a specific route
