@@ -9,6 +9,7 @@ import Navbar from "@/components/Navbar"
 import PhotoUpload from "@/components/PhotoUpload"
 import PhotoGrid, { GridSize } from "@/components/PhotoGrid"
 import PhotoDetailsModal from "@/components/PhotoDetailsModal"
+import DayDownloadModal from "@/components/DayDownloadModal"
 import StatsCards from "@/components/StatsCards"
 import { Photo } from "@/types/photo"
 import { PAGINATION } from "@/lib/constants"
@@ -38,6 +39,7 @@ export default function GalleryPage() {
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
   const [dayToDelete, setDayToDelete] = useState<{ date: Date; photos: Photo[] } | null>(null)
   const [isDeletingDay, setIsDeletingDay] = useState(false)
+  const [dayToDownload, setDayToDownload] = useState<{ date: Date; photos: Photo[] } | null>(null)
   const isInitialLoad = useRef(true)
 
   // Load preferences from localStorage
@@ -502,21 +504,38 @@ export default function GalleryPage() {
                       {photos.length} photo{photos.length > 1 ? "s" : ""}
                     </p>
                   </div>
-                  <button
-                    onClick={() => setDayToDelete({ date, photos })}
-                    className="text-destructive hover:bg-destructive/10 flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors"
-                    title="Supprimer cette journée"
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      />
-                    </svg>
-                    Supprimer la journée
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setDayToDownload({ date, photos })}
+                      className="text-primary hover:bg-primary/10 flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors"
+                      title="Télécharger cette journée"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                        />
+                      </svg>
+                      Télécharger
+                    </button>
+                    <button
+                      onClick={() => setDayToDelete({ date, photos })}
+                      className="text-destructive hover:bg-destructive/10 flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors"
+                      title="Supprimer cette journée"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                      Supprimer
+                    </button>
+                  </div>
                 </div>
 
                 {/* Photos grid */}
@@ -613,6 +632,16 @@ export default function GalleryPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Day Download Modal */}
+      {dayToDownload && (
+        <DayDownloadModal
+          date={dayToDownload.date}
+          photos={dayToDownload.photos}
+          isOpen={true}
+          onClose={() => setDayToDownload(null)}
+        />
       )}
     </div>
   )
