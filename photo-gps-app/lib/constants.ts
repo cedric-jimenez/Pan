@@ -33,6 +33,9 @@ export const PAGINATION = {
   INFINITE_SCROLL_THRESHOLD: 0.8,
 } as const
 
+// Map photo limits
+export const MAP_PHOTO_LIMITS = [20, 50, 100, 200, 500] as const
+
 // YOLO/Crop detection
 export const CROP_DETECTION = {
   MIN_CONFIDENCE: 0.5,
