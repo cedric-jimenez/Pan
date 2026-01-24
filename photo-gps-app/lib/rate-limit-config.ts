@@ -3,6 +3,8 @@
  * Defines limits for different routes and operations
  */
 
+import { RATE_LIMIT_MAX } from "./constants"
+
 export interface RateLimitConfig {
   max: number // Maximum requests allowed
   window: number // Time window in milliseconds
@@ -28,9 +30,9 @@ export const RATE_LIMITS = {
 
   // Authenticated routes (by user ID)
   upload: {
-    max: 60,
+    max: RATE_LIMIT_MAX.UPLOAD_HOURLY,
     window: 60 * 60 * 1000, // 1 hour
-    message: "Limite d'upload atteinte (60 photos par heure). Réessayez plus tard.",
+    message: `Limite d'upload atteinte (${RATE_LIMIT_MAX.UPLOAD_HOURLY} photos par heure). Réessayez plus tard.`,
   },
 
   uploadDaily: {

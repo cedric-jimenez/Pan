@@ -72,9 +72,9 @@ export const RATE_LIMIT_WINDOWS = {
 export const RATE_LIMIT_MAX = {
   REGISTER: 5, // per 15 minutes
   LOGIN: 10, // per 15 minutes
-  UPLOAD_HOURLY: 60, // per hour
+  UPLOAD_HOURLY: parseInt(process.env.UPLOAD_HOURLY_LIMIT || "60", 10), // per hour (configurable via env)
   UPLOAD_DAILY: 200, // per day
   MODIFY: 100, // per hour
   BULK_DELETE: 20, // per hour
   GLOBAL: 200, // per minute
-} as const
+}
