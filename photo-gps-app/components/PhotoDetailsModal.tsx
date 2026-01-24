@@ -228,13 +228,14 @@ export default function PhotoDetailsModal({
                       return (
                         <div
                           key={similar.id}
-                          className="bg-muted group relative aspect-square overflow-hidden rounded-lg transition-transform hover:scale-105"
+                          className="bg-muted group relative flex min-h-[120px] items-center justify-center overflow-hidden rounded-lg transition-transform hover:scale-105"
                         >
                           <Image
                             src={similar.segmentedUrl || similar.croppedUrl || similar.url}
                             alt={similar.title || similar.filename}
-                            fill
-                            className="object-cover"
+                            width={200}
+                            height={200}
+                            className="h-auto max-h-[180px] w-auto max-w-full object-contain"
                             sizes="150px"
                           />
                           {/* Confidence Badge */}
