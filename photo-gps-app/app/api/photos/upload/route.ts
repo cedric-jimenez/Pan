@@ -376,12 +376,13 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Check if this file already exists for this user (by name and size)
+    // Check if this file already exists for this user (by name only)
+    // Note: We only check by name because Vercel Blob identifies files by pathname,
+    // so even if the file size differs, Blob will reject the upload
     const existingPhoto = await prisma.photo.findFirst({
       where: {
         userId: user.id,
         originalName: file.name,
-        fileSize: buffer.length,
       },
     })
 
