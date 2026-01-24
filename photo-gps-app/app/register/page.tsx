@@ -153,7 +153,7 @@ export default function RegisterPage() {
 
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             className="w-full"
             onClick={handleGoogleSignIn}
             isLoading={isLoading}

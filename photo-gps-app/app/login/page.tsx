@@ -98,7 +98,7 @@ export default function LoginPage() {
 
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             className="w-full"
             onClick={handleGoogleSignIn}
             isLoading={isLoading}
