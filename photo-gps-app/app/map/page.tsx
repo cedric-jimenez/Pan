@@ -10,6 +10,7 @@ import Input from "@/components/Input"
 import Button from "@/components/Button"
 import { Photo } from "@/types/photo"
 import { logger } from "@/lib/logger"
+import { MAP_PHOTO_LIMITS, PAGINATION } from "@/lib/constants"
 
 // Dynamically import MapView to avoid SSR issues with Leaflet
 const MapView = dynamic(() => import("@/components/MapView"), {
@@ -30,6 +31,7 @@ export default function MapPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
+  const [photoLimit, setPhotoLimit] = useState<number>(PAGINATION.PHOTOS_PER_PAGE)
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -37,12 +39,13 @@ export default function MapPage() {
     }
   }, [status, router])
 
-  const fetchPhotos = async (start?: string, end?: string) => {
+  const fetchPhotos = async (start?: string, end?: string, limit?: number) => {
     setIsLoading(true)
     try {
       const params = new URLSearchParams()
       if (start) params.append("startDate", start)
       if (end) params.append("endDate", end)
+      params.append("limit", (limit ?? photoLimit).toString())
 
       const response = await fetch(`/api/photos?${params.toString()}`)
       if (response.ok) {
@@ -64,13 +67,18 @@ export default function MapPage() {
   }, [session])
 
   const handleFilter = () => {
-    fetchPhotos(startDate, endDate)
+    fetchPhotos(startDate, endDate, photoLimit)
   }
 
   const handleClearFilter = () => {
     setStartDate("")
     setEndDate("")
-    fetchPhotos()
+    fetchPhotos(undefined, undefined, photoLimit)
+  }
+
+  const handleLimitChange = (newLimit: number) => {
+    setPhotoLimit(newLimit)
+    fetchPhotos(startDate || undefined, endDate || undefined, newLimit)
   }
 
   const handlePhotoUpdate = async (updatedPhoto: Photo) => {
@@ -135,6 +143,22 @@ export default function MapPage() {
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
               />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-foreground mb-1 text-sm font-medium">
+                Photos to display
+              </label>
+              <select
+                value={photoLimit}
+                onChange={(e) => handleLimitChange(Number(e.target.value))}
+                className="bg-input border-border text-foreground focus:ring-primary h-10 rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+              >
+                {MAP_PHOTO_LIMITS.map((limit) => (
+                  <option key={limit} value={limit}>
+                    {limit} photos
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="flex gap-2">
               <Button onClick={handleFilter} variant="primary">
