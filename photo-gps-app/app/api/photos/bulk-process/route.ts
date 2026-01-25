@@ -348,6 +348,7 @@ export async function POST(request: Request) {
 
         // Upload new cropped image if salamander was detected
         let croppedBlobUrl: string | null = null
+        let croppedFileSize: number | null = null
         let isCropped = false
         let cropConfidence: number | null = null
         const salamanderDetected = cropResult.detected
@@ -358,6 +359,8 @@ export async function POST(request: Request) {
             maxHeight: IMAGE_CONFIG.CROPPED_IMAGE_SIZE,
             quality: IMAGE_CONFIG.COMPRESSION_QUALITY,
           })
+
+          croppedFileSize = compressedCroppedBuffer.length
 
           const croppedUint8 = new Uint8Array(compressedCroppedBuffer)
           const croppedBlob = new Blob([croppedUint8], { type: "image/jpeg" })
@@ -375,6 +378,7 @@ export async function POST(request: Request) {
 
         // Process segmentation and embedding if salamander was detected
         let segmentedBlobUrl: string | null = null
+        let segmentedFileSize: number | null = null
         let segmentedEmbedding: number[] | null = null
         let embeddingDim: number | null = null
         let embedModel: string | null = null
@@ -392,6 +396,8 @@ export async function POST(request: Request) {
               maxHeight: segmentedImageSize,
               quality: IMAGE_CONFIG.COMPRESSION_QUALITY,
             })
+
+            segmentedFileSize = compressedSegmentedBuffer.length
 
             // Generate embedding
             try {
@@ -421,7 +427,9 @@ export async function POST(request: Request) {
           where: { id: photo.id },
           data: {
             croppedUrl: croppedBlobUrl,
+            croppedFileSize,
             segmentedUrl: segmentedBlobUrl,
+            segmentedFileSize,
             isCropped,
             cropConfidence,
             salamanderDetected,

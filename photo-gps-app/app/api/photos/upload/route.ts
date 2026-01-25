@@ -427,6 +427,7 @@ export async function POST(request: Request) {
 
     // Upload cropped image if salamander was detected
     let croppedBlobUrl: string | null = null
+    let croppedFileSize: number | null = null
     let isCropped = false
     let cropConfidence: number | null = null
     const salamanderDetected = cropResult.detected
@@ -440,6 +441,8 @@ export async function POST(request: Request) {
         quality: IMAGE_CONFIG.COMPRESSION_QUALITY,
         keepMetadata: false,
       })
+
+      croppedFileSize = compressedCroppedBuffer.length
 
       const croppedUint8 = new Uint8Array(compressedCroppedBuffer)
       const croppedBlob = new Blob([croppedUint8], { type: "image/jpeg" })
@@ -480,6 +483,7 @@ export async function POST(request: Request) {
 
     // Upload segmented image if salamander was detected
     let segmentedBlobUrl: string | null = null
+    let segmentedFileSize: number | null = null
 
     // Embedding placeholders (filled if embedding generated)
     let segmentedEmbedding: number[] | null = null
@@ -506,6 +510,8 @@ export async function POST(request: Request) {
           quality: IMAGE_CONFIG.COMPRESSION_QUALITY,
           keepMetadata: false,
         })
+
+        segmentedFileSize = compressedSegmentedBuffer.length
 
         // Generate embedding for the segmented version
         try {
@@ -599,6 +605,8 @@ export async function POST(request: Request) {
         filename,
         originalName: file.name,
         fileSize: compressedBuffer.length, // Full image size
+        croppedFileSize, // Cropped image size (null if not cropped)
+        segmentedFileSize, // Segmented image size (null if not segmented)
         mimeType: "image/jpeg", // Always JPEG after compression
         url: blobUrl,
         croppedUrl: croppedBlobUrl,

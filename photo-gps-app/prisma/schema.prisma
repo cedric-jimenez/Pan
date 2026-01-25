@@ -80,7 +80,9 @@ model Photo {
   individualId String?
   filename    String
   originalName String
-  fileSize    Int
+  fileSize    Int       // Full image size in bytes
+  croppedFileSize Int?  // Cropped image size in bytes (if salamander detected)
+  segmentedFileSize Int? // Segmented image size in bytes (if salamander detected)
   mimeType    String
   url         String    // Full image (resized to 800px)
   croppedUrl  String?   // YOLO cropped version (if salamander detected)
