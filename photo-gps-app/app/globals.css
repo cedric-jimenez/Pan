@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+/* Dark theme (default) */
 :root {
   /* Figma dark theme colors - matching App.tsx Tailwind classes */
   --background: #111827;
@@ -19,6 +20,27 @@
   --ring: #059669;
   --muted: #374151;
   --muted-foreground: #9ca3af;
+}
+
+/* Light theme */
+[data-theme="light"] {
+  --background: #ffffff;
+  --foreground: #111827;
+  --card: #f9fafb;
+  --card-foreground: #111827;
+  --primary: #059669;
+  --primary-foreground: #ffffff;
+  --secondary: #e5e7eb;
+  --secondary-foreground: #111827;
+  --accent: #0d9488;
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #d1d5db;
+  --input: #e5e7eb;
+  --ring: #059669;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
 }
 
 @theme inline {

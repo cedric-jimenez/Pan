@@ -4,6 +4,7 @@ import "./globals.css"
 import SessionProvider from "@/components/SessionProvider"
 import ErrorBoundary from "@/components/ErrorBoundary"
 import CsrfTokenInitializer from "@/components/CsrfTokenInitializer"
+import ThemeProvider from "@/components/ThemeProvider"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,10 +31,12 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ErrorBoundary>
-          <SessionProvider>
-            <CsrfTokenInitializer />
-            {children}
-          </SessionProvider>
+          <ThemeProvider>
+            <SessionProvider>
+              <CsrfTokenInitializer />
+              {children}
+            </SessionProvider>
+          </ThemeProvider>
         </ErrorBoundary>
       </body>
     </html>
