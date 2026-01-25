@@ -30,6 +30,16 @@ interface SimilarPhoto {
   inliers?: number
 }
 
+interface ProcessResult {
+  photoId: string
+  success: boolean
+  error?: string
+  salamanderDetected?: boolean
+  hasCropped?: boolean
+  hasSegmented?: boolean
+  hasEmbedding?: boolean
+}
+
 interface PhotoDetailsModalProps {
   photo: Photo
   onClose: () => void
@@ -53,6 +63,8 @@ export default function PhotoDetailsModal({
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [similarPhotos, setSimilarPhotos] = useState<SimilarPhoto[]>([])
   const [isLoadingSimilar, setIsLoadingSimilar] = useState(false)
+  const [isReprocessing, setIsReprocessing] = useState(false)
+  const [reprocessResult, setReprocessResult] = useState<ProcessResult | null>(null)
 
   // Determine default view: cropped if available, otherwise original
   const defaultView: ImageView = photo.croppedUrl ? "cropped" : "original"
@@ -147,6 +159,62 @@ export default function PhotoDetailsModal({
       logger.error("Failed to delete photo:", error)
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  const handleReprocess = async () => {
+    setIsReprocessing(true)
+    setReprocessResult(null)
+
+    try {
+      const response = await fetchWithCsrf("/api/photos/bulk-process", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ photoIds: [photo.id] }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const result = data.results?.[0] as ProcessResult | undefined
+        if (result) {
+          setReprocessResult(result)
+          // Fetch the updated photo to refresh the UI
+          const photoResponse = await fetch(`/api/photos/${photo.id}`)
+          if (photoResponse.ok) {
+            const updatedData = await photoResponse.json()
+            onUpdate(updatedData.photo)
+            // Reload similar photos after reprocessing
+            setIsLoadingSimilar(true)
+            try {
+              const similarResponse = await fetch(`/api/photos/${photo.id}/similar`)
+              if (similarResponse.ok) {
+                const similarData = await similarResponse.json()
+                setSimilarPhotos(similarData)
+              }
+            } finally {
+              setIsLoadingSimilar(false)
+            }
+          }
+        }
+      } else {
+        const data = await response.json()
+        setReprocessResult({
+          photoId: photo.id,
+          success: false,
+          error: data.error || "Erreur inconnue",
+        })
+      }
+    } catch (error) {
+      logger.error("Failed to reprocess photo:", error)
+      setReprocessResult({
+        photoId: photo.id,
+        success: false,
+        error: "Erreur lors du retraitement",
+      })
+    } finally {
+      setIsReprocessing(false)
     }
   }
 
@@ -387,8 +455,51 @@ export default function PhotoDetailsModal({
                 )}
               </div>
 
+              {/* Reprocess Result */}
+              {reprocessResult && (
+                <div className={`rounded-lg p-4 ${reprocessResult.success ? "bg-muted" : "bg-destructive/10"}`}>
+                  {reprocessResult.success ? (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-green-600 dark:text-green-400">
+                        Retraitement terminé
+                      </p>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className={reprocessResult.salamanderDetected ? "text-green-600" : "text-muted-foreground"}>
+                            {reprocessResult.salamanderDetected ? "✓" : "✗"}
+                          </span>
+                          <span>Salamandre détectée</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={reprocessResult.hasCropped ? "text-green-600" : "text-muted-foreground"}>
+                            {reprocessResult.hasCropped ? "✓" : "✗"}
+                          </span>
+                          <span>Image recadrée</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={reprocessResult.hasSegmented ? "text-green-600" : "text-muted-foreground"}>
+                            {reprocessResult.hasSegmented ? "✓" : "✗"}
+                          </span>
+                          <span>Image segmentée</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={reprocessResult.hasEmbedding ? "text-green-600" : "text-muted-foreground"}>
+                            {reprocessResult.hasEmbedding ? "✓" : "✗"}
+                          </span>
+                          <span>Vecteur généré</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-destructive text-sm">
+                      Erreur : {reprocessResult.error}
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Actions */}
-              <div className="border-border flex gap-2 border-t pt-4">
+              <div className="border-border flex flex-wrap gap-2 border-t pt-4">
                 {isEditing ? (
                   <>
                     <Button onClick={handleSave} variant="primary" isLoading={isSaving}>
@@ -412,6 +523,24 @@ export default function PhotoDetailsModal({
                     </Button>
                     <Button onClick={() => setShowAssignModal(true)} variant="secondary">
                       Assign Individual
+                    </Button>
+                    <Button
+                      onClick={handleReprocess}
+                      variant="secondary"
+                      isLoading={isReprocessing}
+                      disabled={isReprocessing}
+                    >
+                      <span className="flex items-center gap-2">
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                          />
+                        </svg>
+                        Retraiter
+                      </span>
                     </Button>
                     <Button onClick={handleDelete} variant="destructive" isLoading={isDeleting}>
                       Delete
