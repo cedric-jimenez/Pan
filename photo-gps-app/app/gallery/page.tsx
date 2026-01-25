@@ -41,6 +41,7 @@ export default function GalleryPage() {
   const [isDeletingDay, setIsDeletingDay] = useState(false)
   const [dayToDownload, setDayToDownload] = useState<{ date: Date; photos: Photo[] } | null>(null)
   const isInitialLoad = useRef(true)
+  const [collapsedDays, setCollapsedDays] = useState<Set<string>>(new Set())
 
   // Load preferences from localStorage
   useEffect(() => {
@@ -61,6 +62,18 @@ export default function GalleryPage() {
     if (savedSortOrder && (savedSortOrder === "asc" || savedSortOrder === "desc")) {
       setSortOrder(savedSortOrder as SortOrder)
     }
+
+    const savedCollapsedDays = localStorage.getItem("galleryCollapsedDays")
+    if (savedCollapsedDays) {
+      try {
+        const parsed = JSON.parse(savedCollapsedDays)
+        if (Array.isArray(parsed)) {
+          setCollapsedDays(new Set(parsed))
+        }
+      } catch {
+        // Ignore invalid JSON
+      }
+    }
   }, [])
 
   // Save grid size to localStorage
@@ -80,6 +93,20 @@ export default function GalleryPage() {
     const newOrder = sortOrder === "asc" ? "desc" : "asc"
     setSortOrder(newOrder)
     localStorage.setItem("gallerySortOrder", newOrder)
+  }
+
+  // Toggle day collapse
+  const toggleDayCollapse = (dayKey: string) => {
+    setCollapsedDays((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(dayKey)) {
+        newSet.delete(dayKey)
+      } else {
+        newSet.add(dayKey)
+      }
+      localStorage.setItem("galleryCollapsedDays", JSON.stringify(Array.from(newSet)))
+      return newSet
+    })
   }
 
   // Debounce search input
@@ -492,60 +519,85 @@ export default function GalleryPage() {
           </div>
         ) : (
           <div className="space-y-8">
-            {photosByDay.map(({ date, photos }) => (
-              <div key={format(date, "yyyy-MM-dd")}>
-                {/* Date header */}
-                <div className="border-border mb-4 flex items-center justify-between border-b pb-2">
-                  <div>
-                    <h2 className="text-xl font-semibold">
-                      {format(date, "EEEE d MMMM yyyy", { locale: fr })}
-                    </h2>
-                    <p className="text-muted-foreground text-sm">
-                      {photos.length} photo{photos.length > 1 ? "s" : ""}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
+            {photosByDay.map(({ date, photos }) => {
+              const dayKey = format(date, "yyyy-MM-dd")
+              const isCollapsed = collapsedDays.has(dayKey)
+              return (
+                <div key={dayKey}>
+                  {/* Date header */}
+                  <div className="border-border mb-4 flex items-center justify-between border-b pb-2">
                     <button
-                      onClick={() => setDayToDownload({ date, photos })}
-                      className="text-primary hover:bg-primary/10 flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors"
-                      title="Télécharger cette journée"
+                      onClick={() => toggleDayCollapse(dayKey)}
+                      className="hover:bg-muted/50 flex items-center gap-3 rounded-lg py-1 pr-3 text-left transition-colors"
+                      title={isCollapsed ? "Déplier" : "Replier"}
                     >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg
+                        className={`h-5 w-5 transition-transform duration-200 ${isCollapsed ? "" : "rotate-90"}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                          d="M9 5l7 7-7 7"
                         />
                       </svg>
-                      Télécharger
+                      <div>
+                        <h2 className="text-xl font-semibold">
+                          {format(date, "EEEE d MMMM yyyy", { locale: fr })}
+                        </h2>
+                        <p className="text-muted-foreground text-sm">
+                          {photos.length} photo{photos.length > 1 ? "s" : ""}
+                        </p>
+                      </div>
                     </button>
-                    <button
-                      onClick={() => setDayToDelete({ date, photos })}
-                      className="text-destructive hover:bg-destructive/10 flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors"
-                      title="Supprimer cette journée"
-                    >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                      Supprimer
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setDayToDownload({ date, photos })}
+                        className="text-primary hover:bg-primary/10 flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors"
+                        title="Télécharger cette journée"
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                          />
+                        </svg>
+                        Télécharger
+                      </button>
+                      <button
+                        onClick={() => setDayToDelete({ date, photos })}
+                        className="text-destructive hover:bg-destructive/10 flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors"
+                        title="Supprimer cette journée"
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                        Supprimer
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                {/* Photos grid */}
-                <PhotoGrid
-                  photos={photos}
-                  onPhotoClick={(photo: Photo) => setSelectedPhoto(photo)}
-                  gridSize={gridSize}
-                />
-              </div>
-            ))}
+                  {/* Photos grid */}
+                  {!isCollapsed && (
+                    <PhotoGrid
+                      photos={photos}
+                      onPhotoClick={(photo: Photo) => setSelectedPhoto(photo)}
+                      gridSize={gridSize}
+                    />
+                  )}
+                </div>
+              )
+            })}
 
             {/* Infinite scroll trigger and loading indicator */}
             {hasMore && (
