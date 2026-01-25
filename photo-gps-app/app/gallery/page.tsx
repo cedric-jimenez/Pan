@@ -45,6 +45,7 @@ export default function GalleryPage() {
   const isInitialLoad = useRef(true)
   const [collapsedDays, setCollapsedDays] = useState<Set<string>>(new Set())
   const [photoCountsByDay, setPhotoCountsByDay] = useState<Map<string, number>>(new Map())
+  const [openMobileMenu, setOpenMobileMenu] = useState<string | null>(null)
 
   // Load preferences from localStorage
   useEffect(() => {
@@ -587,9 +588,10 @@ export default function GalleryPage() {
                       </div>
                     </button>
                     <div className="flex items-center gap-2">
+                      {/* Desktop buttons - hidden on mobile */}
                       <button
                         onClick={() => setDayToProcess({ date, photos })}
-                        className="text-muted-foreground hover:text-foreground hover:bg-muted flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors"
+                        className="text-muted-foreground hover:text-foreground hover:bg-muted hidden items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors md:flex"
                         title="Retraiter cette journée"
                       >
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -604,7 +606,7 @@ export default function GalleryPage() {
                       </button>
                       <button
                         onClick={() => setDayToDownload({ date, photos })}
-                        className="text-primary hover:bg-primary/10 flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors"
+                        className="text-primary hover:bg-primary/10 hidden items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors md:flex"
                         title="Télécharger cette journée"
                       >
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -619,7 +621,7 @@ export default function GalleryPage() {
                       </button>
                       <button
                         onClick={() => setDayToDelete({ date, photos })}
-                        className="text-destructive hover:bg-destructive/10 flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors"
+                        className="text-destructive hover:bg-destructive/10 hidden items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors md:flex"
                         title="Supprimer cette journée"
                       >
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -632,6 +634,87 @@ export default function GalleryPage() {
                         </svg>
                         Supprimer
                       </button>
+
+                      {/* Mobile dropdown menu - hidden on desktop */}
+                      <div className="relative md:hidden">
+                        <button
+                          onClick={() => setOpenMobileMenu(openMobileMenu === dayKey ? null : dayKey)}
+                          className="text-muted-foreground hover:text-foreground hover:bg-muted flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm transition-colors"
+                          title="Actions"
+                        >
+                          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                            />
+                          </svg>
+                        </button>
+                        {openMobileMenu === dayKey && (
+                          <>
+                            {/* Backdrop to close menu */}
+                            <div
+                              className="fixed inset-0 z-10"
+                              onClick={() => setOpenMobileMenu(null)}
+                            />
+                            {/* Dropdown menu */}
+                            <div className="bg-card border-border absolute right-0 z-20 mt-1 w-48 rounded-lg border py-1 shadow-lg">
+                              <button
+                                onClick={() => {
+                                  setDayToProcess({ date, photos })
+                                  setOpenMobileMenu(null)
+                                }}
+                                className="text-muted-foreground hover:text-foreground hover:bg-muted flex w-full items-center gap-3 px-4 py-2 text-left text-sm transition-colors"
+                              >
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                  />
+                                </svg>
+                                Retraiter
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setDayToDownload({ date, photos })
+                                  setOpenMobileMenu(null)
+                                }}
+                                className="text-primary hover:bg-primary/10 flex w-full items-center gap-3 px-4 py-2 text-left text-sm transition-colors"
+                              >
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                  />
+                                </svg>
+                                Télécharger
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setDayToDelete({ date, photos })
+                                  setOpenMobileMenu(null)
+                                }}
+                                className="text-destructive hover:bg-destructive/10 flex w-full items-center gap-3 px-4 py-2 text-left text-sm transition-colors"
+                              >
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                  />
+                                </svg>
+                                Supprimer
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
 
