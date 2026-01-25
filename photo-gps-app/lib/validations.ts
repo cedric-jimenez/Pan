@@ -40,6 +40,14 @@ export const bulkDeleteSchema = z.object({
     .max(100, "Cannot delete more than 100 photos at once"),
 })
 
+// Bulk process schema
+export const bulkProcessSchema = z.object({
+  photoIds: z
+    .array(z.string().min(1, "Photo ID cannot be empty"))
+    .min(1, "At least one photo ID is required")
+    .max(50, "Cannot process more than 50 photos at once"),
+})
+
 // Individual schemas
 export const individualCreateSchema = z.object({
   name: z.string().min(1, "Name is required").max(100, "Name is too long").trim(),
