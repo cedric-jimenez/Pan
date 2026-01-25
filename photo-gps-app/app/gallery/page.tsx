@@ -10,6 +10,7 @@ import PhotoUpload from "@/components/PhotoUpload"
 import PhotoGrid, { GridSize } from "@/components/PhotoGrid"
 import PhotoDetailsModal from "@/components/PhotoDetailsModal"
 import DayDownloadModal from "@/components/DayDownloadModal"
+import BulkProcessModal from "@/components/BulkProcessModal"
 import StatsCards from "@/components/StatsCards"
 import { Photo } from "@/types/photo"
 import { PAGINATION } from "@/lib/constants"
@@ -40,6 +41,7 @@ export default function GalleryPage() {
   const [dayToDelete, setDayToDelete] = useState<{ date: Date; photos: Photo[] } | null>(null)
   const [isDeletingDay, setIsDeletingDay] = useState(false)
   const [dayToDownload, setDayToDownload] = useState<{ date: Date; photos: Photo[] } | null>(null)
+  const [dayToProcess, setDayToProcess] = useState<{ date: Date; photos: Photo[] } | null>(null)
   const isInitialLoad = useRef(true)
   const [collapsedDays, setCollapsedDays] = useState<Set<string>>(new Set())
 
@@ -555,6 +557,21 @@ export default function GalleryPage() {
                     </button>
                     <div className="flex items-center gap-2">
                       <button
+                        onClick={() => setDayToProcess({ date, photos })}
+                        className="text-muted-foreground hover:text-foreground hover:bg-muted flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors"
+                        title="Retraiter cette journée"
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                          />
+                        </svg>
+                        Retraiter
+                      </button>
+                      <button
                         onClick={() => setDayToDownload({ date, photos })}
                         className="text-primary hover:bg-primary/10 flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors"
                         title="Télécharger cette journée"
@@ -693,6 +710,22 @@ export default function GalleryPage() {
           photos={dayToDownload.photos}
           isOpen={true}
           onClose={() => setDayToDownload(null)}
+        />
+      )}
+
+      {/* Bulk Process Modal */}
+      {dayToProcess && (
+        <BulkProcessModal
+          date={dayToProcess.date}
+          photos={dayToProcess.photos}
+          isOpen={true}
+          onClose={() => setDayToProcess(null)}
+          onProcessComplete={() => {
+            setDayToProcess(null)
+            // Refresh photos
+            setPage(1)
+            fetchPhotos(1, false, true)
+          }}
         />
       )}
     </div>
