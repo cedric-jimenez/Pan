@@ -17,7 +17,7 @@ export default function Button({
   return (
     <button
       className={clsx(
-        "rounded-lg px-4 py-2 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+        "flex items-center justify-center rounded-lg px-4 py-2 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
         {
           "bg-primary text-primary-foreground hover:bg-primary/90": variant === "primary",
           "bg-secondary text-secondary-foreground hover:bg-secondary/80": variant === "secondary",
