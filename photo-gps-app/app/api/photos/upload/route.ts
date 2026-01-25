@@ -495,9 +495,14 @@ export async function POST(request: Request) {
 
       if (segmentResult.detected && segmentResult.segmentedBuffer) {
         // Re-compress segmented image
+        // Use SEGMENTED_IMAGE_SIZE env var for embedding quality control (default: CROPPED_IMAGE_SIZE)
+        const segmentedImageSize = parseInt(
+          process.env.SEGMENTED_IMAGE_SIZE || String(IMAGE_CONFIG.CROPPED_IMAGE_SIZE),
+          10
+        )
         const compressedSegmentedBuffer = await compressImage(segmentResult.segmentedBuffer, {
-          maxWidth: IMAGE_CONFIG.CROPPED_IMAGE_SIZE,
-          maxHeight: IMAGE_CONFIG.CROPPED_IMAGE_SIZE,
+          maxWidth: segmentedImageSize,
+          maxHeight: segmentedImageSize,
           quality: IMAGE_CONFIG.COMPRESSION_QUALITY,
           keepMetadata: false,
         })
