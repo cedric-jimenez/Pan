@@ -42,6 +42,7 @@ export default function GalleryPage() {
   const [dayToDownload, setDayToDownload] = useState<{ date: Date; photos: Photo[] } | null>(null)
   const isInitialLoad = useRef(true)
   const [collapsedDays, setCollapsedDays] = useState<Set<string>>(new Set())
+  const [photoCountsByDay, setPhotoCountsByDay] = useState<Map<string, number>>(new Map())
 
   // Load preferences from localStorage
   useEffect(() => {
@@ -108,6 +109,28 @@ export default function GalleryPage() {
       return newSet
     })
   }
+
+  // Fetch photo counts by day from database
+  const fetchPhotoCountsByDay = useCallback(async () => {
+    try {
+      const params = new URLSearchParams()
+      if (searchQuery.trim()) {
+        params.set("search", searchQuery.trim())
+      }
+
+      const response = await fetch(`/api/photos/counts-by-day?${params}`)
+      if (response.ok) {
+        const data = await response.json()
+        const countsMap = new Map<string, number>()
+        data.counts.forEach((item: { date: string; count: number }) => {
+          countsMap.set(item.date, item.count)
+        })
+        setPhotoCountsByDay(countsMap)
+      }
+    } catch (error) {
+      logger.error("Failed to fetch photo counts:", error)
+    }
+  }, [searchQuery])
 
   // Debounce search input
   useEffect(() => {
@@ -181,8 +204,9 @@ export default function GalleryPage() {
       setPage(1)
       // Don't clear photos to avoid flash of empty state
       fetchPhotos(1, false)
+      fetchPhotoCountsByDay()
     }
-  }, [session, sortBy, sortOrder, searchQuery, fetchPhotos])
+  }, [session, sortBy, sortOrder, searchQuery, fetchPhotos, fetchPhotoCountsByDay])
 
   // Load more photos when page changes (for infinite scroll)
   useEffect(() => {
@@ -226,6 +250,8 @@ export default function GalleryPage() {
 
   const handlePhotoDelete = async (photoId: string) => {
     setPhotos((prev) => prev.filter((p) => p.id !== photoId))
+    setTotal((prev) => prev - 1)
+    fetchPhotoCountsByDay()
     setSelectedPhoto(null)
   }
 
@@ -245,6 +271,8 @@ export default function GalleryPage() {
         // Remove deleted photos from state
         setPhotos((prev) => prev.filter((p) => !photoIds.includes(p.id)))
         setTotal((prev) => prev - photoIds.length)
+        // Update counts by day
+        fetchPhotoCountsByDay()
         setDayToDelete(null)
       } else {
         const data = await response.json()
@@ -312,6 +340,7 @@ export default function GalleryPage() {
             onUploadComplete={() => {
               setPage(1)
               fetchPhotos(1, false, true)
+              fetchPhotoCountsByDay()
             }}
           />
         </div>
@@ -522,6 +551,8 @@ export default function GalleryPage() {
             {photosByDay.map(({ date, photos }) => {
               const dayKey = format(date, "yyyy-MM-dd")
               const isCollapsed = collapsedDays.has(dayKey)
+              // Use count from database, fallback to loaded photos count
+              const totalPhotosForDay = photoCountsByDay.get(dayKey) ?? photos.length
               return (
                 <div key={dayKey}>
                   {/* Date header */}
@@ -549,7 +580,7 @@ export default function GalleryPage() {
                           {format(date, "EEEE d MMMM yyyy", { locale: fr })}
                         </h2>
                         <p className="text-muted-foreground text-sm">
-                          {photos.length} photo{photos.length > 1 ? "s" : ""}
+                          {totalPhotosForDay} photo{totalPhotosForDay > 1 ? "s" : ""}
                         </p>
                       </div>
                     </button>
