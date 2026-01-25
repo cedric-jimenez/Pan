@@ -6,6 +6,8 @@ export interface Photo {
   filename: string
   originalName: string
   fileSize: number
+  croppedFileSize: number | null
+  segmentedFileSize: number | null
   mimeType: string
   url: string // Full image (resized to 800px)
   croppedUrl: string | null // YOLO cropped version (if salamander detected)
