@@ -38,7 +38,7 @@ export default function GalleryPage() {
   const [total, setTotal] = useState(0)
   const observerRef = useRef<IntersectionObserver | null>(null)
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
-  const [dayToDelete, setDayToDelete] = useState<{ date: Date; photos: Photo[] } | null>(null)
+  const [dayToDelete, setDayToDelete] = useState<{ date: Date; photos: Photo[]; totalCount: number } | null>(null)
   const [isDeletingDay, setIsDeletingDay] = useState(false)
   const [dayToDownload, setDayToDownload] = useState<{ date: Date; photos: Photo[] } | null>(null)
   const [dayToProcess, setDayToProcess] = useState<{ date: Date; photos: Photo[] } | null>(null)
@@ -301,10 +301,9 @@ export default function GalleryPage() {
       }
 
       if (deletedCount > 0) {
-        // Remove deleted photos from state
-        const deletedSet = new Set(photoIds)
-        setPhotos((prev) => prev.filter((p) => !deletedSet.has(p.id)))
-        setTotal((prev) => prev - deletedCount)
+        // Reload gallery from page 1 to reflect changes
+        setPage(1)
+        fetchPhotos(1, false, true)
         fetchPhotoCountsByDay()
         setDayToDelete(null)
       }
@@ -647,7 +646,7 @@ export default function GalleryPage() {
                         Télécharger
                       </button>
                       <button
-                        onClick={() => setDayToDelete({ date, photos })}
+                        onClick={() => setDayToDelete({ date, photos, totalCount: totalPhotosForDay })}
                         className="text-destructive hover:bg-destructive/10 hidden items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors md:flex"
                         title="Supprimer cette journée"
                       >
@@ -723,7 +722,7 @@ export default function GalleryPage() {
                               </button>
                               <button
                                 onClick={() => {
-                                  setDayToDelete({ date, photos })
+                                  setDayToDelete({ date, photos, totalCount: totalPhotosForDay })
                                   setOpenMobileMenu(null)
                                 }}
                                 className="text-destructive hover:bg-destructive/10 flex w-full items-center gap-3 px-4 py-2 text-left text-sm transition-colors"
@@ -802,9 +801,9 @@ export default function GalleryPage() {
               <br />
               <br />
               <strong className="text-destructive">
-                {dayToDelete.photos.length} photo{dayToDelete.photos.length > 1 ? "s" : ""} ser
-                {dayToDelete.photos.length > 1 ? "ont" : "a"} définitivement supprimée
-                {dayToDelete.photos.length > 1 ? "s" : ""}.
+                {dayToDelete.totalCount} photo{dayToDelete.totalCount > 1 ? "s" : ""} ser
+                {dayToDelete.totalCount > 1 ? "ont" : "a"} définitivement supprimée
+                {dayToDelete.totalCount > 1 ? "s" : ""}.
               </strong>
             </p>
             <div className="flex justify-end gap-3">
