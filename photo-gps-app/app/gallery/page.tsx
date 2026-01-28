@@ -258,28 +258,55 @@ export default function GalleryPage() {
     setSelectedPhoto(null)
   }
 
-  const handleDayDelete = async (dayPhotos: Photo[]) => {
+  const handleDayDelete = async (dayDate: Date) => {
     setIsDeletingDay(true)
     try {
-      const photoIds = dayPhotos.map((p) => p.id)
-      const response = await fetchWithCsrf("/api/photos/bulk-delete", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ photoIds }),
-      })
+      // Fetch ALL photo IDs for this day from the API (not just loaded ones)
+      const dayKey = format(dayDate, "yyyy-MM-dd")
+      const idsResponse = await fetch(`/api/photos/ids-by-day?date=${dayKey}`)
+      if (!idsResponse.ok) {
+        const data = await idsResponse.json()
+        alert(`Erreur lors de la récupération des photos : ${data.error || "Erreur inconnue"}`)
+        return
+      }
 
-      if (response.ok) {
+      const { photoIds } = await idsResponse.json()
+      if (photoIds.length === 0) {
+        setDayToDelete(null)
+        return
+      }
+
+      // Delete in batches of 100 (API limit)
+      const BATCH_SIZE = 100
+      let deletedCount = 0
+
+      for (let i = 0; i < photoIds.length; i += BATCH_SIZE) {
+        const batch = photoIds.slice(i, i + BATCH_SIZE)
+        const response = await fetchWithCsrf("/api/photos/bulk-delete", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ photoIds: batch }),
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          deletedCount += data.deletedCount
+        } else {
+          const data = await response.json()
+          alert(`Erreur lors de la suppression : ${data.error || "Erreur inconnue"}`)
+          break
+        }
+      }
+
+      if (deletedCount > 0) {
         // Remove deleted photos from state
-        setPhotos((prev) => prev.filter((p) => !photoIds.includes(p.id)))
-        setTotal((prev) => prev - photoIds.length)
-        // Update counts by day
+        const deletedSet = new Set(photoIds)
+        setPhotos((prev) => prev.filter((p) => !deletedSet.has(p.id)))
+        setTotal((prev) => prev - deletedCount)
         fetchPhotoCountsByDay()
         setDayToDelete(null)
-      } else {
-        const data = await response.json()
-        alert(`Erreur lors de la suppression : ${data.error || "Erreur inconnue"}`)
       }
     } catch (error) {
       logger.error("Failed to delete day:", error)
@@ -789,7 +816,7 @@ export default function GalleryPage() {
                 Annuler
               </button>
               <button
-                onClick={() => handleDayDelete(dayToDelete.photos)}
+                onClick={() => handleDayDelete(dayToDelete.date)}
                 disabled={isDeletingDay}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90 flex items-center gap-2 rounded-lg px-4 py-2 transition-colors disabled:opacity-50"
               >
