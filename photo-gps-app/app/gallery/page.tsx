@@ -38,7 +38,7 @@ export default function GalleryPage() {
   const [total, setTotal] = useState(0)
   const observerRef = useRef<IntersectionObserver | null>(null)
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
-  const [dayToDelete, setDayToDelete] = useState<{ date: Date; photos: Photo[] } | null>(null)
+  const [dayToDelete, setDayToDelete] = useState<{ date: Date; photos: Photo[]; totalCount: number } | null>(null)
   const [isDeletingDay, setIsDeletingDay] = useState(false)
   const [dayToDownload, setDayToDownload] = useState<{ date: Date; photos: Photo[] } | null>(null)
   const [dayToProcess, setDayToProcess] = useState<{ date: Date; photos: Photo[] } | null>(null)
@@ -258,28 +258,54 @@ export default function GalleryPage() {
     setSelectedPhoto(null)
   }
 
-  const handleDayDelete = async (dayPhotos: Photo[]) => {
+  const handleDayDelete = async (dayDate: Date) => {
     setIsDeletingDay(true)
     try {
-      const photoIds = dayPhotos.map((p) => p.id)
-      const response = await fetchWithCsrf("/api/photos/bulk-delete", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ photoIds }),
-      })
+      // Fetch ALL photo IDs for this day from the API (not just loaded ones)
+      const dayKey = format(dayDate, "yyyy-MM-dd")
+      const idsResponse = await fetch(`/api/photos/ids-by-day?date=${dayKey}`)
+      if (!idsResponse.ok) {
+        const data = await idsResponse.json()
+        alert(`Erreur lors de la récupération des photos : ${data.error || "Erreur inconnue"}`)
+        return
+      }
 
-      if (response.ok) {
-        // Remove deleted photos from state
-        setPhotos((prev) => prev.filter((p) => !photoIds.includes(p.id)))
-        setTotal((prev) => prev - photoIds.length)
-        // Update counts by day
+      const { photoIds } = await idsResponse.json()
+      if (photoIds.length === 0) {
+        setDayToDelete(null)
+        return
+      }
+
+      // Delete in batches of 100 (API limit)
+      const BATCH_SIZE = 100
+      let deletedCount = 0
+
+      for (let i = 0; i < photoIds.length; i += BATCH_SIZE) {
+        const batch = photoIds.slice(i, i + BATCH_SIZE)
+        const response = await fetchWithCsrf("/api/photos/bulk-delete", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ photoIds: batch }),
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          deletedCount += data.deletedCount
+        } else {
+          const data = await response.json()
+          alert(`Erreur lors de la suppression : ${data.error || "Erreur inconnue"}`)
+          break
+        }
+      }
+
+      if (deletedCount > 0) {
+        // Reload gallery from page 1 to reflect changes
+        setPage(1)
+        fetchPhotos(1, false, true)
         fetchPhotoCountsByDay()
         setDayToDelete(null)
-      } else {
-        const data = await response.json()
-        alert(`Erreur lors de la suppression : ${data.error || "Erreur inconnue"}`)
       }
     } catch (error) {
       logger.error("Failed to delete day:", error)
@@ -620,7 +646,7 @@ export default function GalleryPage() {
                         Télécharger
                       </button>
                       <button
-                        onClick={() => setDayToDelete({ date, photos })}
+                        onClick={() => setDayToDelete({ date, photos, totalCount: totalPhotosForDay })}
                         className="text-destructive hover:bg-destructive/10 hidden items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors md:flex"
                         title="Supprimer cette journée"
                       >
@@ -696,7 +722,7 @@ export default function GalleryPage() {
                               </button>
                               <button
                                 onClick={() => {
-                                  setDayToDelete({ date, photos })
+                                  setDayToDelete({ date, photos, totalCount: totalPhotosForDay })
                                   setOpenMobileMenu(null)
                                 }}
                                 className="text-destructive hover:bg-destructive/10 flex w-full items-center gap-3 px-4 py-2 text-left text-sm transition-colors"
@@ -775,9 +801,9 @@ export default function GalleryPage() {
               <br />
               <br />
               <strong className="text-destructive">
-                {dayToDelete.photos.length} photo{dayToDelete.photos.length > 1 ? "s" : ""} ser
-                {dayToDelete.photos.length > 1 ? "ont" : "a"} définitivement supprimée
-                {dayToDelete.photos.length > 1 ? "s" : ""}.
+                {dayToDelete.totalCount} photo{dayToDelete.totalCount > 1 ? "s" : ""} ser
+                {dayToDelete.totalCount > 1 ? "ont" : "a"} définitivement supprimée
+                {dayToDelete.totalCount > 1 ? "s" : ""}.
               </strong>
             </p>
             <div className="flex justify-end gap-3">
@@ -789,7 +815,7 @@ export default function GalleryPage() {
                 Annuler
               </button>
               <button
-                onClick={() => handleDayDelete(dayToDelete.photos)}
+                onClick={() => handleDayDelete(dayToDelete.date)}
                 disabled={isDeletingDay}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90 flex items-center gap-2 rounded-lg px-4 py-2 transition-colors disabled:opacity-50"
               >
