@@ -102,7 +102,7 @@ export default function DayDownloadModal({
             `Téléchargement ${downloadedCount + 1}/${totalImages}...`
           )
 
-          const response = await fetch(image.url)
+          const response = await fetch(`/api/photos/proxy?url=${encodeURIComponent(image.url)}`)
           if (response.ok) {
             const blob = await response.blob()
             zip.file(image.filename, blob)
