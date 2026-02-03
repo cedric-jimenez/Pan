@@ -224,7 +224,7 @@ export default function PhotoDetailsModal({
 
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <Dialog.Panel className="bg-card mx-auto max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl shadow-xl md:max-w-4xl">
-          <div className="grid gap-6 p-6 md:grid-cols-2">
+          <div className="grid min-w-0 gap-6 overflow-hidden p-6 md:grid-cols-2">
             {/* Image Section */}
             <div className="space-y-3">
               {/* View Tabs */}
@@ -340,7 +340,7 @@ export default function PhotoDetailsModal({
             </div>
 
             {/* Details Section */}
-            <div className="space-y-6">
+            <div className="min-w-0 space-y-6 overflow-hidden">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   {isEditing ? (
