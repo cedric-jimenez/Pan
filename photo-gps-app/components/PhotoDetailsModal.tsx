@@ -223,7 +223,7 @@ export default function PhotoDetailsModal({
       <div className="fixed inset-0 bg-black/70" aria-hidden="true" />
 
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="bg-card mx-auto max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-xl shadow-xl">
+        <Dialog.Panel className="bg-card mx-auto max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl shadow-xl md:max-w-4xl">
           <div className="grid gap-6 p-6 md:grid-cols-2">
             {/* Image Section */}
             <div className="space-y-3">
@@ -321,7 +321,7 @@ export default function PhotoDetailsModal({
                           {/* Hover Overlay */}
                           <div className="absolute inset-0 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
                             <div className="flex h-full flex-col items-center justify-center gap-1 p-2 text-center text-xs text-white">
-                              <div className="font-medium">
+                              <div className="w-full truncate font-medium" title={similar.title || similar.filename}>
                                 {similar.title || similar.filename}
                               </div>
                               {similar.matches !== undefined && similar.inliers !== undefined && (
@@ -341,8 +341,8 @@ export default function PhotoDetailsModal({
 
             {/* Details Section */}
             <div className="space-y-6">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
                   {isEditing ? (
                     <Input
                       value={title}
@@ -351,7 +351,7 @@ export default function PhotoDetailsModal({
                       className="mb-2"
                     />
                   ) : (
-                    <h2 className="text-2xl font-bold">{photo.title || photo.originalName}</h2>
+                    <h2 className="truncate text-2xl font-bold" title={photo.title || photo.originalName}>{photo.title || photo.originalName}</h2>
                   )}
                 </div>
 
