@@ -1,16 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog } from "@headlessui/react"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
 import Button from "./Button"
-import { Photo } from "@/types/photo"
 import { fetchWithCsrf } from "@/lib/fetch-with-csrf"
+
+const BULK_PROCESS_BATCH_SIZE = 50
 
 interface BulkProcessModalProps {
   date: Date
-  photos: Photo[]
   isOpen: boolean
   onClose: () => void
   onProcessComplete: () => void
@@ -28,48 +28,100 @@ interface ProcessResult {
 
 export default function BulkProcessModal({
   date,
-  photos,
   isOpen,
   onClose,
   onProcessComplete,
 }: BulkProcessModalProps) {
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isLoadingIds, setIsLoadingIds] = useState(false)
   const [processProgress, setProcessProgress] = useState<string>("")
   const [results, setResults] = useState<ProcessResult[] | null>(null)
+  const [allPhotoIds, setAllPhotoIds] = useState<string[]>([])
+  const [loadError, setLoadError] = useState<string | null>(null)
+
+  // Fetch all photo IDs for this day when the modal opens
+  useEffect(() => {
+    if (!isOpen) return
+
+    const fetchAllIds = async () => {
+      setIsLoadingIds(true)
+      setLoadError(null)
+      try {
+        const dayKey = format(date, "yyyy-MM-dd")
+        const response = await fetch(`/api/photos/ids-by-day?date=${dayKey}`)
+        if (response.ok) {
+          const data = await response.json()
+          setAllPhotoIds(data.photoIds)
+        } else {
+          const data = await response.json()
+          setLoadError(data.error || "Erreur lors de la récupération des photos")
+        }
+      } catch {
+        setLoadError("Erreur réseau lors de la récupération des photos")
+      } finally {
+        setIsLoadingIds(false)
+      }
+    }
+
+    fetchAllIds()
+  }, [isOpen, date])
 
   const handleProcess = async () => {
+    if (allPhotoIds.length === 0) return
+
     setIsProcessing(true)
     setProcessProgress("Lancement du traitement...")
     setResults(null)
 
     try {
-      const photoIds = photos.map((p) => p.id)
+      const allResults: ProcessResult[] = []
+      const totalBatches = Math.ceil(allPhotoIds.length / BULK_PROCESS_BATCH_SIZE)
 
-      setProcessProgress(`Traitement de ${photoIds.length} photo${photoIds.length > 1 ? "s" : ""}...`)
+      for (let i = 0; i < allPhotoIds.length; i += BULK_PROCESS_BATCH_SIZE) {
+        const batch = allPhotoIds.slice(i, i + BULK_PROCESS_BATCH_SIZE)
+        const batchNum = Math.floor(i / BULK_PROCESS_BATCH_SIZE) + 1
 
-      const response = await fetchWithCsrf("/api/photos/bulk-process", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ photoIds }),
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setResults(data.results)
         setProcessProgress(
-          `Terminé : ${data.processedCount} réussite${data.processedCount > 1 ? "s" : ""}, ${data.failedCount} échec${data.failedCount > 1 ? "s" : ""}`
+          totalBatches > 1
+            ? `Lot ${batchNum}/${totalBatches} — Traitement de ${batch.length} photo${batch.length > 1 ? "s" : ""}...`
+            : `Traitement de ${batch.length} photo${batch.length > 1 ? "s" : ""}...`
         )
 
-        // Notify parent to refresh photos after a short delay
-        setTimeout(() => {
-          onProcessComplete()
-        }, 1500)
-      } else {
-        const data = await response.json()
-        setProcessProgress(`Erreur : ${data.error || "Erreur inconnue"}`)
+        const response = await fetchWithCsrf("/api/photos/bulk-process", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ photoIds: batch }),
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          allResults.push(...data.results)
+        } else {
+          const data = await response.json()
+          // Add failure entries for this batch
+          batch.forEach((id) =>
+            allResults.push({
+              photoId: id,
+              success: false,
+              error: data.error || "Erreur inconnue",
+            })
+          )
+        }
       }
+
+      setResults(allResults)
+      const processedCount = allResults.filter((r) => r.success).length
+      const failedCount = allResults.filter((r) => !r.success).length
+      setProcessProgress(
+        `Terminé : ${processedCount} réussite${processedCount > 1 ? "s" : ""}, ${failedCount} échec${failedCount > 1 ? "s" : ""}`
+      )
+
+      // Notify parent to refresh photos after a short delay
+      setTimeout(() => {
+        onProcessComplete()
+      }, 1500)
     } catch (error) {
       console.error("Process error:", error)
       setProcessProgress("Erreur lors du traitement")
@@ -82,6 +134,8 @@ export default function BulkProcessModal({
     if (!isProcessing) {
       setResults(null)
       setProcessProgress("")
+      setAllPhotoIds([])
+      setLoadError(null)
       onClose()
     }
   }
@@ -115,22 +169,34 @@ export default function BulkProcessModal({
             <div className="bg-muted mb-6 rounded-lg p-4">
               <div className="flex items-center gap-3">
                 <div className="bg-primary/20 text-primary rounded-full p-2">
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
+                  {isLoadingIds ? (
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  ) : (
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                  )}
                 </div>
                 <div>
-                  <p className="font-medium">
-                    {photos.length} photo{photos.length > 1 ? "s" : ""} à retraiter
-                  </p>
-                  <p className="text-muted-foreground text-sm">
-                    Les images existantes seront remplacées
-                  </p>
+                  {loadError ? (
+                    <p className="text-destructive text-sm">{loadError}</p>
+                  ) : isLoadingIds ? (
+                    <p className="text-muted-foreground text-sm">Chargement des photos...</p>
+                  ) : (
+                    <>
+                      <p className="font-medium">
+                        {allPhotoIds.length} photo{allPhotoIds.length > 1 ? "s" : ""} à retraiter
+                      </p>
+                      <p className="text-muted-foreground text-sm">
+                        Les images existantes seront remplacées
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -203,6 +269,7 @@ export default function BulkProcessModal({
                 onClick={handleProcess}
                 variant="primary"
                 isLoading={isProcessing}
+                disabled={isLoadingIds || allPhotoIds.length === 0 || !!loadError}
               >
                 <span className="flex items-center gap-2">
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
