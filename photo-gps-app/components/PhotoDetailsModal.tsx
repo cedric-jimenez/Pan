@@ -325,9 +325,9 @@ export default function PhotoDetailsModal({
                               <div className="w-full truncate font-medium" title={similar.title || similar.filename}>
                                 {similar.title || similar.filename}
                               </div>
-                              {similar.cosine_similarity !== undefined && (
+                              {similar.similarityScore !== undefined && (
                                 <div className="text-[10px] opacity-80">
-                                  Similarité : {(similar.cosine_similarity * 100).toFixed(1)}%
+                                  Score : {(similar.similarityScore * 100).toFixed(1)}%
                                 </div>
                               )}
                             </div>

@@ -17,7 +17,7 @@ async function fetchImageAsBuffer(url: string): Promise<Buffer> {
 }
 
 /**
- * Call Railway /verify API to perform DINOv2 cosine similarity verification
+ * Call Railway /verify API to perform DINOv2 patch-level verification
  */
 async function callRailwayVerify(
   queryBuffer: Buffer,
