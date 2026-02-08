@@ -26,6 +26,7 @@ interface SimilarPhoto {
   similarityScore: number
   confidence?: string
   isSame?: boolean
+  cosine_similarity?: number
   matches?: number
   inliers?: number
 }
@@ -324,9 +325,9 @@ export default function PhotoDetailsModal({
                               <div className="w-full truncate font-medium" title={similar.title || similar.filename}>
                                 {similar.title || similar.filename}
                               </div>
-                              {similar.matches !== undefined && similar.inliers !== undefined && (
+                              {similar.cosine_similarity !== undefined && (
                                 <div className="text-[10px] opacity-80">
-                                  {similar.matches} matches, {similar.inliers} inliers
+                                  Similarité : {(similar.cosine_similarity * 100).toFixed(1)}%
                                 </div>
                               )}
                             </div>
