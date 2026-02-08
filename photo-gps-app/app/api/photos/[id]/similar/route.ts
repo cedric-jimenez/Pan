@@ -17,7 +17,7 @@ async function fetchImageAsBuffer(url: string): Promise<Buffer> {
 }
 
 /**
- * Call Railway /verify API to perform geometric matching
+ * Call Railway /verify API to perform DINOv2 cosine similarity verification
  */
 async function callRailwayVerify(
   queryBuffer: Buffer,
@@ -29,6 +29,7 @@ async function callRailwayVerify(
     is_same: boolean;
     score: number;
     confidence: string;
+    cosine_similarity: number;
     matches: number;
     inliers: number;
   }>;
@@ -117,6 +118,7 @@ async function callRailwayVerify(
         is_same: r.is_same,
         score: r.score,
         confidence: r.confidence,
+        cosine_similarity: r.cosine_similarity,
         matches: r.matches,
         inliers: r.inliers,
       })),
@@ -250,15 +252,20 @@ export async function GET(
 
     if (!verifyResult.success || verifyResult.results.length === 0) {
       // If verification fails, fall back to vector similarity scores
+      // Convert cosine distance (0=identical, 2=opposite) to cosine similarity (1=identical, -1=opposite)
       logger.warn("Verification failed, using vector similarity scores");
-      const photosWithScores = similarPhotos.map((photo: typeof similarPhotos[0]) => ({
-        ...photo,
-        similarityScore: Math.max(0, Math.min(100, (1 - photo.distance / 2) * 100)),
-        confidence: "unknown" as const,
-        isSame: false,
-        matches: 0,
-        inliers: 0,
-      }));
+      const photosWithScores = similarPhotos.map((photo: typeof similarPhotos[0]) => {
+        const cosineSimilarity = 1 - photo.distance;
+        return {
+          ...photo,
+          similarityScore: Math.max(0, Math.min(1, cosineSimilarity)),
+          confidence: "unknown" as const,
+          isSame: false,
+          cosine_similarity: cosineSimilarity,
+          matches: 0,
+          inliers: 0,
+        };
+      });
 
       logger.log({
         action: "similar_photos_response",
@@ -283,6 +290,7 @@ export async function GET(
         similarityScore: result.score,
         confidence: result.confidence,
         isSame: result.is_same,
+        cosine_similarity: result.cosine_similarity,
         matches: result.matches,
         inliers: result.inliers,
       };
@@ -300,6 +308,7 @@ export async function GET(
         similarityScore: photo.similarityScore,
         confidence: photo.confidence,
         isSame: photo.isSame,
+        cosine_similarity: photo.cosine_similarity,
         matches: photo.matches,
         inliers: photo.inliers,
       })),
