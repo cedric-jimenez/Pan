@@ -41,7 +41,7 @@ export default function GalleryPage() {
   const [dayToDelete, setDayToDelete] = useState<{ date: Date; photos: Photo[]; totalCount: number } | null>(null)
   const [isDeletingDay, setIsDeletingDay] = useState(false)
   const [dayToDownload, setDayToDownload] = useState<{ date: Date; photos: Photo[] } | null>(null)
-  const [dayToProcess, setDayToProcess] = useState<{ date: Date; photos: Photo[] } | null>(null)
+  const [dayToProcess, setDayToProcess] = useState<{ date: Date } | null>(null)
   const isInitialLoad = useRef(true)
   const [collapsedDays, setCollapsedDays] = useState<Set<string>>(new Set())
   const [photoCountsByDay, setPhotoCountsByDay] = useState<Map<string, number>>(new Map())
@@ -616,7 +616,7 @@ export default function GalleryPage() {
                     <div className="flex items-center gap-2">
                       {/* Desktop buttons - hidden on mobile */}
                       <button
-                        onClick={() => setDayToProcess({ date, photos })}
+                        onClick={() => setDayToProcess({ date })}
                         className="text-muted-foreground hover:text-foreground hover:bg-muted hidden items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors md:flex"
                         title="Retraiter cette journée"
                       >
@@ -688,7 +688,7 @@ export default function GalleryPage() {
                             <div className="bg-card border-border absolute right-0 z-20 mt-1 w-48 rounded-lg border py-1 shadow-lg">
                               <button
                                 onClick={() => {
-                                  setDayToProcess({ date, photos })
+                                  setDayToProcess({ date })
                                   setOpenMobileMenu(null)
                                 }}
                                 className="text-muted-foreground hover:text-foreground hover:bg-muted flex w-full items-center gap-3 px-4 py-2 text-left text-sm transition-colors"
@@ -857,7 +857,6 @@ export default function GalleryPage() {
       {dayToProcess && (
         <BulkProcessModal
           date={dayToProcess.date}
-          photos={dayToProcess.photos}
           isOpen={true}
           onClose={() => setDayToProcess(null)}
           onProcessComplete={() => {
