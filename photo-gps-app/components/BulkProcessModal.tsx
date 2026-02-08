@@ -7,7 +7,7 @@ import { fr } from "date-fns/locale"
 import Button from "./Button"
 import { fetchWithCsrf } from "@/lib/fetch-with-csrf"
 
-const BULK_PROCESS_BATCH_SIZE = 50
+const BULK_PROCESS_BATCH_SIZE = 5
 
 interface BulkProcessModalProps {
   date: Date
@@ -81,10 +81,9 @@ export default function BulkProcessModal({
         const batch = allPhotoIds.slice(i, i + BULK_PROCESS_BATCH_SIZE)
         const batchNum = Math.floor(i / BULK_PROCESS_BATCH_SIZE) + 1
 
+        const processed = i
         setProcessProgress(
-          totalBatches > 1
-            ? `Lot ${batchNum}/${totalBatches} — Traitement de ${batch.length} photo${batch.length > 1 ? "s" : ""}...`
-            : `Traitement de ${batch.length} photo${batch.length > 1 ? "s" : ""}...`
+          `Traitement : ${processed}/${allPhotoIds.length} photo${allPhotoIds.length > 1 ? "s" : ""} (lot ${batchNum}/${totalBatches})...`
         )
 
         const response = await fetchWithCsrf("/api/photos/bulk-process", {
