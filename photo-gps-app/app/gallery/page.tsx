@@ -11,7 +11,7 @@ import PhotoGrid, { GridSize } from "@/components/PhotoGrid"
 import PhotoDetailsModal from "@/components/PhotoDetailsModal"
 import DayDownloadModal from "@/components/DayDownloadModal"
 import BulkProcessModal from "@/components/BulkProcessModal"
-import StatsCards from "@/components/StatsCards"
+import StatsCards, { PhotoStats } from "@/components/StatsCards"
 import { Photo } from "@/types/photo"
 import { PAGINATION } from "@/lib/constants"
 import { logger } from "@/lib/logger"
@@ -46,6 +46,7 @@ export default function GalleryPage() {
   const [collapsedDays, setCollapsedDays] = useState<Set<string>>(new Set())
   const [photoCountsByDay, setPhotoCountsByDay] = useState<Map<string, number>>(new Map())
   const [openMobileMenu, setOpenMobileMenu] = useState<string | null>(null)
+  const [photoStats, setPhotoStats] = useState<PhotoStats | null>(null)
 
   // Load preferences from localStorage
   useEffect(() => {
@@ -135,6 +136,24 @@ export default function GalleryPage() {
     }
   }, [searchQuery])
 
+  // Fetch photo stats from database (computed over all photos)
+  const fetchPhotoStats = useCallback(async () => {
+    try {
+      const params = new URLSearchParams()
+      if (searchQuery.trim()) {
+        params.set("search", searchQuery.trim())
+      }
+
+      const response = await fetch(`/api/photos/stats?${params}`)
+      if (response.ok) {
+        const data = await response.json()
+        setPhotoStats(data)
+      }
+    } catch (error) {
+      logger.error("Failed to fetch photo stats:", error)
+    }
+  }, [searchQuery])
+
   // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -208,8 +227,9 @@ export default function GalleryPage() {
       // Don't clear photos to avoid flash of empty state
       fetchPhotos(1, false)
       fetchPhotoCountsByDay()
+      fetchPhotoStats()
     }
-  }, [session, sortBy, sortOrder, searchQuery, fetchPhotos, fetchPhotoCountsByDay])
+  }, [session, sortBy, sortOrder, searchQuery, fetchPhotos, fetchPhotoCountsByDay, fetchPhotoStats])
 
   // Load more photos when page changes (for infinite scroll)
   useEffect(() => {
@@ -255,6 +275,7 @@ export default function GalleryPage() {
     setPhotos((prev) => prev.filter((p) => p.id !== photoId))
     setTotal((prev) => prev - 1)
     fetchPhotoCountsByDay()
+    fetchPhotoStats()
     setSelectedPhoto(null)
   }
 
@@ -305,6 +326,7 @@ export default function GalleryPage() {
         setPage(1)
         fetchPhotos(1, false, true)
         fetchPhotoCountsByDay()
+        fetchPhotoStats()
         setDayToDelete(null)
       }
     } catch (error) {
@@ -362,7 +384,7 @@ export default function GalleryPage() {
           </p>
         </div>
 
-        <StatsCards photos={photos} total={total} />
+        <StatsCards stats={photoStats} />
 
         <div className="mb-8">
           <PhotoUpload
@@ -370,6 +392,7 @@ export default function GalleryPage() {
               setPage(1)
               fetchPhotos(1, false, true)
               fetchPhotoCountsByDay()
+              fetchPhotoStats()
             }}
           />
         </div>
@@ -864,6 +887,7 @@ export default function GalleryPage() {
             // Refresh photos
             setPage(1)
             fetchPhotos(1, false, true)
+            fetchPhotoStats()
           }}
         />
       )}
