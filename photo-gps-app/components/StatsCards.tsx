@@ -1,8 +1,13 @@
-import { Photo } from "@/types/photo"
+export interface PhotoStats {
+  total: number
+  withGPS: number
+  withEXIF: number
+  cropped: number
+  totalStorage: number
+}
 
 interface StatsCardsProps {
-  photos: Photo[]
-  total: number
+  stats: PhotoStats | null
 }
 
 // Helper to format file size
@@ -12,53 +17,42 @@ function formatStorageSize(bytes: number): string {
   return (bytes / (1024 * 1024 * 1024)).toFixed(2) + " GB"
 }
 
-export default function StatsCards({ photos, total }: StatsCardsProps) {
-  // Calculate stats
-  const withGPS = photos.filter((p) => p.latitude && p.longitude).length
-  const withEXIF = photos.filter(
-    (p) => p.aperture || p.shutterSpeed || p.iso || p.focalLength
-  ).length
-  const croppedPhotos = photos.filter((p) => p.croppedUrl !== null).length
-  // Calculate total storage from all image types (full + cropped + segmented)
-  const totalStorage = photos.reduce((sum, p) => {
-    return sum + p.fileSize + (p.croppedFileSize || 0) + (p.segmentedFileSize || 0)
-  }, 0)
-
-  const stats = [
+export default function StatsCards({ stats }: StatsCardsProps) {
+  const items = [
     {
       label: "Total Photos",
-      value: total.toString(),
+      value: stats ? stats.total.toString() : "–",
       color: "text-emerald-400",
     },
     {
       label: "With GPS",
-      value: withGPS.toString(),
+      value: stats ? stats.withGPS.toString() : "–",
       color: "text-blue-400",
     },
     {
       label: "With EXIF",
-      value: withEXIF.toString(),
+      value: stats ? stats.withEXIF.toString() : "–",
       color: "text-purple-400",
     },
     {
       label: "Cropped Photos",
-      value: croppedPhotos.toString(),
+      value: stats ? stats.cropped.toString() : "–",
       color: "text-pink-400",
     },
     {
       label: "Storage Used",
-      value: formatStorageSize(totalStorage),
+      value: stats ? formatStorageSize(stats.totalStorage) : "–",
       color: "text-orange-400",
     },
   ]
 
   return (
     <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-5">
-      {stats.map((stat, index) => (
+      {items.map((stat, index) => (
         <div
           key={index}
           className={`rounded-xl border border-gray-700 bg-gradient-to-br from-gray-800 to-gray-900 p-4 shadow-lg ${
-            index === stats.length - 1 ? "col-span-2 md:col-span-1" : ""
+            index === items.length - 1 ? "col-span-2 md:col-span-1" : ""
           }`}
         >
           <div className="text-sm text-gray-400">{stat.label}</div>
