@@ -188,7 +188,11 @@ export async function GET(
       );
     }
 
-    // Find the 4 most similar photos using cosine distance
+    // Find the most similar photos using cosine distance.
+    // SIFT+RANSAC verification re-ranks these, but can only surface a true match
+    // that retrieval actually returned — and cosine alone ranks the right
+    // individual #1 only ~64% of the time. So retrieve a generous candidate pool
+    // (verification is cheap) to give the verifier a chance to find it.
     // The <-> operator calculates cosine distance (0 = identical, 2 = opposite)
     // We exclude the source photo itself and only search within user's photos
     const similarPhotos = await prisma.$queryRaw<
@@ -225,7 +229,7 @@ export async function GET(
         AND embedding IS NOT NULL
         AND "segmentedUrl" IS NOT NULL
       ORDER BY embedding <-> (SELECT embedding FROM "Photo" WHERE id = ${photoId})
-      LIMIT 4
+      LIMIT 15
     `;
 
     // If no similar photos found, return empty array
@@ -237,15 +241,12 @@ export async function GET(
     logger.log({ action: "fetch_query_image", url: sourcePhoto.segmentedUrl });
     const queryBuffer = await fetchImageAsBuffer(sourcePhoto.segmentedUrl);
 
-    // Fetch candidate images (similar photos' segmented images)
-    const candidateBuffers: Buffer[] = [];
-    for (const photo of similarPhotos) {
-      if (photo.segmentedUrl) {
-        logger.log({ action: "fetch_candidate_image", url: photo.segmentedUrl });
-        const buffer = await fetchImageAsBuffer(photo.segmentedUrl);
-        candidateBuffers.push(buffer);
-      }
-    }
+    // Fetch candidate images (similar photos' segmented images) in parallel.
+    // Order is preserved so candidate_index from /verify maps back to
+    // similarPhotos. The SQL guarantees segmentedUrl is non-null.
+    const candidateBuffers: Buffer[] = await Promise.all(
+      similarPhotos.map((photo) => fetchImageAsBuffer(photo.segmentedUrl as string))
+    );
 
     // Call Railway /verify API
     const verifyResult = await callRailwayVerify(queryBuffer, candidateBuffers);
