@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Dialog } from "@headlessui/react"
 import { format } from "date-fns"
+import { fr } from "date-fns/locale"
 import Image from "next/image"
 import Input from "./Input"
 import Button from "./Button"
@@ -46,6 +47,10 @@ interface PhotoDetailsModalProps {
   onClose: () => void
   onUpdate: (photo: Photo) => void
   onDelete: (photoId: string) => void
+  /** Navigate to the previous/next photo (keyboard arrows + on-screen buttons). */
+  onNavigate?: (direction: "prev" | "next") => void
+  hasPrev?: boolean
+  hasNext?: boolean
 }
 
 type ImageView = "original" | "cropped" | "segmented"
@@ -55,6 +60,9 @@ export default function PhotoDetailsModal({
   onClose,
   onUpdate,
   onDelete,
+  onNavigate,
+  hasPrev = false,
+  hasNext = false,
 }: PhotoDetailsModalProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [title, setTitle] = useState(photo.title || "")
@@ -93,6 +101,25 @@ export default function PhotoDetailsModal({
 
     loadSimilarPhotos()
   }, [photo.id])
+
+  // Keyboard navigation between photos with the arrow keys.
+  useEffect(() => {
+    if (!onNavigate) return
+    const handleKey = (e: KeyboardEvent) => {
+      // Don't hijack arrows while typing in a field.
+      const tag = (e.target as HTMLElement | null)?.tagName
+      if (isEditing || tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return
+      if (e.key === "ArrowLeft" && hasPrev) {
+        e.preventDefault()
+        onNavigate("prev")
+      } else if (e.key === "ArrowRight" && hasNext) {
+        e.preventDefault()
+        onNavigate("next")
+      }
+    }
+    window.addEventListener("keydown", handleKey)
+    return () => window.removeEventListener("keydown", handleKey)
+  }, [onNavigate, hasPrev, hasNext, isEditing])
 
   // Get current image URL based on selected view
   const getCurrentImageUrl = () => {
@@ -219,9 +246,38 @@ export default function PhotoDetailsModal({
     }
   }
 
+  // Only surface photos confirmed to be the same individual.
+  const sameIndividualPhotos = similarPhotos.filter((s) => s.isSame)
+
   return (
     <Dialog open={true} onClose={onClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/70" aria-hidden="true" />
+
+      {/* Previous / next photo navigation (also bound to arrow keys) */}
+      {onNavigate && hasPrev && (
+        <button
+          onClick={() => onNavigate("prev")}
+          aria-label="Photo précédente"
+          title="Photo précédente (←)"
+          className="fixed top-1/2 left-2 z-10 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white transition-colors hover:bg-black/80 md:left-4"
+        >
+          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+      )}
+      {onNavigate && hasNext && (
+        <button
+          onClick={() => onNavigate("next")}
+          aria-label="Photo suivante"
+          title="Photo suivante (→)"
+          className="fixed top-1/2 right-2 z-10 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white transition-colors hover:bg-black/80 md:right-4"
+        >
+          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      )}
 
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <Dialog.Panel className="bg-card mx-auto max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl shadow-xl md:max-w-4xl">
@@ -283,61 +339,59 @@ export default function PhotoDetailsModal({
                 )}
               </div>
 
-              {/* Similar Photos Section */}
+              {/* Same Individual Section */}
               {isLoadingSimilar ? (
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold">Images similaires</h3>
+                  <h3 className="text-sm font-semibold">Même individu</h3>
                   <div className="text-muted-foreground text-sm">Chargement...</div>
                 </div>
-              ) : similarPhotos.length > 0 ? (
+              ) : sameIndividualPhotos.length > 0 ? (
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold">Images similaires</h3>
+                  <h3 className="text-sm font-semibold">
+                    Même individu ({sameIndividualPhotos.length})
+                  </h3>
                   <div className="grid grid-cols-2 gap-2">
-                    {similarPhotos.map((similar) => {
+                    {sameIndividualPhotos.map((similar) => {
                       return (
                         <div
                           key={similar.id}
-                          className="bg-muted group relative flex min-h-[120px] items-center justify-center overflow-hidden rounded-lg transition-transform hover:scale-105"
+                          className="bg-muted group relative flex min-h-[120px] flex-col overflow-hidden rounded-lg transition-transform hover:scale-105"
                         >
-                          <Image
-                            src={similar.segmentedUrl || similar.croppedUrl || similar.url}
-                            alt={similar.title || similar.filename}
-                            width={200}
-                            height={200}
-                            className="h-auto max-h-[180px] w-auto max-w-full object-contain"
-                            sizes="150px"
-                          />
-                          {/* Confidence Badge */}
-                          {similar.confidence && similar.confidence !== "unknown" && (
-                            <div className="bg-black/70 text-white absolute top-1 left-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium backdrop-blur-sm">
-                              {similar.confidence.toUpperCase()}
-                            </div>
-                          )}
-                          {/* Same Individual Indicator */}
-                          {similar.isSame && (
-                            <div className="bg-blue-500/90 text-white absolute bottom-1 left-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium backdrop-blur-sm">
-                              ✓ MÊME INDIVIDU
-                            </div>
-                          )}
-                          {/* Hover Overlay */}
-                          <div className="absolute inset-0 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                            <div className="flex h-full flex-col items-center justify-center gap-1 p-2 text-center text-xs text-white">
-                              <div className="w-full truncate font-medium" title={similar.title || similar.filename}>
-                                {similar.title || similar.filename}
+                          <div className="relative flex flex-1 items-center justify-center">
+                            <Image
+                              src={similar.segmentedUrl || similar.croppedUrl || similar.url}
+                              alt={similar.title || similar.filename}
+                              width={200}
+                              height={200}
+                              className="h-auto max-h-[160px] w-auto max-w-full object-contain"
+                              sizes="150px"
+                            />
+                            {/* Confidence Badge */}
+                            {similar.confidence && similar.confidence !== "unknown" && (
+                              <div className="bg-black/70 text-white absolute top-1 left-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium backdrop-blur-sm">
+                                {similar.confidence.toUpperCase()}
                               </div>
-                              {similar.similarityScore !== undefined && (
-                                <div className="text-[10px] opacity-80">
-                                  Score : {(similar.similarityScore * 100).toFixed(1)}%
-                                </div>
-                              )}
-                            </div>
+                            )}
+                          </div>
+                          {/* Capture date */}
+                          <div className="bg-background/80 text-foreground px-2 py-1 text-center text-[11px] font-medium backdrop-blur-sm">
+                            {similar.takenAt
+                              ? format(new Date(similar.takenAt), "d MMM yyyy", { locale: fr })
+                              : "Date inconnue"}
                           </div>
                         </div>
                       );
                     })}
                   </div>
                 </div>
-              ) : null}
+              ) : (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold">Même individu</h3>
+                  <div className="text-muted-foreground text-sm">
+                    Aucune autre photo du même individu trouvée.
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Details Section */}
