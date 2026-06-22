@@ -801,14 +801,25 @@ export default function GalleryPage() {
         )}
       </main>
 
-      {selectedPhoto && (
-        <PhotoDetailsModal
-          photo={selectedPhoto}
-          onClose={() => setSelectedPhoto(null)}
-          onUpdate={handlePhotoUpdate}
-          onDelete={handlePhotoDelete}
-        />
-      )}
+      {selectedPhoto && (() => {
+        const currentIndex = photos.findIndex((p) => p.id === selectedPhoto.id)
+        return (
+          <PhotoDetailsModal
+            key={selectedPhoto.id}
+            photo={selectedPhoto}
+            onClose={() => setSelectedPhoto(null)}
+            onUpdate={handlePhotoUpdate}
+            onDelete={handlePhotoDelete}
+            hasPrev={currentIndex > 0}
+            hasNext={currentIndex >= 0 && currentIndex < photos.length - 1}
+            onNavigate={(direction) => {
+              const delta = direction === "next" ? 1 : -1
+              const next = photos[currentIndex + delta]
+              if (next) setSelectedPhoto(next)
+            }}
+          />
+        )
+      })()}
 
       {/* Delete Day Confirmation Modal */}
       {dayToDelete && (
