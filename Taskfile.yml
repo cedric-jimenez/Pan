@@ -1,0 +1,112 @@
+# Taskfile for local development of the Pan app.
+# Requires go-task (https://taskfile.dev) and Docker.
+#
+#   task            # start EVERYTHING: DB + mock ML service + Next dev server
+#   task --list     # show all available tasks
+#
+# All work lives in photo-gps-app/, so every task runs there.
+
+version: "3"
+
+vars:
+  APP: photo-gps-app
+
+tasks:
+  default:
+    desc: Start everything (DB + mock ML + web) in one command
+    cmds:
+      - task: up
+
+  up:
+    desc: Ensure DB + schema + demo data, then run mock ML and Next dev in parallel
+    cmds:
+      - task: db
+      - task: seed
+      - task: creds
+      - task: serve
+
+  dev:
+    desc: Like 'up' but never re-seeds (preserves your data)
+    cmds:
+      - task: db
+      - task: creds
+      - task: serve
+
+  creds:
+    desc: Print the local demo login and service URLs
+    silent: true
+    cmds:
+      - |
+        echo ""
+        echo "  ─────────────────────────────────────────"
+        echo "   Pan — local dev"
+        echo "   App      → http://localhost:3000"
+        echo "   Mock ML  → http://localhost:8000"
+        echo "   Login    → demo@pan.local"
+        echo "   Password → password"
+        echo "  ─────────────────────────────────────────"
+        echo ""
+
+  # --- database ------------------------------------------------------------
+
+  db:
+    desc: Start Postgres+pgvector (Docker) and sync the Prisma schema
+    dir: "{{.APP}}"
+    cmds:
+      - npm run db:up
+      - npm run db:push
+
+  seed:
+    desc: Seed demo data (skipped if the database already has users)
+    dir: "{{.APP}}"
+    cmds:
+      - npm run db:seed
+    status:
+      - >-
+        [ "$(docker exec pan-dev-db psql -U pan -d pan -tAc 'SELECT count(*) FROM "User"' 2>/dev/null)" -gt 0 ]
+
+  reseed:
+    desc: Force re-seed demo data (wipes and recreates it)
+    dir: "{{.APP}}"
+    cmds:
+      - npm run db:seed
+
+  down:
+    desc: Stop the database (keeps data)
+    dir: "{{.APP}}"
+    cmds:
+      - npm run db:down
+
+  reset:
+    desc: Destroy the database volume, recreate schema and demo data
+    dir: "{{.APP}}"
+    cmds:
+      - npm run db:reset
+      - task: db
+      - task: reseed
+
+  studio:
+    desc: Open Prisma Studio (database GUI)
+    dir: "{{.APP}}"
+    cmds:
+      - npx prisma studio
+
+  # --- servers -------------------------------------------------------------
+
+  serve:
+    desc: Run the mock ML service and the Next dev server in parallel (Ctrl-C stops both)
+    deps:
+      - mock
+      - web
+
+  mock:
+    desc: Mock ML service (stands in for the pan-py Railway service)
+    dir: "{{.APP}}"
+    cmds:
+      - npm run mock:ml
+
+  web:
+    desc: Next.js dev server
+    dir: "{{.APP}}"
+    cmds:
+      - npm run dev
