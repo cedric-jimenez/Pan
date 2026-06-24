@@ -1,46 +1,45 @@
 @import "tailwindcss";
 
-/* Dark theme (default) */
+/* Light theme (default) — Figma "Design Pan 2" warm earthy palette */
 :root {
-  /* Figma dark theme colors - matching App.tsx Tailwind classes */
-  --background: #111827;
-  --foreground: #f9fafb;
-  --card: #1f2937;
-  --card-foreground: #f9fafb;
-  --primary: #059669;
+  --background: #faf7f2; /* cream */
+  --foreground: #1b1c19; /* near-black */
+  --card: #ffffff;
+  --card-foreground: #1b1c19;
+  --primary: #7d562d; /* terracotta */
   --primary-foreground: #ffffff;
-  --secondary: #374151;
-  --secondary-foreground: #f9fafb;
-  --accent: #0d9488;
+  --secondary: #eae8e2; /* warm light surface */
+  --secondary-foreground: #50453b; /* warm brown body text */
+  --accent: #3f8f5b; /* validation green */
   --accent-foreground: #ffffff;
-  --destructive: #ef4444;
+  --destructive: #c0392b;
   --destructive-foreground: #ffffff;
-  --border: #374151;
-  --input: #374151;
-  --ring: #059669;
-  --muted: #374151;
-  --muted-foreground: #9ca3af;
+  --border: #d4c4b7;
+  --input: #e7ddd2;
+  --ring: #7d562d;
+  --muted: #eae8e2;
+  --muted-foreground: #6f6151; /* lighter warm brown for secondary text */
 }
 
-/* Light theme */
-[data-theme="light"] {
-  --background: #ffffff;
-  --foreground: #111827;
-  --card: #f9fafb;
-  --card-foreground: #111827;
-  --primary: #059669;
-  --primary-foreground: #ffffff;
-  --secondary: #e5e7eb;
-  --secondary-foreground: #111827;
-  --accent: #0d9488;
-  --accent-foreground: #ffffff;
-  --destructive: #dc2626;
-  --destructive-foreground: #ffffff;
-  --border: #d1d5db;
-  --input: #e5e7eb;
-  --ring: #059669;
-  --muted: #f3f4f6;
-  --muted-foreground: #6b7280;
+/* Dark theme — earthy dark, coherent with the terracotta primary */
+[data-theme="dark"] {
+  --background: #1c1814; /* warm near-black */
+  --foreground: #f2ece3; /* warm off-white */
+  --card: #272019;
+  --card-foreground: #f2ece3;
+  --primary: #c89055; /* lighter terracotta for contrast on dark */
+  --primary-foreground: #2a1f14;
+  --secondary: #352b22;
+  --secondary-foreground: #e7ddd0;
+  --accent: #57a972; /* brighter validation green for dark */
+  --accent-foreground: #11250f;
+  --destructive: #e2705a;
+  --destructive-foreground: #2a0f08;
+  --border: #3a2f25;
+  --input: #3a2f25;
+  --ring: #c89055;
+  --muted: #2e251d;
+  --muted-foreground: #b3a695;
 }
 
 @theme inline {
@@ -61,14 +60,21 @@
   --color-ring: var(--ring);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-be-vietnam-pro);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-be-vietnam-pro), system-ui, Arial, Helvetica, sans-serif;
+}
+
+/* Leaflet popups follow the theme (default Leaflet styling is hardcoded white) */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--card);
+  color: var(--card-foreground);
 }
 
 /* Scrollbar styling */

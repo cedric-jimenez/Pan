@@ -14,6 +14,10 @@ interface PhotoUploadProps {
 export default function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
   const [uploadProgress, setUploadProgress] = useState<string[]>([])
   const [error, setError] = useState("")
+  // Files uploaded successfully but where no salamander was detected (HTTP 201,
+  // photo.salamanderDetected === false). Tracked separately from errors: it is a
+  // valid outcome, not a failure.
+  const [noDetectionFiles, setNoDetectionFiles] = useState<string[]>([])
 
   // Compress image on client side while preserving EXIF data
   const compressImage = async (file: File): Promise<File> => {
@@ -52,6 +56,7 @@ export default function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
     async (acceptedFiles: File[]) => {
       setError("")
       setUploadProgress([])
+      setNoDetectionFiles([])
       let successCount = 0
 
       for (const file of acceptedFiles) {
@@ -120,7 +125,18 @@ export default function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
           }
 
           successCount++
-          setUploadProgress((prev) => [...prev, `✓ ${file.name} uploaded successfully`])
+
+          // Read the 201 payload to surface the detection outcome. A successful
+          // upload with salamanderDetected === false means the photo was stored
+          // but the ML pipeline found no salamander to crop/segment/embed — it
+          // cannot be matched against known individuals until re-shot.
+          const data = await response.json().catch(() => null)
+          if (data?.photo?.salamanderDetected === false) {
+            setNoDetectionFiles((prev) => [...prev, file.name])
+            setUploadProgress((prev) => [...prev, `⚠ ${file.name} : aucune salamandre détectée`])
+          } else {
+            setUploadProgress((prev) => [...prev, `✓ ${file.name} importé avec succès`])
+          }
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : "Erreur inconnue"
           setUploadProgress((prev) => [...prev, `✗ ${file.name} : ${message}`])
@@ -207,6 +223,42 @@ export default function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
       {error && (
         <div className="bg-destructive/10 border-destructive text-destructive mt-4 rounded-lg border px-4 py-3">
           {error}
+        </div>
+      )}
+
+      {noDetectionFiles.length > 0 && (
+        <div className="bg-muted/50 border-border mt-4 rounded-lg border px-4 py-3">
+          <div className="flex items-start gap-3">
+            <svg
+              className="text-muted-foreground mt-0.5 h-5 w-5 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4a2 2 0 00-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"
+              />
+            </svg>
+            <div className="text-sm">
+              <p className="text-foreground font-medium">
+                {noDetectionFiles.length > 1
+                  ? `Aucune salamandre détectée sur ${noDetectionFiles.length} photos`
+                  : "Aucune salamandre détectée sur cette photo"}
+              </p>
+              <p className="text-muted-foreground mt-1">
+                {noDetectionFiles.join(", ")} {noDetectionFiles.length > 1 ? "ont" : "a"} bien été
+                importée{noDetectionFiles.length > 1 ? "s" : ""}, mais ne pourr
+                {noDetectionFiles.length > 1 ? "ont" : "a"} pas être comparée
+                {noDetectionFiles.length > 1 ? "s" : ""} aux individus connus. Pour une meilleure
+                détection, utilisez une photo nette du dos de la salamandre, prise de dessus et bien
+                éclairée.
+              </p>
+            </div>
+          </div>
         </div>
       )}
     </div>

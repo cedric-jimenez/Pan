@@ -25,10 +25,10 @@ function getMetadataQuality(photo: Photo): { label: string; color: string } {
 
   const score = [hasGPS, hasCamera, hasExif, hasDate].filter(Boolean).length
 
-  if (score >= 3) return { label: "excellent", color: "bg-amber-50 text-amber-700" }
-  if (score === 2) return { label: "fair", color: "bg-amber-50 text-amber-700" }
-  if (score === 1) return { label: "partial", color: "bg-slate-200 text-slate-700" }
-  return { label: "minimal", color: "bg-slate-200 text-slate-700" }
+  if (score >= 3) return { label: "excellent", color: "bg-accent text-accent-foreground" }
+  if (score === 2) return { label: "fair", color: "bg-accent text-accent-foreground" }
+  if (score === 1) return { label: "partial", color: "bg-secondary text-secondary-foreground" }
+  return { label: "minimal", color: "bg-secondary text-secondary-foreground" }
 }
 
 // Helper to format file size
@@ -80,7 +80,7 @@ export default function PhotoGrid({ photos, onPhotoClick, gridSize = "medium" }:
 
                 {/* EXIF badge */}
                 {hasExifData && (
-                  <div className="flex items-center gap-1.5 rounded-md bg-slate-700/90 px-2.5 py-1 shadow-sm backdrop-blur-sm">
+                  <div className="flex items-center gap-1.5 rounded-md bg-black/70 px-2.5 py-1 shadow-sm backdrop-blur-sm">
                     <svg
                       className="h-3 w-3 text-white"
                       fill="none"
