@@ -48,3 +48,6 @@ prisma/*.db-journal
 
 # uploads
 /public/uploads
+
+# generated dev seed images
+/public/seed

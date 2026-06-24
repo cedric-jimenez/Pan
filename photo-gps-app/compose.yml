@@ -1,0 +1,36 @@
+# Local development database for the Pan web app.
+# Postgres + pgvector, no system Postgres install required.
+#
+#   npm run db:up        # start (first run also creates the `vector` extension)
+#   npm run db:setup     # start + apply migrations + seed demo data
+#   npm run db:down      # stop
+#   npm run db:reset     # stop and wipe all data
+#
+# Connects via .env.local:
+#   DATABASE_URL="postgresql://pan:pan@localhost:5433/pan"
+#   DIRECT_URL="postgresql://pan:pan@localhost:5433/pan"
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: pan-dev-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pan
+      POSTGRES_PASSWORD: pan
+      POSTGRES_DB: pan
+    # Host port 5433 (5432 is often taken by another local Postgres).
+    ports:
+      - "5433:5432"
+    volumes:
+      - pan-pgdata:/var/lib/postgresql/data
+      # Runs once on first init: ensures the pgvector extension exists.
+      - ./prisma/docker-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pan -d pan"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pan-pgdata:
