@@ -255,7 +255,7 @@ export default function AssignIndividualModal({
                       {individuals.map((individual) => (
                         <label
                           key={individual.id}
-                          className="hover:border-primary flex cursor-pointer items-center rounded-lg border border-gray-200 p-3 transition-colors"
+                          className="hover:border-primary border-border flex cursor-pointer items-center rounded-lg border p-3 transition-colors"
                         >
                           <input
                             type="radio"

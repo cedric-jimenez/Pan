@@ -1,14 +1,15 @@
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { Be_Vietnam_Pro, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import SessionProvider from "@/components/SessionProvider"
 import ErrorBoundary from "@/components/ErrorBoundary"
 import CsrfTokenInitializer from "@/components/CsrfTokenInitializer"
 import ThemeProvider from "@/components/ThemeProvider"
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const beVietnamPro = Be_Vietnam_Pro({
+  variable: "--font-be-vietnam-pro",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 })
 
 const geistMono = Geist_Mono({
@@ -29,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${beVietnamPro.variable} ${geistMono.variable} antialiased`}>
         <ErrorBoundary>
           <ThemeProvider>
             <SessionProvider>

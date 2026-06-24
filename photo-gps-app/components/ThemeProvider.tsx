@@ -27,13 +27,13 @@ interface ThemeProviderProps {
 export default function ThemeProvider({ children }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window === "undefined") {
-      return "dark"
+      return "light"
     }
     const savedTheme = localStorage.getItem("theme")
     if (savedTheme === "dark" || savedTheme === "light") {
       return savedTheme
     }
-    return "dark"
+    return "light"
   })
 
   useEffect(() => {

@@ -157,13 +157,13 @@ export default function MapView({ photos, onPhotoClick }: MapViewProps) {
                     </div>
                     <h3 className="mb-1 font-semibold">{photo.title || photo.originalName}</h3>
                     {photo.takenAt && (
-                      <p className="mb-2 text-sm text-gray-600">
+                      <p className="text-muted-foreground mb-2 text-sm">
                         {format(new Date(photo.takenAt), "PPp")}
                       </p>
                     )}
                     <button
                       onClick={() => onPhotoClick(photo)}
-                      className="text-sm text-blue-600 hover:underline"
+                      className="text-primary text-sm hover:underline"
                     >
                       View Details
                     </button>

@@ -94,7 +94,7 @@ export default function IndividualList({
           placeholder="Search individuals..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="focus:ring-primary flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:outline-none"
+          className="focus:ring-primary border-input flex-1 rounded-lg border px-4 py-2 focus:ring-2 focus:outline-none"
         />
         {onCreateIndividual && <Button onClick={onCreateIndividual}>Create Individual</Button>}
       </div>
@@ -112,7 +112,7 @@ export default function IndividualList({
           {individuals.map((individual) => (
             <div
               key={individual.id}
-              className="hover:border-primary flex cursor-pointer items-center justify-between rounded-lg border border-gray-200 p-4 transition-colors"
+              className="hover:border-primary border-border flex cursor-pointer items-center justify-between rounded-lg border p-4 transition-colors"
               onClick={() => onSelectIndividual?.(individual)}
             >
               <div>

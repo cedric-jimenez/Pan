@@ -515,30 +515,30 @@ export default function PhotoDetailsModal({
                 <div className={`rounded-lg p-4 ${reprocessResult.success ? "bg-muted" : "bg-destructive/10"}`}>
                   {reprocessResult.success ? (
                     <div className="space-y-2">
-                      <p className="text-sm font-medium text-green-600 dark:text-green-400">
+                      <p className="text-accent text-sm font-medium">
                         Retraitement terminé
                       </p>
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div className="flex items-center gap-2">
-                          <span className={reprocessResult.salamanderDetected ? "text-green-600" : "text-muted-foreground"}>
+                          <span className={reprocessResult.salamanderDetected ? "text-accent" : "text-muted-foreground"}>
                             {reprocessResult.salamanderDetected ? "✓" : "✗"}
                           </span>
                           <span>Salamandre détectée</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={reprocessResult.hasCropped ? "text-green-600" : "text-muted-foreground"}>
+                          <span className={reprocessResult.hasCropped ? "text-accent" : "text-muted-foreground"}>
                             {reprocessResult.hasCropped ? "✓" : "✗"}
                           </span>
                           <span>Image recadrée</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={reprocessResult.hasSegmented ? "text-green-600" : "text-muted-foreground"}>
+                          <span className={reprocessResult.hasSegmented ? "text-accent" : "text-muted-foreground"}>
                             {reprocessResult.hasSegmented ? "✓" : "✗"}
                           </span>
                           <span>Image segmentée</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={reprocessResult.hasEmbedding ? "text-green-600" : "text-muted-foreground"}>
+                          <span className={reprocessResult.hasEmbedding ? "text-accent" : "text-muted-foreground"}>
                             {reprocessResult.hasEmbedding ? "✓" : "✗"}
                           </span>
                           <span>Vecteur généré</span>
