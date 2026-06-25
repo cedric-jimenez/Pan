@@ -27,16 +27,18 @@ export default function StatsCards({ stats }: StatsCardsProps) {
   ]
 
   return (
-    <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-5">
+    <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
       {items.map((stat, index) => (
         <div
           key={index}
-          className={`bg-card border-border rounded-xl border p-4 shadow-lg ${
+          className={`bg-card border-border flex flex-col items-center rounded-lg border p-6 text-center shadow-sm ${
             index === items.length - 1 ? "col-span-2 md:col-span-1" : ""
           }`}
         >
-          <div className="text-muted-foreground text-sm">{stat.label}</div>
-          <div className="text-primary mt-1 text-3xl font-bold">{stat.value}</div>
+          <div className="text-primary text-3xl font-semibold">{stat.value}</div>
+          <div className="text-secondary-foreground mt-1 text-sm font-medium tracking-wider uppercase">
+            {stat.label}
+          </div>
         </div>
       ))}
     </div>

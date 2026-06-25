@@ -1,5 +1,10 @@
+// @vitest-environment node
+// This route parses multipart form-data via undici's `request.formData()`, which
+// rejects jsdom's File objects. Run it in the node environment so File/Request/
+// FormData all come from undici and stay consistent.
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { POST } from "@/app/api/photos/upload/route"
+import { createMockPhoto } from "../../fixtures/photo"
 
 // Mock modules
 vi.mock("@/lib/session", () => ({
@@ -131,7 +136,7 @@ describe("POST /api/photos/upload", () => {
       title: null,
       description: null,
     }
-    vi.mocked(prisma.photo.create).mockResolvedValue(mockPhoto)
+    vi.mocked(prisma.photo.create).mockResolvedValue(createMockPhoto(mockPhoto))
 
     // Create test file
     const file = new File(["test-image-data"], "test.jpg", { type: "image/jpeg" })
@@ -220,7 +225,7 @@ describe("POST /api/photos/upload", () => {
       title: null,
       description: null,
     }
-    vi.mocked(prisma.photo.create).mockResolvedValue(mockPhoto)
+    vi.mocked(prisma.photo.create).mockResolvedValue(createMockPhoto(mockPhoto))
 
     // Create test file
     const file = new File(["test-image-data"], "test.jpg", { type: "image/jpeg" })
@@ -262,32 +267,34 @@ describe("POST /api/photos/upload", () => {
     vi.mocked(uploadToBlob).mockResolvedValue("https://blob.vercel-storage.com/photo.jpg")
 
     // Mock database
-    vi.mocked(prisma.photo.create).mockResolvedValue({
-      id: "photo-123",
-      userId: "user-123",
-      filename: "test.jpg",
-      originalName: "test.jpg",
-      fileSize: 1000,
-      mimeType: "image/jpeg",
-      url: "https://blob.vercel-storage.com/photo.jpg",
-      croppedUrl: null,
-      latitude: null,
-      longitude: null,
-      takenAt: null,
-      cameraMake: null,
-      cameraModel: null,
-      iso: null,
-      aperture: null,
-      shutterSpeed: null,
-      focalLength: null,
-      isCropped: false,
-      cropConfidence: null,
-      salamanderDetected: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      title: null,
-      description: null,
-    })
+    vi.mocked(prisma.photo.create).mockResolvedValue(
+      createMockPhoto({
+        id: "photo-123",
+        userId: "user-123",
+        filename: "test.jpg",
+        originalName: "test.jpg",
+        fileSize: 1000,
+        mimeType: "image/jpeg",
+        url: "https://blob.vercel-storage.com/photo.jpg",
+        croppedUrl: null,
+        latitude: null,
+        longitude: null,
+        takenAt: null,
+        cameraMake: null,
+        cameraModel: null,
+        iso: null,
+        aperture: null,
+        shutterSpeed: null,
+        focalLength: null,
+        isCropped: false,
+        cropConfidence: null,
+        salamanderDetected: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        title: null,
+        description: null,
+      })
+    )
 
     // Create test file
     const file = new File(["test-image-data"], "test.png", { type: "image/png" })
@@ -404,32 +411,34 @@ describe("POST /api/photos/upload", () => {
     vi.mocked(uploadToBlob).mockResolvedValue("https://blob.vercel-storage.com/photo.jpg")
 
     // Mock database create
-    vi.mocked(prisma.photo.create).mockResolvedValue({
-      id: "photo-123",
-      userId: "user-123",
-      filename: "test.jpg",
-      originalName: "test.jpg",
-      fileSize: mockBuffer.length,
-      mimeType: "image/jpeg",
-      url: "https://blob.vercel-storage.com/photo.jpg",
-      croppedUrl: null,
-      latitude: null,
-      longitude: null,
-      takenAt: null,
-      cameraMake: null,
-      cameraModel: null,
-      iso: null,
-      aperture: null,
-      shutterSpeed: null,
-      focalLength: null,
-      isCropped: false,
-      cropConfidence: null,
-      salamanderDetected: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      title: null,
-      description: null,
-    })
+    vi.mocked(prisma.photo.create).mockResolvedValue(
+      createMockPhoto({
+        id: "photo-123",
+        userId: "user-123",
+        filename: "test.jpg",
+        originalName: "test.jpg",
+        fileSize: mockBuffer.length,
+        mimeType: "image/jpeg",
+        url: "https://blob.vercel-storage.com/photo.jpg",
+        croppedUrl: null,
+        latitude: null,
+        longitude: null,
+        takenAt: null,
+        cameraMake: null,
+        cameraModel: null,
+        iso: null,
+        aperture: null,
+        shutterSpeed: null,
+        focalLength: null,
+        isCropped: false,
+        cropConfidence: null,
+        salamanderDetected: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        title: null,
+        description: null,
+      })
+    )
 
     // Create test file
     const file = new File(["test-image-data"], "test.jpg", { type: "image/jpeg" })
