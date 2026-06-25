@@ -9,9 +9,12 @@ export function createMockPhoto(overrides: Partial<Photo> = {}): Photo {
   return {
     id: "photo-1",
     userId: "user-123",
+    individualId: null,
     filename: "photo1.jpg",
     originalName: "vacation.jpg",
     fileSize: 1000,
+    croppedFileSize: null,
+    segmentedFileSize: null,
     mimeType: "image/jpeg",
     url: "https://blob.vercel-storage.com/photo1.jpg",
     croppedUrl: null,

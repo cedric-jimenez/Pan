@@ -5,6 +5,7 @@ import SessionProvider from "@/components/SessionProvider"
 import ErrorBoundary from "@/components/ErrorBoundary"
 import CsrfTokenInitializer from "@/components/CsrfTokenInitializer"
 import ThemeProvider from "@/components/ThemeProvider"
+import Footer from "@/components/Footer"
 
 const beVietnamPro = Be_Vietnam_Pro({
   variable: "--font-be-vietnam-pro",
@@ -36,6 +37,7 @@ export default function RootLayout({
             <SessionProvider>
               <CsrfTokenInitializer />
               {children}
+              <Footer />
             </SessionProvider>
           </ThemeProvider>
         </ErrorBoundary>

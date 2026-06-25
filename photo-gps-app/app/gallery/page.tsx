@@ -376,7 +376,7 @@ export default function GalleryPage() {
     <div className="bg-background min-h-screen">
       <Navbar />
 
-      <main className="container mx-auto px-4 pt-24 pb-8">
+      <main className="w-full px-4 pt-24 pb-8 md:px-8">
         <div className="mb-8">
           <h1 className="mb-2 text-3xl font-bold">Salamander Database</h1>
           <p className="text-muted-foreground">
@@ -384,9 +384,12 @@ export default function GalleryPage() {
           </p>
         </div>
 
-        <StatsCards stats={photoStats} />
+        {/* Full-width tinted band behind the KPIs, matching the Figma stats section */}
+        <div className="bg-muted/40 -mx-4 mb-8 px-4 py-12 md:-mx-8 md:px-8">
+          <StatsCards stats={photoStats} />
+        </div>
 
-        <div className="mb-8">
+        <div id="upload" className="mb-8 scroll-mt-24">
           <PhotoUpload
             onUploadComplete={() => {
               setPage(1)

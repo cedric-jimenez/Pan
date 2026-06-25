@@ -58,7 +58,7 @@ export default function IndividualsPage() {
   return (
     <div className="bg-background min-h-screen">
       <Navbar />
-      <main className="container mx-auto px-4 py-8 pt-24">
+      <main className="w-full px-4 py-8 pt-24 md:px-8">
         <div className="mb-8">
           <h1 className="mb-2 text-4xl font-bold">Individuals</h1>
           <p className="text-muted-foreground">
