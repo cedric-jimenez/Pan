@@ -1,31 +1,58 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Dialog } from "@headlessui/react"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
 import JSZip from "jszip"
 import Button from "./Button"
 import { Photo } from "@/types/photo"
+import { logger } from "@/lib/logger"
 
 interface DayDownloadModalProps {
   date: Date
-  photos: Photo[]
   isOpen: boolean
   onClose: () => void
 }
 
 type ImageType = "original" | "cropped" | "segmented"
 
-export default function DayDownloadModal({
-  date,
-  photos,
-  isOpen,
-  onClose,
-}: DayDownloadModalProps) {
+export default function DayDownloadModal({ date, isOpen, onClose }: DayDownloadModalProps) {
   const [selectedTypes, setSelectedTypes] = useState<ImageType[]>(["original"])
   const [isDownloading, setIsDownloading] = useState(false)
   const [downloadProgress, setDownloadProgress] = useState<string>("")
+  const [photos, setPhotos] = useState<Photo[]>([])
+  const [isLoadingPhotos, setIsLoadingPhotos] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+
+  // Fetch all photos for this day when the modal opens (the gallery loads photos
+  // lazily per day, so they may not be in memory yet).
+  useEffect(() => {
+    if (!isOpen) return
+
+    const fetchPhotos = async () => {
+      setIsLoadingPhotos(true)
+      setLoadError(null)
+      try {
+        const dayKey = format(date, "yyyy-MM-dd")
+        const response = await fetch(`/api/photos/by-day?date=${dayKey}`)
+        if (response.ok) {
+          const data = await response.json()
+          setPhotos(data.photos)
+        } else {
+          const data = await response.json()
+          setLoadError(data.error || "Erreur lors de la récupération des photos")
+        }
+      } catch (error) {
+        logger.error("Failed to fetch photos for download:", error)
+        setLoadError("Erreur réseau lors de la récupération des photos")
+      } finally {
+        setIsLoadingPhotos(false)
+      }
+    }
+
+    fetchPhotos()
+  }, [isOpen, date])
 
   // Count how many photos have each type
   const typeCounts = {
@@ -267,7 +294,17 @@ export default function DayDownloadModal({
             </p>
           </div>
 
-          {/* Progress */}
+          {/* Loading / error / progress */}
+          {isLoadingPhotos && (
+            <div className="mb-4 text-center">
+              <p className="text-muted-foreground text-sm">Chargement des photos…</p>
+            </div>
+          )}
+          {loadError && (
+            <div className="mb-4 text-center">
+              <p className="text-destructive text-sm">{loadError}</p>
+            </div>
+          )}
           {downloadProgress && (
             <div className="mb-4 text-center">
               <p className="text-muted-foreground text-sm">{downloadProgress}</p>
