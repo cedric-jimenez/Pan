@@ -190,9 +190,12 @@ export async function GET(
 
     // Find the most similar photos using cosine distance.
     // SIFT+RANSAC verification re-ranks these, but can only surface a true match
-    // that retrieval actually returned — and cosine alone ranks the right
-    // individual #1 only ~64% of the time. So retrieve a generous candidate pool
-    // (verification is cheap) to give the verifier a chance to find it.
+    // that retrieval actually returned — and the DINOv2 GeM cosine barely
+    // separates individuals (same/diff score gap ~0.017, top-1 ~61%): a true
+    // same-individual match can rank well past the first dozen neighbours
+    // (observed at rank #41 in prod). So retrieve a generous candidate pool
+    // (SIFT verification is cheap and ~0 false positives) to give the verifier
+    // a chance to find it. TODO: improve the retrieval embedding to shrink this.
     // The <-> operator calculates cosine distance (0 = identical, 2 = opposite)
     // We exclude the source photo itself and only search within user's photos
     const similarPhotos = await prisma.$queryRaw<
@@ -229,7 +232,7 @@ export async function GET(
         AND embedding IS NOT NULL
         AND "segmentedUrl" IS NOT NULL
       ORDER BY embedding <-> (SELECT embedding FROM "Photo" WHERE id = ${photoId})
-      LIMIT 15
+      LIMIT 100
     `;
 
     // If no similar photos found, return empty array
