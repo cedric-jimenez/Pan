@@ -107,7 +107,7 @@ Server-side: call `requireAuth()` (throws `"Unauthorized"`) or `getCurrentUser()
 ### pgvector similarity search
 
 The `/api/photos/[id]/similar` endpoint:
-1. Finds 4 nearest neighbors using `embedding <-> (SELECT embedding ...)` cosine distance via raw SQL
+1. Finds the 100 nearest neighbors using `embedding <-> (SELECT embedding ...)` cosine distance via raw SQL (generous pool: cosine barely separates individuals, so the true match can rank well past the first dozen)
 2. Fetches all segmented images
 3. Calls Railway `/verify` for patch-level cross-verification
 4. Falls back to pure vector scores if `/verify` fails
