@@ -19,6 +19,8 @@
   --ring: #7d562d;
   --muted: #eae8e2;
   --muted-foreground: #6f6151; /* lighter warm brown for secondary text */
+  --warning: #ffdcbd; /* warm amber callout surface */
+  --warning-foreground: #623f18; /* deep amber-brown text */
 }
 
 /* Dark theme — earthy dark, coherent with the terracotta primary */
@@ -40,6 +42,8 @@
   --ring: #c89055;
   --muted: #2e251d;
   --muted-foreground: #b3a695;
+  --warning: #3a2a18; /* dark amber callout surface */
+  --warning-foreground: #f2d5b3; /* warm amber text on dark */
 }
 
 @theme inline {
@@ -60,6 +64,8 @@
   --color-ring: var(--ring);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --font-sans: var(--font-be-vietnam-pro);
   --font-mono: var(--font-geist-mono);
 }

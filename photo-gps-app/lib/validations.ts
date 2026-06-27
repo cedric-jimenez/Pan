@@ -77,6 +77,19 @@ export const assignPhotoSchema = z.object({
   photoId: z.string().min(1, "Photo ID is required"),
 })
 
+// Identification: confirm that a set of photos belongs to the same individual.
+// Either an existing individual is targeted (individualId) or a new one is
+// created (newName). The server resolves which based on the photos' current
+// assignments; see app/api/identification/confirm/route.ts.
+export const identificationConfirmSchema = z.object({
+  photoIds: z
+    .array(z.string().min(1))
+    .min(1, "At least one photo is required")
+    .max(200, "Too many photos"),
+  individualId: z.string().min(1).optional(),
+  newName: z.string().min(1, "Name is required").max(100, "Name is too long").trim().optional(),
+})
+
 // Query parameters schemas
 export const photoQuerySchema = z.object({
   startDate: z.string().datetime().nullable().optional(),
