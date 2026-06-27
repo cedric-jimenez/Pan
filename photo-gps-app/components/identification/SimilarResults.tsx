@@ -121,7 +121,7 @@ export default function SimilarResults({
           <img
             src={referencePhoto.croppedUrl ?? referencePhoto.url}
             alt="Photo analysée"
-            className="h-full w-full object-cover"
+            className="h-full w-full object-contain"
           />
         </div>
         <div className="flex flex-col justify-center">
@@ -169,7 +169,7 @@ export default function SimilarResults({
                 <button
                   type="button"
                   onClick={() => onToggle(result.id)}
-                  className="relative block h-72 w-full"
+                  className="bg-muted relative block h-72 w-full"
                   aria-pressed={selected}
                   aria-label={selected ? "Désélectionner cette photo" : "Sélectionner cette photo"}
                 >
@@ -177,7 +177,7 @@ export default function SimilarResults({
                   <img
                     src={result.croppedUrl ?? result.url}
                     alt={result.title ?? result.filename}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-contain"
                   />
                   <span
                     className={`absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-medium ${matchBadgeClass(

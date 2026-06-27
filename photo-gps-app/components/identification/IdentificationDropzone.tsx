@@ -15,6 +15,8 @@ interface IdentificationDropzoneProps {
   onNoDetection: (filename: string) => void
   /** Disable interaction while the page is busy (e.g. searching for matches). */
   busy?: boolean
+  /** Extra classes on the root (e.g. flex-1 to fill the column height). */
+  className?: string
 }
 
 // Compress on the client while preserving EXIF (GPS/date), mirroring PhotoUpload.
@@ -67,6 +69,7 @@ export default function IdentificationDropzone({
   onUploaded,
   onNoDetection,
   busy = false,
+  className,
 }: IdentificationDropzoneProps) {
   const [uploading, setUploading] = useState(false)
   const [status, setStatus] = useState("")
@@ -130,10 +133,10 @@ export default function IdentificationDropzone({
   })
 
   return (
-    <div className="w-full">
+    <div className={`flex w-full flex-col ${className ?? ""}`}>
       <div
         {...getRootProps()}
-        className={`flex min-h-[400px] flex-col items-center justify-center rounded-xl border-2 border-dashed bg-card px-12 py-16 text-center transition-colors ${
+        className={`flex min-h-[400px] flex-1 flex-col items-center justify-center rounded-xl border-2 border-dashed bg-card px-12 py-16 text-center transition-colors ${
           isDragActive ? "border-primary bg-primary/5" : "border-border"
         } ${disabled ? "opacity-70" : ""}`}
       >

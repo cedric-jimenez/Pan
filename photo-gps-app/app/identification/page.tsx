@@ -170,7 +170,7 @@ export default function IdentificationPage() {
       <main className="min-h-screen w-full px-4 pt-20 pb-12 md:px-8">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           {/* Upload section */}
-          <div className="flex flex-col gap-6 lg:col-span-8">
+          <div className="flex h-full flex-col gap-6 lg:col-span-8">
             <div className="flex flex-col gap-2">
               <h1 className="text-foreground text-3xl font-semibold">Identifier un individu</h1>
               <p className="text-secondary-foreground text-base">
@@ -183,6 +183,7 @@ export default function IdentificationPage() {
               onUploaded={handleUploaded}
               onNoDetection={handleNoDetection}
               busy={searching}
+              className="flex-1"
             />
 
             {noDetectionFile && (
