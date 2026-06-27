@@ -210,28 +210,33 @@ export async function GET(
         takenAt: Date | null;
         latitude: number | null;
         longitude: number | null;
+        individualId: string | null;
+        individualName: string | null;
         distance: number;
       }>
     >`
       SELECT
-        id,
-        filename,
-        url,
-        "croppedUrl",
-        "segmentedUrl",
-        title,
-        description,
-        "takenAt",
-        latitude,
-        longitude,
-        (embedding <-> (SELECT embedding FROM "Photo" WHERE id = ${photoId})) as distance
-      FROM "Photo"
+        p.id,
+        p.filename,
+        p.url,
+        p."croppedUrl",
+        p."segmentedUrl",
+        p.title,
+        p.description,
+        p."takenAt",
+        p.latitude,
+        p.longitude,
+        p."individualId",
+        i.name as "individualName",
+        (p.embedding <-> (SELECT embedding FROM "Photo" WHERE id = ${photoId})) as distance
+      FROM "Photo" p
+      LEFT JOIN "Individual" i ON i.id = p."individualId"
       WHERE
-        "userId" = ${user.id}
-        AND id != ${photoId}
-        AND embedding IS NOT NULL
-        AND "segmentedUrl" IS NOT NULL
-      ORDER BY embedding <-> (SELECT embedding FROM "Photo" WHERE id = ${photoId})
+        p."userId" = ${user.id}
+        AND p.id != ${photoId}
+        AND p.embedding IS NOT NULL
+        AND p."segmentedUrl" IS NOT NULL
+      ORDER BY p.embedding <-> (SELECT embedding FROM "Photo" WHERE id = ${photoId})
       LIMIT 100
     `;
 
