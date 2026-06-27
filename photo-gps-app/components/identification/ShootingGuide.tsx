@@ -1,42 +1,25 @@
 // Static "Guide de prise de vue" sidebar from the identification design.
-// Thumbnails use neutral icon placeholders; swap in real reference photos under
-// /public when available.
+// Illustrative photos live under /public/guide and /public.
+// Field photos: Thomas Bresson, CC BY 3.0 (top-view.jpg, focus.jpg).
 
 const TIPS = [
   {
     title: "Vue de dessus",
     description: "Photographiez l'animal bien à plat, de manière perpendiculaire au dos.",
+    image: "/guide/top-view.jpg",
   },
   {
     title: "Lumière diffuse",
     description:
       "Évitez les reflets du flash ou la lumière directe du soleil qui masquent les motifs.",
+    image: "/hero-salamander.jpg",
   },
   {
     title: "Mise au point",
     description: "Assurez-vous que le milieu du corps (région dorsale) est parfaitement net.",
+    image: "/guide/focus.jpg",
   },
 ]
-
-function CameraIcon() {
-  return (
-    <svg
-      className="text-muted-foreground h-8 w-8"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-      />
-      <circle cx="12" cy="13" r="3" strokeWidth={1.5} />
-    </svg>
-  )
-}
 
 export default function ShootingGuide() {
   return (
@@ -58,8 +41,9 @@ export default function ShootingGuide() {
       <div className="flex flex-col gap-6">
         {TIPS.map((tip) => (
           <div key={tip.title} className="flex gap-4">
-            <div className="bg-muted flex h-24 w-24 shrink-0 items-center justify-center rounded-lg">
-              <CameraIcon />
+            <div className="bg-muted h-24 w-24 shrink-0 overflow-hidden rounded-lg">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={tip.image} alt={tip.title} className="h-full w-full object-cover" />
             </div>
             <div className="flex flex-col gap-1">
               <p className="text-foreground text-sm font-medium">{tip.title}</p>
