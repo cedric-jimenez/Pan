@@ -167,7 +167,7 @@ export default function IdentificationPage() {
   return (
     <>
       <Navbar />
-      <main className="mx-auto min-h-screen max-w-[1280px] px-4 pt-20 pb-12 md:px-8">
+      <main className="min-h-screen w-full px-4 pt-20 pb-12 md:px-8">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           {/* Upload section */}
           <div className="flex flex-col gap-6 lg:col-span-8">
