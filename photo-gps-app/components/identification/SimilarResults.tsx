@@ -70,6 +70,9 @@ export default function SimilarResults({
   // Reference + every checked similar photo are assigned together.
   const totalToAssign = selectedCount + 1
 
+  // Auto-fill grid: larger thumbnails that adapt to the full-width page.
+  const gridClass = "grid gap-6 [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))]"
+
   const newIndividualCard = (
     <div className="bg-muted/40 border-border flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed p-6 text-center">
       <div className="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-full">
@@ -111,9 +114,9 @@ export default function SimilarResults({
         </a>
       </div>
 
-      {/* Reference (the just-uploaded photo) */}
-      <div className="border-primary/40 bg-primary/5 flex items-center gap-4 rounded-xl border p-4">
-        <div className="bg-muted h-20 w-20 shrink-0 overflow-hidden rounded-lg">
+      {/* Reference (the just-uploaded photo) — highlighted */}
+      <div className="border-primary/50 bg-primary/5 flex flex-col items-center gap-6 rounded-2xl border-2 p-6 shadow-sm sm:flex-row sm:items-stretch">
+        <div className="bg-muted ring-primary/20 h-56 w-full shrink-0 overflow-hidden rounded-xl ring-2 sm:h-48 sm:w-64">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={referencePhoto.croppedUrl ?? referencePhoto.url}
@@ -121,14 +124,19 @@ export default function SimilarResults({
             className="h-full w-full object-cover"
           />
         </div>
-        <div>
-          <p className="text-primary text-sm font-semibold">Photo analysée</p>
-          <p className="text-secondary-foreground text-sm">
+        <div className="flex flex-col justify-center">
+          <span className="bg-primary text-primary-foreground mb-2 w-fit rounded-full px-3 py-1 text-xs font-semibold tracking-wide uppercase">
+            Photo analysée
+          </span>
+          <p className="text-foreground text-2xl font-semibold">
             {referencePhoto.title || referencePhoto.originalName || referencePhoto.filename}
           </p>
+          <p className="text-secondary-foreground mt-1 text-sm">
+            Comparée à votre catalogue pour trouver l&apos;individu correspondant.
+          </p>
           {referencePhoto.individual?.name && (
-            <p className="text-muted-foreground mt-1 text-xs">
-              Déjà rattachée à {referencePhoto.individual.name}
+            <p className="text-muted-foreground mt-2 text-sm">
+              Déjà rattachée à <span className="font-medium">{referencePhoto.individual.name}</span>
             </p>
           )}
         </div>
@@ -140,12 +148,10 @@ export default function SimilarResults({
             Aucune correspondance confirmée dans votre catalogue. Vous pouvez enregistrer cette
             photo comme un nouvel individu.
           </p>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {newIndividualCard}
-          </div>
+          <div className={gridClass}>{newIndividualCard}</div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className={gridClass}>
           {results.map((result) => {
             const selected = selectedIds.has(result.id)
             const takenAt = formatTakenAt(result.takenAt)
@@ -163,7 +169,7 @@ export default function SimilarResults({
                 <button
                   type="button"
                   onClick={() => onToggle(result.id)}
-                  className="relative block h-48 w-full"
+                  className="relative block h-72 w-full"
                   aria-pressed={selected}
                   aria-label={selected ? "Désélectionner cette photo" : "Sélectionner cette photo"}
                 >
@@ -200,9 +206,9 @@ export default function SimilarResults({
                   </span>
                 </button>
 
-                <div className="flex flex-col gap-3 p-4">
+                <div className="flex flex-col gap-3 p-5">
                   <div>
-                    <h3 className="text-foreground truncate text-lg font-semibold">
+                    <h3 className="text-foreground truncate text-xl font-semibold">
                       {result.title || result.filename}
                     </h3>
                     {result.individualName ? (
