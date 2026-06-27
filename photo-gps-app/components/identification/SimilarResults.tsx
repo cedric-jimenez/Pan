@@ -70,6 +70,29 @@ export default function SimilarResults({
   // Reference + every checked similar photo are assigned together.
   const totalToAssign = selectedCount + 1
 
+  const newIndividualCard = (
+    <div className="bg-muted/40 border-border flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed p-6 text-center">
+      <div className="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-full">
+        <svg className="text-primary h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v14M5 12h14" />
+        </svg>
+      </div>
+      <div>
+        <p className="text-foreground text-sm font-medium">Nouvel individu ?</p>
+        <p className="text-secondary-foreground mt-1 text-xs">
+          Si aucune correspondance n&apos;est trouvée, créez une nouvelle fiche.
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onRegisterNew}
+        className="text-primary text-xs font-bold hover:underline"
+      >
+        Enregistrer comme nouveau
+      </button>
+    </div>
+  )
+
   return (
     <section className="flex flex-col gap-6">
       <div className="flex items-end justify-between">
@@ -112,10 +135,15 @@ export default function SimilarResults({
       </div>
 
       {results.length === 0 ? (
-        <p className="text-secondary-foreground text-sm">
-          Aucune photo similaire trouvée dans votre catalogue. Vous pouvez enregistrer cette photo
-          comme un nouvel individu.
-        </p>
+        <div className="flex flex-col gap-4">
+          <p className="text-secondary-foreground text-sm">
+            Aucune correspondance confirmée dans votre catalogue. Vous pouvez enregistrer cette
+            photo comme un nouvel individu.
+          </p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {newIndividualCard}
+          </div>
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {results.map((result) => {
@@ -205,27 +233,8 @@ export default function SimilarResults({
             )
           })}
 
-          {/* New individual empty-state card */}
-          <div className="bg-muted/40 border-border flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed p-6 text-center">
-            <div className="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-full">
-              <svg className="text-primary h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v14M5 12h14" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-foreground text-sm font-medium">Nouvel individu ?</p>
-              <p className="text-secondary-foreground mt-1 text-xs">
-                Si aucune correspondance n&apos;est trouvée, créez une nouvelle fiche.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={onRegisterNew}
-              className="text-primary text-xs font-bold hover:underline"
-            >
-              Enregistrer comme nouveau
-            </button>
-          </div>
+          {/* New individual card */}
+          {newIndividualCard}
         </div>
       )}
 

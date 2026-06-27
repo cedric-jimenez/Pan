@@ -53,7 +53,9 @@ export default function IdentificationPage() {
         throw new Error(data.error || "Échec de la recherche de similaires")
       }
       const data: SimilarPhotoResult[] = await res.json()
-      setSimilar(data)
+      // Only surface candidates the cross-verifier confirmed as the same
+      // individual (isSame). Lower-ranked / unverified neighbours are noise here.
+      setSimilar(data.filter((result) => result.isSame === true))
     } catch (err) {
       logger.error("similar fetch error", err)
       setSearchError(
