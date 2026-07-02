@@ -228,6 +228,37 @@ export default function GalleryPage() {
     }
   }, [session, sortBy, sortOrder, searchQuery, fetchPhotoCountsByDay, fetchPhotoStats])
 
+  // Close the details modal and drop the ?photo= deep-link param from the URL
+  const closePhoto = useCallback(() => {
+    setSelectedPhoto(null)
+    if (new URLSearchParams(window.location.search).has("photo")) {
+      window.history.replaceState(null, "", window.location.pathname)
+    }
+  }, [])
+
+  // Deep link: open the photo referenced by ?photo= on load. Fetched directly
+  // so it works even when the photo isn't in the currently paginated list.
+  const deepLinkHandled = useRef(false)
+  useEffect(() => {
+    if (status !== "authenticated" || deepLinkHandled.current) return
+    const photoId = new URLSearchParams(window.location.search).get("photo")
+    if (!photoId) return
+    deepLinkHandled.current = true
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/photos/${photoId}`)
+        if (res.ok) {
+          const data = await res.json()
+          setSelectedPhoto(data.photo)
+        } else {
+          logger.error("Deep-linked photo not found:", photoId)
+        }
+      } catch (error) {
+        logger.error("Failed to open deep-linked photo:", error)
+      }
+    })()
+  }, [status])
+
   const handlePhotoUpdate = async (updatedPhoto: Photo) => {
     setDayPhotos((prev) => {
       const next = new Map(prev)
@@ -259,7 +290,7 @@ export default function GalleryPage() {
     })
     fetchPhotoCountsByDay(true)
     fetchPhotoStats()
-    setSelectedPhoto(null)
+    closePhoto()
   }
 
   const handleDayDelete = async (dayDate: Date) => {
@@ -619,7 +650,7 @@ export default function GalleryPage() {
           <PhotoDetailsModal
             key={selectedPhoto.id}
             photo={selectedPhoto}
-            onClose={() => setSelectedPhoto(null)}
+            onClose={closePhoto}
             onUpdate={handlePhotoUpdate}
             onDelete={handlePhotoDelete}
             hasPrev={currentIndex > 0}

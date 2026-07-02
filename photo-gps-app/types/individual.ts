@@ -12,14 +12,27 @@ export interface IndividualWithCount extends Individual {
   photoCount: number
 }
 
+// Photo as returned by GET /api/individuals/[id] (subset of the full Photo model)
+export interface IndividualPhoto {
+  id: string
+  url: string
+  croppedUrl: string | null
+  segmentedUrl: string | null
+  title: string | null
+  description: string | null
+  takenAt: Date | string | null
+  latitude: number | null
+  longitude: number | null
+  cameraMake: string | null
+  cameraModel: string | null
+  aperture: string | null
+  shutterSpeed: string | null
+  iso: number | null
+  focalLength: string | null
+}
+
 // Individual with photos
 export interface IndividualWithPhotos extends Individual {
   photoCount: number
-  photos: {
-    id: string
-    url: string
-    croppedUrl: string | null
-    title: string | null
-    takenAt: Date | string | null
-  }[]
+  photos: IndividualPhoto[]
 }
