@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import Navbar from "@/components/Navbar"
 import PhotoDetailsModal from "@/components/PhotoDetailsModal"
 import IdentificationDropzone from "@/components/identification/IdentificationDropzone"
@@ -212,9 +213,9 @@ export default function IdentificationPage() {
                   {successInfo.count} photo{successInfo.count > 1 ? "s" : ""} associée
                   {successInfo.count > 1 ? "s" : ""} à{" "}
                   <span className="font-semibold">{successInfo.name}</span>.{" "}
-                  <a href="/individuals" className="text-primary font-medium hover:underline">
+                  <Link href="/individuals" className="text-primary font-medium hover:underline">
                     Voir la fiche
-                  </a>
+                  </Link>
                 </p>
                 <button
                   type="button"
