@@ -48,9 +48,9 @@ export default function IndividualsPage() {
       <Navbar />
       <main className="w-full px-4 py-8 pt-24 md:px-8">
         <div className="mb-8">
-          <h1 className="mb-2 text-4xl font-bold">Individuals</h1>
+          <h1 className="mb-2 text-4xl font-bold">Catalogue des individus</h1>
           <p className="text-muted-foreground">
-            Manage individuals and organize your photos by assigning them to specific individuals.
+            Parcourez les individus répertoriés et organisez vos photos en les rattachant à chacun.
           </p>
         </div>
 
