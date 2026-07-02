@@ -296,12 +296,12 @@ export default function IndividualDetailPage() {
                     key={photo.id}
                     className="bg-card border-border flex flex-col overflow-hidden rounded-xl border transition-shadow hover:shadow-lg md:flex-row"
                   >
-                    <div className="relative h-48 md:h-auto md:w-1/3">
+                    <div className="bg-muted relative h-48 md:h-auto md:w-1/3">
                       <Image
                         src={photo.croppedUrl || photo.url}
                         alt={photo.title || "Observation"}
                         fill
-                        className="object-cover"
+                        className="object-contain"
                         sizes="(max-width: 768px) 100vw, 33vw"
                       />
                     </div>
