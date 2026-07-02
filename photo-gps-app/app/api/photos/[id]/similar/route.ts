@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
 import { logger } from "@/lib/logger";
@@ -149,10 +150,18 @@ export async function GET(
     const user = await requireAuth();
     const { id: photoId } = await params;
 
+    // When linkedOnly is set, restrict the candidate pool to photos already
+    // attached to an individual — used by the guided bulk-identify flow to match
+    // an import strictly against the existing catalogue (cheaper /verify too).
+    const { searchParams } = new URL(request.url);
+    const linkedOnly =
+      searchParams.get("linkedOnly") === "1" || searchParams.get("linkedOnly") === "true";
+
     logger.log({
       action: "similar_photos_request",
       photoId,
       userId: user.id,
+      linkedOnly,
     });
 
     // Get the source photo with its embedding
@@ -198,6 +207,10 @@ export async function GET(
     // a chance to find it. TODO: improve the retrieval embedding to shrink this.
     // The <-> operator calculates cosine distance (0 = identical, 2 = opposite)
     // We exclude the source photo itself and only search within user's photos
+    const linkedFilter = linkedOnly
+      ? Prisma.sql`AND p."individualId" IS NOT NULL`
+      : Prisma.empty;
+
     const similarPhotos = await prisma.$queryRaw<
       Array<{
         id: string;
@@ -214,7 +227,7 @@ export async function GET(
         individualName: string | null;
         distance: number;
       }>
-    >`
+    >(Prisma.sql`
       SELECT
         p.id,
         p.filename,
@@ -236,9 +249,10 @@ export async function GET(
         AND p.id != ${photoId}
         AND p.embedding IS NOT NULL
         AND p."segmentedUrl" IS NOT NULL
+        ${linkedFilter}
       ORDER BY p.embedding <-> (SELECT embedding FROM "Photo" WHERE id = ${photoId})
       LIMIT 100
-    `;
+    `);
 
     // If no similar photos found, return empty array
     if (similarPhotos.length === 0) {
