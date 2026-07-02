@@ -10,6 +10,10 @@ export interface Individual {
 // Individual with photo count
 export interface IndividualWithCount extends Individual {
   photoCount: number
+  // Cover thumbnail (most recent photo's cropped/full URL) and the date of the
+  // most recent observation. Both null when the individual has no photos.
+  coverUrl: string | null
+  lastObservedAt: Date | string | null
 }
 
 // Photo as returned by GET /api/individuals/[id] (subset of the full Photo model)

@@ -57,19 +57,35 @@ export async function GET(request: Request) {
               photos: true,
             },
           },
+          // Most recent photo drives both the cover thumbnail and the last
+          // observation date. Nulls-last keeps geotagged/dated photos on top.
+          photos: {
+            orderBy: [{ takenAt: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
+            take: 1,
+            select: {
+              url: true,
+              croppedUrl: true,
+              takenAt: true,
+            },
+          },
         },
       }),
       prisma.individual.count({ where }),
     ])
 
     return NextResponse.json({
-      individuals: individuals.map((ind) => ({
-        id: ind.id,
-        name: ind.name,
-        photoCount: ind._count.photos,
-        createdAt: ind.createdAt,
-        updatedAt: ind.updatedAt,
-      })),
+      individuals: individuals.map((ind) => {
+        const cover = ind.photos[0]
+        return {
+          id: ind.id,
+          name: ind.name,
+          photoCount: ind._count.photos,
+          coverUrl: cover ? (cover.croppedUrl ?? cover.url) : null,
+          lastObservedAt: cover?.takenAt ?? null,
+          createdAt: ind.createdAt,
+          updatedAt: ind.updatedAt,
+        }
+      }),
       total,
       page,
       limit,
