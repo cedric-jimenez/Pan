@@ -7,6 +7,14 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   prettier,
+  {
+    rules: {
+      complexity: ["warn", 15],
+      "max-depth": ["warn", 4],
+      "max-params": ["warn", 4],
+      "max-nested-callbacks": ["warn", 4],
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
