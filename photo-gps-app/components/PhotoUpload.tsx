@@ -11,6 +11,111 @@ interface PhotoUploadProps {
   onUploadComplete: () => void
 }
 
+// Compress an image client-side while preserving EXIF data (GPS, date, camera info).
+async function compressImage(file: File): Promise<File> {
+  if (file.size < IMAGE_CONFIG.MAX_UPLOAD_SIZE_BYTES) {
+    return file
+  }
+
+  try {
+    const options = {
+      maxSizeMB: IMAGE_CONFIG.TARGET_SIZE_MB,
+      maxWidthOrHeight: IMAGE_CONFIG.THUMBNAIL_SIZE,
+      useWebWorker: true,
+      preserveExif: true,
+    }
+
+    const compressedFile = await imageCompression(file, options)
+
+    // Ensure the filename is preserved (browser-image-compression sometimes loses it)
+    if (compressedFile.name === "blob" || !compressedFile.name) {
+      return new File([compressedFile], file.name, {
+        type: compressedFile.type,
+        lastModified: compressedFile.lastModified,
+      })
+    }
+
+    return compressedFile
+  } catch (error) {
+    logger.error("Compression failed:", error)
+    return file
+  }
+}
+
+function getValidationErrorMessage(error: string): string {
+  if (error.includes("No file")) return "Aucun fichier fourni"
+  if (error.includes("must be an image")) return "Le fichier doit être une image"
+  if (error.includes("too large")) return "Fichier trop volumineux (max 10 MB)"
+  return `Format invalide : ${error}`
+}
+
+/** Map an upload HTTP status code to a user-friendly French message. */
+function getUploadErrorMessage(status: number, error: string): string {
+  switch (status) {
+    case 401:
+      return "Vous devez être connecté pour uploader des photos"
+    case 400:
+      return getValidationErrorMessage(error)
+    case 409:
+      return "Ce fichier existe déjà dans votre galerie"
+    case 413:
+      return "Fichier trop volumineux (max 10 MB après compression)"
+    case 507:
+      return "Quota de stockage atteint. Supprimez des photos pour en ajouter de nouvelles"
+    case 500:
+      return "Erreur lors du traitement de l'image. Réessayez avec une autre photo"
+    default:
+      return `Erreur ${status}: ${error}`
+  }
+}
+
+type UploadOutcome = "success" | "no-detection" | "error"
+
+/** Compress, upload, and report progress for a single file. Never throws. */
+async function uploadSingleFile(
+  file: File,
+  onProgress: (message: string, replaceLast?: boolean) => void
+): Promise<UploadOutcome> {
+  try {
+    onProgress(`Préparation de ${file.name}...`)
+
+    const compressedFile = await compressImage(file)
+    const sizeBefore = (file.size / 1024 / 1024).toFixed(2)
+    const sizeAfter = (compressedFile.size / 1024 / 1024).toFixed(2)
+    onProgress(`Upload de ${file.name} (${sizeBefore}MB → ${sizeAfter}MB)...`, true)
+
+    const formData = new FormData()
+    formData.append("file", compressedFile)
+
+    const response = await fetchWithCsrf("/api/photos/upload", {
+      method: "POST",
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const data = await response.json()
+      throw new Error(getUploadErrorMessage(response.status, data.error || "Erreur d'upload"))
+    }
+
+    // Read the 201 payload to surface the detection outcome. A successful
+    // upload with salamanderDetected === false means the photo was stored
+    // but the ML pipeline found no salamander to crop/segment/embed — it
+    // cannot be matched against known individuals until re-shot.
+    const data = await response.json().catch(() => null)
+    if (data?.photo?.salamanderDetected === false) {
+      onProgress(`⚠ ${file.name} : aucune salamandre détectée`)
+      return "no-detection"
+    }
+
+    onProgress(`✓ ${file.name} importé avec succès`)
+    return "success"
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Erreur inconnue"
+    onProgress(`✗ ${file.name} : ${message}`)
+    return "error"
+  }
+}
+
 export default function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
   const [uploadProgress, setUploadProgress] = useState<string[]>([])
   const [error, setError] = useState("")
@@ -19,129 +124,26 @@ export default function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
   // valid outcome, not a failure.
   const [noDetectionFiles, setNoDetectionFiles] = useState<string[]>([])
 
-  // Compress image on client side while preserving EXIF data
-  const compressImage = async (file: File): Promise<File> => {
-    // If file is already small enough, return as-is
-    if (file.size < IMAGE_CONFIG.MAX_UPLOAD_SIZE_BYTES) {
-      return file
-    }
-
-    try {
-      const options = {
-        maxSizeMB: IMAGE_CONFIG.TARGET_SIZE_MB,
-        maxWidthOrHeight: IMAGE_CONFIG.THUMBNAIL_SIZE,
-        useWebWorker: true,
-        preserveExif: true, // CRITICAL: Preserve EXIF data (GPS, date, camera info)
-      }
-
-      const compressedFile = await imageCompression(file, options)
-
-      // Ensure the filename is preserved (browser-image-compression sometimes loses it)
-      if (compressedFile.name === "blob" || !compressedFile.name) {
-        return new File([compressedFile], file.name, {
-          type: compressedFile.type,
-          lastModified: compressedFile.lastModified,
-        })
-      }
-
-      return compressedFile
-    } catch (error) {
-      logger.error("Compression failed:", error)
-      // If compression fails, return original file
-      return file
-    }
-  }
-
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
       setError("")
       setUploadProgress([])
       setNoDetectionFiles([])
       let successCount = 0
+      let hasError = false
+
+      const reportProgress = (message: string, replaceLast = false) =>
+        setUploadProgress((prev) => (replaceLast ? [...prev.slice(0, -1), message] : [...prev, message]))
 
       for (const file of acceptedFiles) {
-        try {
-          setUploadProgress((prev) => [...prev, `Préparation de ${file.name}...`])
+        const outcome = await uploadSingleFile(file, reportProgress)
+        if (outcome === "success" || outcome === "no-detection") successCount++
+        if (outcome === "no-detection") setNoDetectionFiles((prev) => [...prev, file.name])
+        if (outcome === "error") hasError = true
+      }
 
-          // Compress image before upload
-          const compressedFile = await compressImage(file)
-          const sizeBefore = (file.size / 1024 / 1024).toFixed(2)
-          const sizeAfter = (compressedFile.size / 1024 / 1024).toFixed(2)
-
-          setUploadProgress((prev) => [
-            ...prev.slice(0, -1),
-            `Upload de ${file.name} (${sizeBefore}MB → ${sizeAfter}MB)...`,
-          ])
-
-          const formData = new FormData()
-          formData.append("file", compressedFile)
-
-          const response = await fetchWithCsrf("/api/photos/upload", {
-            method: "POST",
-            body: formData,
-          })
-
-          if (!response.ok) {
-            const data = await response.json()
-
-            // Map HTTP status codes to user-friendly French messages
-            let errorMessage = data.error || "Erreur d'upload"
-
-            switch (response.status) {
-              case 401:
-                errorMessage = "Vous devez être connecté pour uploader des photos"
-                break
-              case 400:
-                // Validation errors - use server message if available
-                if (data.error.includes("No file")) {
-                  errorMessage = "Aucun fichier fourni"
-                } else if (data.error.includes("must be an image")) {
-                  errorMessage = "Le fichier doit être une image"
-                } else if (data.error.includes("too large")) {
-                  errorMessage = "Fichier trop volumineux (max 10 MB)"
-                } else {
-                  errorMessage = `Format invalide : ${data.error}`
-                }
-                break
-              case 409:
-                errorMessage = "Ce fichier existe déjà dans votre galerie"
-                break
-              case 413:
-                errorMessage = "Fichier trop volumineux (max 10 MB après compression)"
-                break
-              case 507:
-                errorMessage =
-                  "Quota de stockage atteint. Supprimez des photos pour en ajouter de nouvelles"
-                break
-              case 500:
-                errorMessage =
-                  "Erreur lors du traitement de l'image. Réessayez avec une autre photo"
-                break
-              default:
-                errorMessage = `Erreur ${response.status}: ${data.error}`
-            }
-
-            throw new Error(errorMessage)
-          }
-
-          successCount++
-
-          // Read the 201 payload to surface the detection outcome. A successful
-          // upload with salamanderDetected === false means the photo was stored
-          // but the ML pipeline found no salamander to crop/segment/embed — it
-          // cannot be matched against known individuals until re-shot.
-          const data = await response.json().catch(() => null)
-          if (data?.photo?.salamanderDetected === false) {
-            setNoDetectionFiles((prev) => [...prev, file.name])
-            setUploadProgress((prev) => [...prev, `⚠ ${file.name} : aucune salamandre détectée`])
-          } else {
-            setUploadProgress((prev) => [...prev, `✓ ${file.name} importé avec succès`])
-          }
-        } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : "Erreur inconnue"
-          setUploadProgress((prev) => [...prev, `✗ ${file.name} : ${message}`])
-          setError("Certains fichiers n'ont pas pu être uploadés. Consultez les détails ci-dessus.")
-        }
+      if (hasError) {
+        setError("Certains fichiers n'ont pas pu être uploadés. Consultez les détails ci-dessus.")
       }
 
       // Only reload gallery if at least one upload succeeded

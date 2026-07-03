@@ -7,100 +7,84 @@ import { logger } from "@/lib/logger"
 type SortBy = "date" | "title" | "size" | "camera"
 type SortOrder = "asc" | "desc"
 
+type WhereClause = {
+  userId: string
+  takenAt?: { gte?: Date; lte?: Date }
+  OR?: Array<{
+    title?: { contains: string; mode: "insensitive" }
+    originalName?: { contains: string; mode: "insensitive" }
+    description?: { contains: string; mode: "insensitive" }
+    cameraMake?: { contains: string; mode: "insensitive" }
+    cameraModel?: { contains: string; mode: "insensitive" }
+  }>
+}
+
+type OrderBy = Record<string, "asc" | "desc"> | Record<string, "asc" | "desc">[]
+
+function buildWhereClause(
+  userId: string,
+  params: { startDate: string | null; endDate: string | null; search: string | null }
+): WhereClause {
+  const where: WhereClause = { userId }
+
+  if (params.startDate || params.endDate) {
+    where.takenAt = {}
+    if (params.startDate) where.takenAt.gte = new Date(params.startDate)
+    if (params.endDate) where.takenAt.lte = new Date(params.endDate)
+  }
+
+  if (params.search && params.search.trim()) {
+    where.OR = [
+      { title: { contains: params.search, mode: "insensitive" } },
+      { originalName: { contains: params.search, mode: "insensitive" } },
+      { description: { contains: params.search, mode: "insensitive" } },
+      { cameraMake: { contains: params.search, mode: "insensitive" } },
+      { cameraModel: { contains: params.search, mode: "insensitive" } },
+    ]
+  }
+
+  return where
+}
+
+/** Sort by the requested field, falling back to a secondary field when the primary is unset. */
+function buildOrderBy(sortBy: SortBy, sortOrder: SortOrder): OrderBy {
+  const dir = sortOrder === "asc" ? "asc" : "desc"
+
+  switch (sortBy) {
+    case "date":
+      return [{ takenAt: dir }, { createdAt: dir }]
+    case "title":
+      return [{ title: dir }, { originalName: dir }]
+    case "size":
+      return { fileSize: dir }
+    case "camera":
+      return [{ cameraModel: dir }, { cameraMake: dir }]
+    default:
+      return { takenAt: "desc" }
+  }
+}
+
 export async function GET(request: Request) {
   try {
     const user = await requireAuth()
 
     const { searchParams } = new URL(request.url)
-    const startDate = searchParams.get("startDate")
-    const endDate = searchParams.get("endDate")
     const sortBy = (searchParams.get("sortBy") || "date") as SortBy
     const sortOrder = (searchParams.get("sortOrder") || "desc") as SortOrder
-    const search = searchParams.get("search")
 
-    // Pagination parameters
     const page = parseInt(searchParams.get("page") || "1", 10)
     const limit = parseInt(searchParams.get("limit") || PAGINATION.PHOTOS_PER_PAGE.toString(), 10)
     const skip = (page - 1) * limit
 
-    // Build query filters
-    type WhereClause = {
-      userId: string
-      takenAt?: { gte?: Date; lte?: Date }
-      OR?: Array<{
-        title?: { contains: string; mode: "insensitive" }
-        originalName?: { contains: string; mode: "insensitive" }
-        description?: { contains: string; mode: "insensitive" }
-        cameraMake?: { contains: string; mode: "insensitive" }
-        cameraModel?: { contains: string; mode: "insensitive" }
-      }>
-    }
+    const where = buildWhereClause(user.id, {
+      startDate: searchParams.get("startDate"),
+      endDate: searchParams.get("endDate"),
+      search: searchParams.get("search"),
+    })
+    const orderBy = buildOrderBy(sortBy, sortOrder)
 
-    const where: WhereClause = {
-      userId: user.id,
-    }
-
-    if (startDate || endDate) {
-      where.takenAt = {}
-      if (startDate) {
-        where.takenAt.gte = new Date(startDate)
-      }
-      if (endDate) {
-        where.takenAt.lte = new Date(endDate)
-      }
-    }
-
-    // Add search filter
-    if (search && search.trim()) {
-      where.OR = [
-        { title: { contains: search, mode: "insensitive" } },
-        { originalName: { contains: search, mode: "insensitive" } },
-        { description: { contains: search, mode: "insensitive" } },
-        { cameraMake: { contains: search, mode: "insensitive" } },
-        { cameraModel: { contains: search, mode: "insensitive" } },
-      ]
-    }
-
-    // Build orderBy based on sortBy parameter
-    let orderBy: Record<string, "asc" | "desc"> | Record<string, "asc" | "desc">[]
-
-    switch (sortBy) {
-      case "date":
-        // Sort by takenAt if available, otherwise by createdAt
-        orderBy = [
-          { takenAt: sortOrder === "asc" ? "asc" : "desc" },
-          { createdAt: sortOrder === "asc" ? "asc" : "desc" },
-        ]
-        break
-
-      case "title":
-        // Sort by title if available, otherwise by originalName
-        orderBy = [
-          { title: sortOrder === "asc" ? "asc" : "desc" },
-          { originalName: sortOrder === "asc" ? "asc" : "desc" },
-        ]
-        break
-
-      case "size":
-        orderBy = { fileSize: sortOrder === "asc" ? "asc" : "desc" }
-        break
-
-      case "camera":
-        // Sort by cameraModel if available, otherwise by cameraMake
-        orderBy = [
-          { cameraModel: sortOrder === "asc" ? "asc" : "desc" },
-          { cameraMake: sortOrder === "asc" ? "asc" : "desc" },
-        ]
-        break
-
-      default:
-        orderBy = { takenAt: "desc" }
-    }
-
-    // Get total count for pagination metadata
     const total = await prisma.photo.count({ where })
 
-    // Fetch paginated photos
     const photos = await prisma.photo.findMany({
       where,
       orderBy,
@@ -116,7 +100,6 @@ export async function GET(request: Request) {
       },
     })
 
-    // Calculate if there are more pages
     const hasMore = skip + photos.length < total
 
     return NextResponse.json({
