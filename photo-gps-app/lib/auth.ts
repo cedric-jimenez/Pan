@@ -7,6 +7,43 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "./prisma"
 import bcrypt from "bcryptjs"
 
+/**
+ * Validates email/password credentials against the database.
+ * Extracted from the CredentialsProvider config so it can be unit-tested directly.
+ */
+export async function authorizeCredentials(
+  credentials: Partial<Record<"email" | "password", unknown>> | undefined
+) {
+  if (!credentials?.email || !credentials?.password) {
+    throw new Error("Invalid credentials")
+  }
+
+  const email = credentials.email as string
+  const password = credentials.password as string
+
+  const user = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  })
+
+  if (!user || !user.password) {
+    throw new Error("Invalid credentials")
+  }
+
+  const isCorrectPassword = await bcrypt.compare(password, user.password)
+
+  if (!isCorrectPassword) {
+    throw new Error("Invalid credentials")
+  }
+
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+  }
+}
+
 // @ts-expect-error - NextAuth v5 beta has type resolution issues with TypeScript
 // The code works correctly at runtime, this is a known issue with the beta version
 const nextAuthConfig = NextAuth({
@@ -31,34 +68,7 @@ const nextAuthConfig = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Invalid credentials")
-        }
-
-        const email = credentials.email as string
-        const password = credentials.password as string
-
-        const user = await prisma.user.findUnique({
-          where: {
-            email,
-          },
-        })
-
-        if (!user || !user.password) {
-          throw new Error("Invalid credentials")
-        }
-
-        const isCorrectPassword = await bcrypt.compare(password, user.password)
-
-        if (!isCorrectPassword) {
-          throw new Error("Invalid credentials")
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        }
+        return authorizeCredentials(credentials)
       },
     }),
   ],
