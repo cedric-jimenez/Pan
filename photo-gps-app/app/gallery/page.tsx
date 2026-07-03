@@ -4,7 +4,6 @@ import { useEffect, useState, useMemo, useRef, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { format, parseISO } from "date-fns"
-import { fr } from "date-fns/locale"
 import Navbar from "@/components/Navbar"
 import PhotoUpload from "@/components/PhotoUpload"
 import { GridSize } from "@/components/PhotoGrid"
@@ -13,6 +12,9 @@ import PhotoDetailsModal from "@/components/PhotoDetailsModal"
 import DayDownloadModal from "@/components/DayDownloadModal"
 import BulkProcessModal from "@/components/BulkProcessModal"
 import StatsCards, { PhotoStats } from "@/components/StatsCards"
+import GalleryControls from "@/components/gallery/GalleryControls"
+import GalleryEmptyState from "@/components/gallery/GalleryEmptyState"
+import DeleteDayModal from "@/components/gallery/DeleteDayModal"
 import { Photo } from "@/types/photo"
 import { logger } from "@/lib/logger"
 import { fetchWithCsrf } from "@/lib/fetch-with-csrf"
@@ -377,6 +379,12 @@ export default function GalleryPage() {
     [dayList, dayPhotos]
   )
 
+  // Position of the open photo within `loadedPhotos`, used for prev/next navigation.
+  const currentPhotoIndex = useMemo(
+    () => (selectedPhoto ? loadedPhotos.findIndex((p) => p.id === selectedPhoto.id) : -1),
+    [selectedPhoto, loadedPhotos]
+  )
+
   if (status === "loading" || (isLoading && isInitialLoad.current)) {
     return (
       <div className="bg-background flex min-h-screen items-center justify-center">
@@ -421,158 +429,17 @@ export default function GalleryPage() {
         </div>
 
         {/* Search and controls - always visible */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          {total > 0 && (
-            <p className="text-muted-foreground text-sm">
-              {total} photo{total > 1 ? "s" : ""}
-            </p>
-          )}
-
-          <div className="flex flex-wrap items-center gap-4">
-            {/* Search input */}
-            <div className="relative">
-              <input
-                type="text"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Rechercher..."
-                className="bg-muted text-foreground placeholder:text-muted-foreground focus:ring-ring w-48 rounded-lg border-0 py-1.5 pr-9 pl-9 text-sm focus:ring-2 focus:outline-none"
-              />
-              <svg
-                className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-              {searchInput && (
-                <button
-                  onClick={() => setSearchInput("")}
-                  className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2.5 -translate-y-1/2 transition-colors"
-                  title="Effacer la recherche"
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              )}
-            </div>
-
-            {/* Sort selector */}
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground text-sm">Tri :</span>
-              <select
-                value={sortBy}
-                onChange={(e) => handleSortChange(e.target.value as SortBy)}
-                className="bg-muted text-foreground focus:ring-ring rounded-lg border-0 px-3 py-1.5 text-sm focus:ring-2 focus:outline-none"
-              >
-                <option value="date">Date</option>
-                <option value="title">Titre</option>
-                <option value="size">Taille</option>
-                <option value="camera">Appareil</option>
-              </select>
-
-              {/* Sort order toggle */}
-              <button
-                onClick={toggleSortOrder}
-                className="bg-muted hover:bg-muted/80 rounded-lg px-3 py-1.5 transition-colors"
-                title={sortOrder === "desc" ? "Décroissant" : "Croissant"}
-              >
-                {sortOrder === "desc" ? (
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                ) : (
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 15l7-7 7 7"
-                    />
-                  </svg>
-                )}
-              </button>
-            </div>
-
-            {/* Grid size selector */}
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground mr-2 text-sm">Taille :</span>
-              <div className="bg-muted flex gap-1 rounded-lg p-1">
-                <button
-                  onClick={() => handleGridSizeChange("small")}
-                  className={`rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-                    gridSize === "small"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  title="Petites vignettes"
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-                    />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => handleGridSizeChange("medium")}
-                  className={`rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-                    gridSize === "medium"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  title="Vignettes moyennes"
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"
-                    />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => handleGridSizeChange("large")}
-                  className={`rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-                    gridSize === "large"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  title="Grandes vignettes"
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 5a1 1 0 011-1h14a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h14a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4z"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <GalleryControls
+          total={total}
+          searchInput={searchInput}
+          onSearchInputChange={setSearchInput}
+          sortBy={sortBy}
+          onSortByChange={handleSortChange}
+          sortOrder={sortOrder}
+          onToggleSortOrder={toggleSortOrder}
+          gridSize={gridSize}
+          onGridSizeChange={handleGridSizeChange}
+        />
 
         {/* Subtle loading indicator during search/filter */}
         {isSearching && (
@@ -584,40 +451,7 @@ export default function GalleryPage() {
         )}
 
         {dayList.length === 0 ? (
-          <div className="py-16 text-center">
-            <svg
-              className="text-muted-foreground mx-auto mb-4 h-24 w-24"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-            {searchQuery.trim() ? (
-              <>
-                <h3 className="mb-2 text-xl font-medium">Aucun résultat</h3>
-                <p className="text-muted-foreground mb-4">
-                  Aucune photo ne correspond à &quot;{searchQuery}&quot;
-                </p>
-                <button
-                  onClick={() => setSearchInput("")}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 text-sm transition-colors"
-                >
-                  Effacer la recherche
-                </button>
-              </>
-            ) : (
-              <>
-                <h3 className="mb-2 text-xl font-medium">No photos yet</h3>
-                <p className="text-muted-foreground">Upload your first photo to get started</p>
-              </>
-            )}
-          </div>
+          <GalleryEmptyState searchQuery={searchQuery} onClearSearch={() => setSearchInput("")} />
         ) : (
           <div className="space-y-8">
             {dayList.map(({ date, dateKey, count }) => (
@@ -644,80 +478,32 @@ export default function GalleryPage() {
         )}
       </main>
 
-      {selectedPhoto && (() => {
-        const currentIndex = loadedPhotos.findIndex((p) => p.id === selectedPhoto.id)
-        return (
-          <PhotoDetailsModal
-            key={selectedPhoto.id}
-            photo={selectedPhoto}
-            onClose={closePhoto}
-            onUpdate={handlePhotoUpdate}
-            onDelete={handlePhotoDelete}
-            hasPrev={currentIndex > 0}
-            hasNext={currentIndex >= 0 && currentIndex < loadedPhotos.length - 1}
-            onNavigate={(direction) => {
-              const delta = direction === "next" ? 1 : -1
-              const next = loadedPhotos[currentIndex + delta]
-              if (next) setSelectedPhoto(next)
-            }}
-          />
-        )
-      })()}
+      {selectedPhoto && (
+        <PhotoDetailsModal
+          key={selectedPhoto.id}
+          photo={selectedPhoto}
+          onClose={closePhoto}
+          onUpdate={handlePhotoUpdate}
+          onDelete={handlePhotoDelete}
+          hasPrev={currentPhotoIndex > 0}
+          hasNext={currentPhotoIndex >= 0 && currentPhotoIndex < loadedPhotos.length - 1}
+          onNavigate={(direction) => {
+            const delta = direction === "next" ? 1 : -1
+            const next = loadedPhotos[currentPhotoIndex + delta]
+            if (next) setSelectedPhoto(next)
+          }}
+        />
+      )}
 
       {/* Delete Day Confirmation Modal */}
       {dayToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-card w-full max-w-md rounded-lg p-6 shadow-xl">
-            <h3 className="mb-4 text-xl font-semibold">Confirmer la suppression</h3>
-            <p className="text-muted-foreground mb-6">
-              Êtes-vous sûr de vouloir supprimer toutes les photos du{" "}
-              <strong className="text-foreground">
-                {format(dayToDelete.date, "d MMMM yyyy", { locale: fr })}
-              </strong>{" "}
-              ?
-              <br />
-              <br />
-              <strong className="text-destructive">
-                {dayToDelete.totalCount} photo{dayToDelete.totalCount > 1 ? "s" : ""} ser
-                {dayToDelete.totalCount > 1 ? "ont" : "a"} définitivement supprimée
-                {dayToDelete.totalCount > 1 ? "s" : ""}.
-              </strong>
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setDayToDelete(null)}
-                disabled={isDeletingDay}
-                className="bg-muted hover:bg-muted/80 rounded-lg px-4 py-2 transition-colors disabled:opacity-50"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={() => handleDayDelete(dayToDelete.date)}
-                disabled={isDeletingDay}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 flex items-center gap-2 rounded-lg px-4 py-2 transition-colors disabled:opacity-50"
-              >
-                {isDeletingDay ? (
-                  <>
-                    <div className="border-destructive-foreground h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
-                    Suppression...
-                  </>
-                ) : (
-                  <>
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      />
-                    </svg>
-                    Supprimer
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeleteDayModal
+          date={dayToDelete.date}
+          totalCount={dayToDelete.totalCount}
+          isDeleting={isDeletingDay}
+          onCancel={() => setDayToDelete(null)}
+          onConfirm={() => handleDayDelete(dayToDelete.date)}
+        />
       )}
 
       {/* Day Download Modal */}

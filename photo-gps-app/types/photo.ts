@@ -42,3 +42,35 @@ export interface Photo {
   createdAt: Date | string
   updatedAt: Date | string
 }
+
+// A candidate match returned by /api/photos/[id]/similar
+export interface SimilarPhoto {
+  id: string
+  filename: string
+  url: string
+  croppedUrl: string | null
+  segmentedUrl: string | null
+  title: string | null
+  description: string | null
+  takenAt: Date | null
+  latitude: number | null
+  longitude: number | null
+  distance: number
+  similarityScore: number
+  confidence?: string
+  isSame?: boolean
+  cosine_similarity?: number
+  matches?: number
+  inliers?: number
+}
+
+// Result of a single photo crop/segment/embed (re)processing run
+export interface PhotoProcessResult {
+  photoId: string
+  success: boolean
+  error?: string
+  salamanderDetected?: boolean
+  hasCropped?: boolean
+  hasSegmented?: boolean
+  hasEmbedding?: boolean
+}

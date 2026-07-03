@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react"
 import { Dialog } from "@headlessui/react"
 import Button from "@/components/Button"
-import Input from "@/components/Input"
+import ConflictIndividualPicker from "./ConflictIndividualPicker"
+import CreateIndividualNameField from "./CreateIndividualNameField"
 import { fetchWithCsrf } from "@/lib/fetch-with-csrf"
 import { ConflictIndividual } from "@/types/identification"
 
@@ -23,6 +24,36 @@ interface ConfirmIndividualModalProps {
 }
 
 type Mode = "create" | "reuse" | "conflict"
+
+interface ConfirmRequestBody {
+  photoIds: string[]
+  newName?: string
+  individualId?: string
+}
+
+/** Build the confirm-endpoint request body for the current mode, or an error to show instead. */
+function buildRequestBody(params: {
+  mode: Mode
+  photoIds: string[]
+  name: string
+  chosenId: string | null
+  existingIndividuals: ExistingIndividual[]
+}): { body: ConfirmRequestBody } | { error: string } {
+  const { mode, photoIds, name, chosenId, existingIndividuals } = params
+
+  if (mode === "create") {
+    if (!name.trim()) return { error: "Veuillez saisir un nom" }
+    return { body: { photoIds, newName: name.trim() } }
+  }
+
+  if (mode === "conflict") {
+    if (!chosenId) return { error: "Veuillez choisir un individu" }
+    return { body: { photoIds, individualId: chosenId } }
+  }
+
+  // mode === "reuse"
+  return { body: { photoIds, individualId: existingIndividuals[0]?.id } }
+}
 
 export default function ConfirmIndividualModal({
   isOpen,
@@ -75,37 +106,19 @@ export default function ConfirmIndividualModal({
   }, [isOpen])
 
   const handleSubmit = async () => {
+    const built = buildRequestBody({ mode, photoIds, name, chosenId, existingIndividuals })
+    if ("error" in built) {
+      setError(built.error)
+      return
+    }
+
     setSubmitting(true)
     setError(null)
     try {
-      const body: {
-        photoIds: string[]
-        newName?: string
-        individualId?: string
-      } = { photoIds }
-
-      if (mode === "create") {
-        if (!name.trim()) {
-          setError("Veuillez saisir un nom")
-          setSubmitting(false)
-          return
-        }
-        body.newName = name.trim()
-      } else if (mode === "conflict") {
-        if (!chosenId) {
-          setError("Veuillez choisir un individu")
-          setSubmitting(false)
-          return
-        }
-        body.individualId = chosenId
-      } else if (mode === "reuse") {
-        body.individualId = existingIndividuals[0]?.id
-      }
-
       const res = await fetchWithCsrf("/api/identification/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify(built.body),
       })
 
       const data = await res.json().catch(() => ({}))
@@ -150,42 +163,13 @@ export default function ConfirmIndividualModal({
 
           <div className="mt-5 space-y-4">
             {mode === "create" && (
-              <div>
-                <div className="flex items-end gap-2">
-                  <Input
-                    label="Nom du nouvel individu"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder={nameLoading ? "Génération…" : "Nom"}
-                    disabled={submitting}
-                  />
-                  <button
-                    type="button"
-                    onClick={fetchSuggestedName}
-                    disabled={nameLoading || submitting}
-                    className="text-secondary-foreground hover:text-foreground hover:bg-muted mb-px rounded-lg p-2.5 transition-colors disabled:opacity-50"
-                    aria-label="Suggérer un autre nom"
-                    title="Suggérer un autre nom"
-                  >
-                    <svg
-                      className={`h-5 w-5 ${nameLoading ? "animate-spin" : ""}`}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                      />
-                    </svg>
-                  </button>
-                </div>
-                <p className="text-muted-foreground mt-2 text-xs">
-                  Nom suggéré automatiquement — modifiable.
-                </p>
-              </div>
+              <CreateIndividualNameField
+                name={name}
+                nameLoading={nameLoading}
+                submitting={submitting}
+                onNameChange={setName}
+                onRegenerate={fetchSuggestedName}
+              />
             )}
 
             {mode === "reuse" && (
@@ -196,36 +180,11 @@ export default function ConfirmIndividualModal({
             )}
 
             {mode === "conflict" && (
-              <div>
-                <p className="text-foreground mb-3 text-sm">
-                  Les photos sélectionnées appartiennent à plusieurs individus. Choisissez celui
-                  auquel tout rattacher :
-                </p>
-                <div className="space-y-2">
-                  {conflictList.map((ind) => (
-                    <label
-                      key={ind.id}
-                      className={`border-border flex cursor-pointer items-center gap-3 rounded-lg border p-3 ${
-                        chosenId === ind.id ? "border-primary bg-primary/5" : ""
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="conflict-individual"
-                        value={ind.id}
-                        checked={chosenId === ind.id}
-                        onChange={() => setChosenId(ind.id)}
-                      />
-                      <span className="text-foreground text-sm font-medium">{ind.name}</span>
-                      {ind.photoCount > 0 && (
-                        <span className="text-muted-foreground text-xs">
-                          ({ind.photoCount} photos)
-                        </span>
-                      )}
-                    </label>
-                  ))}
-                </div>
-              </div>
+              <ConflictIndividualPicker
+                options={conflictList}
+                chosenId={chosenId}
+                onChoose={setChosenId}
+              />
             )}
 
             {error && <p className="text-destructive text-sm">{error}</p>}

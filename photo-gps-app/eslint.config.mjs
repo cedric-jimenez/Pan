@@ -9,10 +9,10 @@ const eslintConfig = defineConfig([
   prettier,
   {
     rules: {
-      complexity: ["warn", 15],
-      "max-depth": ["warn", 4],
-      "max-params": ["warn", 4],
-      "max-nested-callbacks": ["warn", 4],
+      complexity: ["error", 15],
+      "max-depth": ["error", 4],
+      "max-params": ["error", 4],
+      "max-nested-callbacks": ["error", 4],
     },
   },
   // Override default ignores of eslint-config-next.
