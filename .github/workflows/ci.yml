@@ -35,13 +35,21 @@ jobs:
         working-directory: photo-gps-app
         run: npm run lint
 
-      - name: Run Tests
+      - name: Run Tests with Coverage
         working-directory: photo-gps-app
-        run: npm test -- --run
+        run: npm run test:coverage -- --run
         env:
           NEXTAUTH_SECRET: test-secret
           NEXTAUTH_URL: http://localhost:3000
           DATABASE_URL: file:./test.db
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: photo-gps-app/coverage/
+          retention-days: 14
 
       - name: Type Check
         working-directory: photo-gps-app

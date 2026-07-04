@@ -135,7 +135,9 @@ See `.env.example` for the full list. Key variables:
 
 `.github/workflows/ci.yml` runs on PRs to `main`/`master` and pushes to `claude/**` branches:
 
-1. **lint-and-test**: ESLint → Vitest (`--run`) → TypeScript type check (`--skipLibCheck`, non-blocking)
+1. **lint-and-test**: ESLint → Vitest with coverage (`--run`, thresholds enforced via `vitest.config.ts`) → TypeScript type check (`--skipLibCheck`, non-blocking)
 2. **build**: `next build` (depends on lint-and-test)
+
+Coverage thresholds (`coverage.thresholds` in `vitest.config.ts`) act as a regression floor — the job fails if global statements/branches/functions/lines coverage drops below the configured percentages. The HTML/JSON coverage report is uploaded as a CI artifact (`coverage-report`) for inspection.
 
 The build step uses dummy env values for Postgres and R2 — the app must gracefully handle missing credentials at build time.
