@@ -18,6 +18,12 @@ export default defineConfig({
       reporter: ["text", "json", "html"],
       include: ["app/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "middleware.ts"],
       exclude: ["node_modules/", ".next/", "out/", "coverage/", "*.config.*", "**/*.d.ts"],
+      thresholds: {
+        statements: 64,
+        branches: 63,
+        functions: 58,
+        lines: 65,
+      },
     },
   },
   resolve: {
