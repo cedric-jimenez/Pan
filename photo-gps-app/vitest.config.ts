@@ -8,9 +8,15 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./vitest.setup.ts"],
+    server: {
+      deps: {
+        inline: ["next-auth", "@auth/prisma-adapter"],
+      },
+    },
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
+      include: ["app/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "middleware.ts"],
       exclude: ["node_modules/", ".next/", "out/", "coverage/", "*.config.*", "**/*.d.ts"],
     },
   },

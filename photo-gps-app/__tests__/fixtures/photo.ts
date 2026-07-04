@@ -1,4 +1,4 @@
-import { Photo } from "@prisma/client"
+import { Individual, Photo } from "@prisma/client"
 
 /**
  * Creates a complete mock Photo object with all required fields.
@@ -59,4 +59,19 @@ export function createMinimalMockPhoto(overrides: Partial<Photo> = {}): Photo {
     description: null,
     ...overrides,
   })
+}
+
+/**
+ * Creates a mock Individual object with all required fields.
+ */
+export function createMockIndividual(overrides: Partial<Individual> = {}): Individual {
+  const now = new Date()
+  return {
+    id: "ind-1",
+    name: "Salamandra",
+    userId: "user-123",
+    createdAt: now,
+    updatedAt: now,
+    ...overrides,
+  }
 }
