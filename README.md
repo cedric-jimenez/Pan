@@ -6,7 +6,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?logo=prisma&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-pgvector-4169E1?logo=postgresql&logoColor=white)
-![License](https://img.shields.io/badge/license-unspecified-lightgrey)
+[![License: GPL v3](https://img.shields.io/badge/license-GPLv3-blue)](LICENSE)
 
 Application web (Next.js) de gestion de photos de terrain de salamandres tachetées (*Salamandra salamandra*). L'app extrait les données GPS/EXIF, exécute des pipelines de détection/segmentation/identification par IA, et permet aux chercheurs de suivre des individus.
 
@@ -59,3 +59,7 @@ Voir `photo-gps-app/.env.example` pour la liste complète (base de données, R2,
 ## CI
 
 `.github/workflows/ci.yml` exécute lint, tests (avec seuils de couverture) et build à chaque PR vers `main`/`master` et à chaque push sur les branches `claude/**`.
+
+## Licence
+
+Ce projet est distribué sous licence [GNU General Public License v3.0 (ou ultérieure)](LICENSE).
