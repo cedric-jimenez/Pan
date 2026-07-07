@@ -43,17 +43,18 @@ export interface SegmentEmbedResult {
   embedModel: string | null
 }
 
-type RailwayResponse = { ok: true; data: Record<string, unknown> } | { ok: false; error: string }
+export type RailwayResponse =
+  | { ok: true; data: Record<string, unknown> }
+  | { ok: false; error: string }
 
-function getRailwayTimeoutMs(): number {
+export function getRailwayTimeoutMs(): number {
   return parseInt(process.env.YOLO_TIMEOUT_MS || String(API_TIMEOUTS.DEFAULT_TIMEOUT_MS), 10)
 }
 
-/** POST an image buffer to a Railway ML endpoint, handling the FormData/timeout/error boilerplate. */
-async function postToRailway(
+/** POST a pre-built FormData to a Railway ML endpoint, handling the timeout/abort/error boilerplate. */
+export async function postFormDataToRailway(
   endpoint: string,
-  buffer: Buffer,
-  filename: string,
+  formData: FormData,
   query = ""
 ): Promise<RailwayResponse> {
   const railwayUrl = process.env.RAILWAY_API_URL
@@ -65,9 +66,6 @@ async function postToRailway(
   const timeoutId = setTimeout(() => controller.abort(), getRailwayTimeoutMs())
 
   try {
-    const formData = new FormData()
-    formData.append("file", new Blob([Uint8Array.from(buffer)], { type: "image/jpeg" }), filename)
-
     const response = await fetch(`${railwayUrl}${endpoint}${query}`, {
       method: "POST",
       body: formData,
@@ -90,6 +88,18 @@ async function postToRailway(
   } finally {
     clearTimeout(timeoutId)
   }
+}
+
+/** POST a single image buffer to a Railway ML endpoint, handling the FormData/timeout/error boilerplate. */
+async function postToRailway(
+  endpoint: string,
+  buffer: Buffer,
+  filename: string,
+  query = ""
+): Promise<RailwayResponse> {
+  const formData = new FormData()
+  formData.append("file", new Blob([Uint8Array.from(buffer)], { type: "image/jpeg" }), filename)
+  return postFormDataToRailway(endpoint, formData, query)
 }
 
 function base64ToBuffer(dataUrl: string): Buffer {

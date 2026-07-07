@@ -10,7 +10,7 @@ All development work lives in the `photo-gps-app/` subdirectory. Run all command
 
 ## Coding Principles
 
-- **DRY (Don't Repeat Yourself)**: Extract shared logic instead of copy-pasting it. Note that the crop/segment/embed pipeline is currently duplicated between `app/api/photos/upload/route.ts` and `app/api/photos/bulk-process/route.ts` — when touching either, consider whether the change belongs in a shared helper instead of both call sites.
+- **DRY (Don't Repeat Yourself)**: Extract shared logic instead of copy-pasting it. The crop/segment/embed pipeline is already factored into `lib/photo-pipeline.ts` (`compressImage`, `processCropAndUpload`, `processSegmentAndEmbed`, `storeEmbedding`) and reused by both `app/api/photos/upload/route.ts` and `app/api/photos/bulk-process/route.ts`. Calls to the Railway ML service should go through `postToRailway`/`postFormDataToRailway` in `lib/photo-pipeline.ts` rather than re-implementing the fetch/timeout/AbortController boilerplate — `app/api/photos/[id]/similar/route.ts`'s `/verify` call reuses `postFormDataToRailway` for this reason.
 - **KISS (Keep It Simple, Stupid)**: Prefer the straightforward solution over a clever or generic one. Don't introduce abstractions, config options, or indirection for cases that don't exist yet.
 - **Time/space complexity**: Be deliberate about algorithmic cost, especially around the pgvector similarity search and any batch/bulk processing (`bulk-process`, embedding backfills). Avoid N+1 database queries and unnecessary full-table scans; prefer set-based SQL over per-row loops when working with `Photo`/`Individual` collections.
 
