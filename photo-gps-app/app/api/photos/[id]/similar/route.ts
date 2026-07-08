@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
 import { logger } from "@/lib/logger";
-import { API_TIMEOUTS } from "@/lib/constants";
+import { getRailwayTimeoutMs, postFormDataToRailway } from "@/lib/photo-pipeline";
 
 /**
  * Fetch an image from a URL as a Buffer
@@ -36,110 +36,61 @@ async function callRailwayVerify(
   }>;
   error?: string;
 }> {
-  const railwayUrl = process.env.RAILWAY_API_URL;
-  const timeoutMs = parseInt(
-    process.env.YOLO_TIMEOUT_MS || String(API_TIMEOUTS.DEFAULT_TIMEOUT_MS),
-    10
+  const formData = new FormData();
+  formData.append(
+    "query",
+    new Blob([Uint8Array.from(queryBuffer)], { type: "image/jpeg" }),
+    "query.jpg"
   );
+  candidateBuffers.forEach((buffer, i) => {
+    formData.append(
+      "candidates",
+      new Blob([Uint8Array.from(buffer)], { type: "image/jpeg" }),
+      `candidate_${i}.jpg`
+    );
+  });
 
-  if (!railwayUrl) {
-    logger.warn("RAILWAY_API_URL not configured, skipping verification");
-    return {
-      success: false,
-      results: [],
-      error: "Railway URL not configured",
-    };
+  logger.log({
+    action: "railway_verify_request",
+    candidates_count: candidateBuffers.length,
+    query_size_bytes: queryBuffer.length,
+    timeout_ms: getRailwayTimeoutMs(),
+  });
+
+  const startTime = Date.now();
+  const result = await postFormDataToRailway("/verify", formData);
+  const duration = Date.now() - startTime;
+
+  if (!result.ok) {
+    logger.warn({ action: "railway_verify_error", error: result.error, duration_ms: duration });
+    return { success: false, results: [], error: result.error };
   }
 
-  try {
-    const startTime = Date.now();
+  const data = result.data as {
+    success: boolean;
+    results?: Array<{
+      candidate_index: number;
+      is_same: boolean;
+      score: number;
+      confidence: string;
+      cosine_similarity: number;
+      matches: number;
+      inliers: number;
+    }>;
+  };
 
-    // Create FormData with query and candidate images
-    const formData = new FormData();
+  logger.log({
+    action: "railway_verify_response",
+    success: data.success,
+    results_count: data.results?.length || 0,
+    duration_ms: duration,
+    results: data.results,
+  });
 
-    // Add query image
-    const queryBlob = new Blob([Uint8Array.from(queryBuffer)], { type: "image/jpeg" });
-    formData.append("query", queryBlob, "query.jpg");
-
-    // Add candidate images
-    for (let i = 0; i < candidateBuffers.length; i++) {
-      const candidateBlob = new Blob([Uint8Array.from(candidateBuffers[i])], {
-        type: "image/jpeg"
-      });
-      formData.append("candidates", candidateBlob, `candidate_${i}.jpg`);
-    }
-
-    // Log request details before calling API
-    logger.log({
-      action: "railway_verify_request",
-      endpoint: `${railwayUrl}/verify`,
-      method: "POST",
-      candidates_count: candidateBuffers.length,
-      query_size_bytes: queryBuffer.length,
-      timeout_ms: timeoutMs,
-    });
-
-    // Call Railway API with timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-    const response = await fetch(`${railwayUrl}/verify`, {
-      method: "POST",
-      body: formData,
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-    const duration = Date.now() - startTime;
-
-    if (!response.ok) {
-      logger.warn({
-        action: "railway_verify_error",
-        status: response.status,
-        statusText: response.statusText,
-        duration_ms: duration,
-      });
-      return {
-        success: false,
-        results: [],
-        error: `Railway API error: ${response.status}`,
-      };
-    }
-
-    const data = await response.json();
-
-    // Log detailed results
-    logger.log({
-      action: "railway_verify_response",
-      success: data.success,
-      results_count: data.results?.length || 0,
-      duration_ms: duration,
-      results: data.results?.map((r: typeof data.results[0]) => ({
-        candidate_index: r.candidate_index,
-        is_same: r.is_same,
-        score: r.score,
-        confidence: r.confidence,
-        cosine_similarity: r.cosine_similarity,
-        matches: r.matches,
-        inliers: r.inliers,
-      })),
-    });
-
-    return {
-      success: data.success,
-      results: data.results || [],
-    };
-  } catch (error) {
-    if (error instanceof Error) {
-      if (error.name === "AbortError") {
-        logger.warn(`Railway verify API timeout after ${timeoutMs}ms`);
-        return { success: false, results: [], error: "Timeout" };
-      }
-      logger.error("Railway verify API error:", error.message);
-      return { success: false, results: [], error: error.message };
-    }
-    return { success: false, results: [], error: "Unknown error" };
-  }
+  return {
+    success: data.success,
+    results: data.results || [],
+  };
 }
 
 export async function GET(
