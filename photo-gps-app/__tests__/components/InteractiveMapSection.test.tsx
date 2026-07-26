@@ -133,7 +133,9 @@ describe("InteractiveMapSection", () => {
     render(<InteractiveMapSection />)
 
     await screen.findByTestId("mock-landing-map")
-    expect(lastLandingMapPoints).toHaveLength(1)
+    await waitFor(() => {
+      expect(lastLandingMapPoints).toHaveLength(1)
+    })
     expect(lastLandingMapPoints?.[0].id).toBe("a")
   })
 
