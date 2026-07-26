@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import dynamic from "next/dynamic"
 import { formatDistanceToNow } from "date-fns"
 import { fr } from "date-fns/locale"
@@ -165,8 +166,9 @@ export default function InteractiveMapSection() {
               observations.map((obs) => {
                 const when = obs.takenAt ?? obs.createdAt
                 return (
-                  <div
+                  <Link
                     key={obs.id}
+                    href={`/gallery?photo=${obs.id}`}
                     className="hover:bg-muted/50 flex gap-4 rounded-lg p-3 transition-colors"
                   >
                     <div className="bg-muted relative size-16 shrink-0 overflow-hidden rounded-lg">
@@ -191,7 +193,7 @@ export default function InteractiveMapSection() {
                         <StatusBadge identified={obs.individualId !== null} />
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 )
               })
             )}
