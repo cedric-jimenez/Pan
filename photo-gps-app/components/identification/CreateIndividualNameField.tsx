@@ -6,6 +6,16 @@ interface CreateIndividualNameFieldProps {
   submitting: boolean
   onNameChange: (name: string) => void
   onRegenerate: () => void
+  /** Override the default (French) copy, e.g. for the English photo modal. */
+  labels?: Partial<typeof DEFAULT_LABELS>
+}
+
+const DEFAULT_LABELS = {
+  label: "Nom du nouvel individu",
+  placeholder: "Nom",
+  loadingPlaceholder: "Génération…",
+  regenerate: "Suggérer un autre nom",
+  hint: "Nom suggéré automatiquement — modifiable.",
 }
 
 export default function CreateIndividualNameField({
@@ -14,15 +24,18 @@ export default function CreateIndividualNameField({
   submitting,
   onNameChange,
   onRegenerate,
+  labels,
 }: CreateIndividualNameFieldProps) {
+  const text = { ...DEFAULT_LABELS, ...labels }
+
   return (
     <div>
       <div className="flex items-end gap-2">
         <Input
-          label="Nom du nouvel individu"
+          label={text.label}
           value={name}
           onChange={(e) => onNameChange(e.target.value)}
-          placeholder={nameLoading ? "Génération…" : "Nom"}
+          placeholder={nameLoading ? text.loadingPlaceholder : text.placeholder}
           disabled={submitting}
         />
         <button
@@ -30,8 +43,8 @@ export default function CreateIndividualNameField({
           onClick={onRegenerate}
           disabled={nameLoading || submitting}
           className="text-secondary-foreground hover:text-foreground hover:bg-muted mb-px rounded-lg p-2.5 transition-colors disabled:opacity-50"
-          aria-label="Suggérer un autre nom"
-          title="Suggérer un autre nom"
+          aria-label={text.regenerate}
+          title={text.regenerate}
         >
           <svg
             className={`h-5 w-5 ${nameLoading ? "animate-spin" : ""}`}
@@ -48,7 +61,7 @@ export default function CreateIndividualNameField({
           </svg>
         </button>
       </div>
-      <p className="text-muted-foreground mt-2 text-xs">Nom suggéré automatiquement — modifiable.</p>
+      <p className="text-muted-foreground mt-2 text-xs">{text.hint}</p>
     </div>
   )
 }

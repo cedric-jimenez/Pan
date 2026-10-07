@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Dialog } from "@headlessui/react"
 import { IndividualWithCount } from "@/types/individual"
 import Button from "./Button"
-import Input from "./Input"
+import CreateIndividualNameField from "./identification/CreateIndividualNameField"
 import { fetchWithCsrf } from "@/lib/fetch-with-csrf"
 
 interface AssignIndividualModalProps {
@@ -13,6 +13,14 @@ interface AssignIndividualModalProps {
   photoId: string
   currentIndividualId?: string | null
   onSuccess?: () => void
+}
+
+const NAME_FIELD_LABELS = {
+  label: "New Individual Name",
+  placeholder: "Enter name",
+  loadingPlaceholder: "Generating…",
+  regenerate: "Suggest another name",
+  hint: "Automatically suggested name — editable.",
 }
 
 export default function AssignIndividualModal({
@@ -28,6 +36,7 @@ export default function AssignIndividualModal({
   const [error, setError] = useState<string | null>(null)
   const [newIndividualName, setNewIndividualName] = useState("")
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [nameLoading, setNameLoading] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
@@ -49,6 +58,29 @@ export default function AssignIndividualModal({
       setIndividuals(data.individuals)
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
+    }
+  }
+
+  const fetchSuggestedName = async (overwrite: boolean) => {
+    setNameLoading(true)
+    try {
+      const response = await fetch("/api/individuals/suggest-name")
+      if (response.ok) {
+        const data = await response.json()
+        // Never clobber a name the user typed while the suggestion was loading.
+        setNewIndividualName((current) => (overwrite || !current ? (data.name ?? current) : current))
+      }
+    } catch {
+      // Leave the field as is; the user can type a name.
+    } finally {
+      setNameLoading(false)
+    }
+  }
+
+  const openCreateForm = () => {
+    setShowCreateForm(true)
+    if (!newIndividualName) {
+      fetchSuggestedName(false)
     }
   }
 
@@ -204,19 +236,14 @@ export default function AssignIndividualModal({
 
             {showCreateForm ? (
               <div className="space-y-4">
-                <div>
-                  <label htmlFor="newName" className="mb-2 block text-sm font-medium">
-                    New Individual Name
-                  </label>
-                  <Input
-                    id="newName"
-                    type="text"
-                    value={newIndividualName}
-                    onChange={(e) => setNewIndividualName(e.target.value)}
-                    placeholder="Enter name"
-                    disabled={loading}
-                  />
-                </div>
+                <CreateIndividualNameField
+                  name={newIndividualName}
+                  nameLoading={nameLoading}
+                  submitting={loading}
+                  onNameChange={setNewIndividualName}
+                  onRegenerate={() => fetchSuggestedName(true)}
+                  labels={NAME_FIELD_LABELS}
+                />
 
                 {error && (
                   <div className="text-destructive bg-destructive/10 rounded p-3 text-sm">
@@ -242,7 +269,7 @@ export default function AssignIndividualModal({
               <div className="space-y-4">
                 <Button
                   variant="secondary"
-                  onClick={() => setShowCreateForm(true)}
+                  onClick={openCreateForm}
                   className="w-full"
                 >
                   + Create New Individual
