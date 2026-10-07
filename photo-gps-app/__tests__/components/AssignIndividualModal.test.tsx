@@ -258,6 +258,52 @@ describe("AssignIndividualModal", () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
+  it("pre-fills the create form with a suggested name and can regenerate it", async () => {
+    const suggestions = ["Lila", "Hugo"]
+    global.fetch = vi.fn().mockImplementation(async (url) =>
+      url === "/api/individuals/suggest-name"
+        ? jsonResponse({ name: suggestions.shift() })
+        : jsonResponse({ individuals })
+    )
+    vi.mocked(fetchWithCsrf).mockImplementation(async (url) =>
+      url === "/api/individuals" ? jsonResponse({ individual: { id: "ind-new" } }) : jsonResponse({})
+    )
+    const user = userEvent.setup()
+
+    render(<AssignIndividualModal isOpen={true} onClose={vi.fn()} photoId="photo-1" />)
+    await screen.findByText("Fido")
+
+    await user.click(screen.getByRole("button", { name: "+ Create New Individual" }))
+    expect(await screen.findByDisplayValue("Lila")).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Suggest another name" }))
+    expect(await screen.findByDisplayValue("Hugo")).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Create & Assign" }))
+    await waitFor(() =>
+      expect(fetchWithCsrf).toHaveBeenCalledWith(
+        "/api/individuals",
+        expect.objectContaining({ method: "POST", body: JSON.stringify({ name: "Hugo" }) })
+      )
+    )
+  })
+
+  it("keeps the create form usable when the name suggestion fails", async () => {
+    global.fetch = vi.fn().mockImplementation(async (url) => {
+      if (url === "/api/individuals/suggest-name") throw new Error("network down")
+      return jsonResponse({ individuals })
+    })
+    const user = userEvent.setup()
+
+    render(<AssignIndividualModal isOpen={true} onClose={vi.fn()} photoId="photo-1" />)
+    await screen.findByText("Fido")
+
+    await user.click(screen.getByRole("button", { name: "+ Create New Individual" }))
+
+    expect(await screen.findByPlaceholderText("Enter name")).toHaveValue("")
+    expect(screen.queryByText("network down")).not.toBeInTheDocument()
+  })
+
   it("shows a server error when creating the individual fails", async () => {
     vi.mocked(fetchWithCsrf).mockResolvedValue(jsonResponse({ error: "Name already exists" }, false))
     const user = userEvent.setup()
