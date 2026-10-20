@@ -57,18 +57,41 @@ export async function postFormDataToRailway(
   formData: FormData,
   query = ""
 ): Promise<RailwayResponse> {
+  return postToRailwayEndpoint(endpoint, { body: formData }, query, getRailwayTimeoutMs())
+}
+
+/** POST a JSON body to a Railway ML endpoint, with an explicit timeout. */
+export async function postJsonToRailway(
+  endpoint: string,
+  body: unknown,
+  timeoutMs: number
+): Promise<RailwayResponse> {
+  return postToRailwayEndpoint(
+    endpoint,
+    { body: JSON.stringify(body), headers: { "Content-Type": "application/json" } },
+    "",
+    timeoutMs
+  )
+}
+
+async function postToRailwayEndpoint(
+  endpoint: string,
+  init: { body: BodyInit; headers?: Record<string, string> },
+  query: string,
+  timeoutMs: number
+): Promise<RailwayResponse> {
   const railwayUrl = process.env.RAILWAY_API_URL
   if (!railwayUrl) {
     return { ok: false, error: "Railway URL not configured" }
   }
 
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), getRailwayTimeoutMs())
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
 
   try {
     const response = await fetch(`${railwayUrl}${endpoint}${query}`, {
       method: "POST",
-      body: formData,
+      ...init,
       signal: controller.signal,
     })
 
@@ -79,7 +102,7 @@ export async function postFormDataToRailway(
     return { ok: true, data: await response.json() }
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      logger.warn(`Railway ${endpoint} timeout after ${getRailwayTimeoutMs()}ms`)
+      logger.warn(`Railway ${endpoint} timeout after ${timeoutMs}ms`)
       return { ok: false, error: "Timeout" }
     }
     const message = error instanceof Error ? error.message : "Unknown error"

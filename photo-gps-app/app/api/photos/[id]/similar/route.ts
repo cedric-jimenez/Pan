@@ -3,62 +3,43 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
 import { logger } from "@/lib/logger";
-import { getRailwayTimeoutMs, postFormDataToRailway } from "@/lib/photo-pipeline";
+import { postJsonToRailway } from "@/lib/photo-pipeline";
+import { API_TIMEOUTS, IDENTIFICATION } from "@/lib/constants";
 
-/**
- * Fetch an image from a URL as a Buffer
- */
-async function fetchImageAsBuffer(url: string): Promise<Buffer> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch image: ${response.statusText}`);
-  }
-  const arrayBuffer = await response.arrayBuffer();
-  return Buffer.from(arrayBuffer);
+// Comparing against the whole catalogue can take a while on a cold pan-py cache.
+export const maxDuration = 60;
+
+interface VerifyResult {
+  candidate_index: number;
+  is_same: boolean;
+  score: number;
+  confidence: string;
+  cosine_similarity: number;
+  matches: number;
+  inliers: number;
 }
 
 /**
- * Call Railway /verify API to perform DINOv2 patch-level verification
+ * Call Railway /verify-urls: SIFT+RANSAC verification of the query against every
+ * candidate, by image URL. pan-py caches each image's SIFT features, so each
+ * photo is downloaded and analysed only once across searches.
  */
-async function callRailwayVerify(
-  queryBuffer: Buffer,
-  candidateBuffers: Buffer[]
-): Promise<{
-  success: boolean;
-  results: Array<{
-    candidate_index: number;
-    is_same: boolean;
-    score: number;
-    confidence: string;
-    cosine_similarity: number;
-    matches: number;
-    inliers: number;
-  }>;
-  error?: string;
-}> {
-  const formData = new FormData();
-  formData.append(
-    "query",
-    new Blob([Uint8Array.from(queryBuffer)], { type: "image/jpeg" }),
-    "query.jpg"
-  );
-  candidateBuffers.forEach((buffer, i) => {
-    formData.append(
-      "candidates",
-      new Blob([Uint8Array.from(buffer)], { type: "image/jpeg" }),
-      `candidate_${i}.jpg`
-    );
-  });
-
+async function callRailwayVerifyUrls(
+  queryUrl: string,
+  candidateUrls: string[]
+): Promise<{ success: boolean; results: VerifyResult[]; error?: string }> {
   logger.log({
-    action: "railway_verify_request",
-    candidates_count: candidateBuffers.length,
-    query_size_bytes: queryBuffer.length,
-    timeout_ms: getRailwayTimeoutMs(),
+    action: "railway_verify_urls_request",
+    candidates_count: candidateUrls.length,
+    timeout_ms: API_TIMEOUTS.VERIFY_URLS_TIMEOUT_MS,
   });
 
   const startTime = Date.now();
-  const result = await postFormDataToRailway("/verify", formData);
+  const result = await postJsonToRailway(
+    "/verify-urls",
+    { query_url: queryUrl, candidate_urls: candidateUrls },
+    API_TIMEOUTS.VERIFY_URLS_TIMEOUT_MS
+  );
   const duration = Date.now() - startTime;
 
   if (!result.ok) {
@@ -66,31 +47,17 @@ async function callRailwayVerify(
     return { success: false, results: [], error: result.error };
   }
 
-  const data = result.data as {
-    success: boolean;
-    results?: Array<{
-      candidate_index: number;
-      is_same: boolean;
-      score: number;
-      confidence: string;
-      cosine_similarity: number;
-      matches: number;
-      inliers: number;
-    }>;
-  };
+  const data = result.data as { success: boolean; message?: string; results?: VerifyResult[] };
 
   logger.log({
-    action: "railway_verify_response",
+    action: "railway_verify_urls_response",
     success: data.success,
+    message: data.message,
     results_count: data.results?.length || 0,
     duration_ms: duration,
-    results: data.results,
   });
 
-  return {
-    success: data.success,
-    results: data.results || [],
-  };
+  return { success: data.success, results: data.results || [] };
 }
 
 export async function GET(
@@ -103,7 +70,7 @@ export async function GET(
 
     // When linkedOnly is set, restrict the candidate pool to photos already
     // attached to an individual — used by the guided bulk-identify flow to match
-    // an import strictly against the existing catalogue (cheaper /verify too).
+    // an import strictly against the existing catalogue.
     const { searchParams } = new URL(request.url);
     const linkedOnly =
       searchParams.get("linkedOnly") === "1" || searchParams.get("linkedOnly") === "true";
@@ -148,16 +115,15 @@ export async function GET(
       );
     }
 
-    // Find the most similar photos using cosine distance.
-    // SIFT+RANSAC verification re-ranks these, but can only surface a true match
-    // that retrieval actually returned — and the DINOv2 GeM cosine barely
-    // separates individuals (same/diff score gap ~0.017, top-1 ~61%): a true
-    // same-individual match can rank well past the first dozen neighbours
-    // (observed at rank #41 in prod). So retrieve a generous candidate pool
-    // (SIFT verification is cheap and ~0 false positives) to give the verifier
-    // a chance to find it. TODO: improve the retrieval embedding to shrink this.
-    // The <-> operator calculates cosine distance (0 = identical, 2 = opposite)
-    // We exclude the source photo itself and only search within user's photos
+    // Candidates = ALL of the user's analysed photos (up to MAX_VERIFY_CANDIDATES),
+    // not just the nearest embeddings. The DINOv2 embedding mostly groups photos by
+    // session (light, background), so a true same-individual match from another
+    // date can rank far down (observed: rank #41, then outside the top 100 once the
+    // catalogue grew) and would never be verified. SIFT verification on the whole
+    // catalogue is affordable because pan-py caches each photo's features.
+    // The embedding distance only orders the list (used by the fallback below).
+    // Note: pgvector's <-> is the L2 distance; on normalised vectors it orders
+    // like cosine distance.
     const linkedFilter = linkedOnly
       ? Prisma.sql`AND p."individualId" IS NOT NULL`
       : Prisma.empty;
@@ -202,7 +168,7 @@ export async function GET(
         AND p."segmentedUrl" IS NOT NULL
         ${linkedFilter}
       ORDER BY p.embedding <-> (SELECT embedding FROM "Photo" WHERE id = ${photoId})
-      LIMIT 100
+      LIMIT ${IDENTIFICATION.MAX_VERIFY_CANDIDATES}
     `);
 
     // If no similar photos found, return empty array
@@ -210,85 +176,81 @@ export async function GET(
       return NextResponse.json([]);
     }
 
-    // Fetch the query image (source photo's segmented image)
-    logger.log({ action: "fetch_query_image", url: sourcePhoto.segmentedUrl });
-    const queryBuffer = await fetchImageAsBuffer(sourcePhoto.segmentedUrl);
-
-    // Fetch candidate images (similar photos' segmented images) in parallel.
-    // Order is preserved so candidate_index from /verify maps back to
-    // similarPhotos. The SQL guarantees segmentedUrl is non-null.
-    const candidateBuffers: Buffer[] = await Promise.all(
-      similarPhotos.map((photo) => fetchImageAsBuffer(photo.segmentedUrl as string))
+    // The SQL guarantees segmentedUrl is non-null; order is preserved so
+    // candidate_index from /verify-urls maps back to similarPhotos.
+    const verifyResult = await callRailwayVerifyUrls(
+      sourcePhoto.segmentedUrl,
+      similarPhotos.map((photo) => photo.segmentedUrl as string)
     );
 
-    // Call Railway /verify API
-    const verifyResult = await callRailwayVerify(queryBuffer, candidateBuffers);
-
     if (!verifyResult.success || verifyResult.results.length === 0) {
-      // If verification fails, fall back to vector similarity scores
+      // If verification fails, fall back to the nearest embeddings.
       // Convert cosine distance (0=identical, 2=opposite) to cosine similarity (1=identical, -1=opposite)
       logger.warn("Verification failed, using vector similarity scores");
-      const photosWithScores = similarPhotos.map((photo: typeof similarPhotos[0]) => {
-        const cosineSimilarity = 1 - photo.distance;
-        return {
-          ...photo,
-          similarityScore: Math.max(0, Math.min(1, cosineSimilarity)),
-          confidence: "unknown" as const,
-          isSame: false,
-          cosine_similarity: cosineSimilarity,
-          matches: 0,
-          inliers: 0,
-        };
-      });
+      const photosWithScores = similarPhotos
+        .slice(0, IDENTIFICATION.MAX_RESULTS)
+        .map((photo: typeof similarPhotos[0]) => {
+          const cosineSimilarity = 1 - photo.distance;
+          return {
+            ...photo,
+            similarityScore: Math.max(0, Math.min(1, cosineSimilarity)),
+            confidence: "unknown" as const,
+            isSame: false,
+            cosine_similarity: cosineSimilarity,
+            matches: 0,
+            inliers: 0,
+          };
+        });
 
       logger.log({
         action: "similar_photos_response",
         photoId,
         results_count: photosWithScores.length,
         fallback: true,
-        results: photosWithScores.map((photo) => ({
-          id: photo.id,
-          similarityScore: photo.similarityScore,
-          distance: photo.distance,
-        })),
       });
 
       return NextResponse.json(photosWithScores);
     }
 
     // Combine verification results with photo data
-    const photosWithVerification = verifyResult.results.map((result) => {
-      const photo = similarPhotos[result.candidate_index];
-      return {
-        ...photo,
-        similarityScore: result.score,
-        confidence: result.confidence,
-        isSame: result.is_same,
-        cosine_similarity: result.cosine_similarity,
-        matches: result.matches,
-        inliers: result.inliers,
-      };
-    });
+    const photosWithVerification = verifyResult.results
+      .filter((result) => similarPhotos[result.candidate_index] !== undefined)
+      .map((result) => {
+        const photo = similarPhotos[result.candidate_index];
+        return {
+          ...photo,
+          similarityScore: result.score,
+          confidence: result.confidence,
+          isSame: result.is_same,
+          cosine_similarity: result.cosine_similarity,
+          matches: result.matches,
+          inliers: result.inliers,
+        };
+      });
 
-    // Sort by verification score (descending)
+    // Sort by verification score (descending), keep the best MAX_RESULTS plus
+    // every same-individual match (is_same also needs an inlier floor, so a
+    // match can rank below a higher-ratio coincidence).
     photosWithVerification.sort((a, b) => b.similarityScore - a.similarityScore);
+    const response = photosWithVerification.filter(
+      (photo, rank) => rank < IDENTIFICATION.MAX_RESULTS || photo.isSame
+    );
 
     logger.log({
       action: "similar_photos_response",
       photoId,
-      results_count: photosWithVerification.length,
-      results: photosWithVerification.map((photo) => ({
+      candidates_count: similarPhotos.length,
+      results_count: response.length,
+      same_count: response.filter((photo) => photo.isSame).length,
+      top: response.slice(0, 10).map((photo) => ({
         id: photo.id,
         similarityScore: photo.similarityScore,
-        confidence: photo.confidence,
         isSame: photo.isSame,
-        cosine_similarity: photo.cosine_similarity,
-        matches: photo.matches,
         inliers: photo.inliers,
       })),
     });
 
-    return NextResponse.json(photosWithVerification);
+    return NextResponse.json(response);
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
