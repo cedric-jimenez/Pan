@@ -62,6 +62,12 @@ export interface SimilarPhoto {
   cosine_similarity?: number
   matches?: number
   inliers?: number
+  individualId?: string | null
+  individualName?: string | null
+  // Inliers between the straightened (unbent) bodies — ranks candidates to verify
+  stripInliers?: number
+  // Possible match to confirm by eye (best straightened matches, not isSame)
+  toVerify?: boolean
 }
 
 // Result of a single photo crop/segment/embed (re)processing run

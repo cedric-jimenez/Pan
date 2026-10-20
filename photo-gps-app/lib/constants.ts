@@ -35,8 +35,15 @@ export const API_TIMEOUTS = {
 export const IDENTIFICATION = {
   // Max photos sent to pan-py /verify-urls (must stay <= pan-py MAX_VERIFY_URL_CANDIDATES).
   MAX_VERIFY_CANDIDATES: 5000,
-  // Max results returned to the client (same-individual matches are always kept).
+  // Max results returned to the client (same-individual matches and candidates
+  // to verify are always kept).
   MAX_RESULTS: 100,
+  // "Candidats à vérifier": best matches on the straightened bodies (pan-py
+  // strip_inliers), shown for a human to confirm. On the labelled set the true
+  // match was in the top 5 for 12/16 queries (vs 8/16 without straightening).
+  MAX_TO_VERIFY: 5,
+  // Below this, a straightened match is noise (RANSAC needs 4 points).
+  MIN_STRIP_INLIERS: 5,
 } as const
 
 // Pagination

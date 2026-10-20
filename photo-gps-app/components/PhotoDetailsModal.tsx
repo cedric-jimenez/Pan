@@ -180,6 +180,10 @@ export default function PhotoDetailsModal({
 
   // Only surface photos confirmed to be the same individual.
   const sameIndividualPhotos = similarPhotos.filter((s) => s.isSame)
+  // Possible matches to confirm by eye, best straightened-body match first.
+  const candidatesToVerify = similarPhotos
+    .filter((s) => s.toVerify)
+    .sort((a, b) => (b.stripInliers ?? 0) - (a.stripInliers ?? 0))
   const displayTitle = photo.title || photo.originalName
 
   return (
@@ -196,6 +200,7 @@ export default function PhotoDetailsModal({
               currentView={currentView}
               onViewChange={setCurrentView}
               sameIndividualPhotos={sameIndividualPhotos}
+              candidatesToVerify={candidatesToVerify}
               isLoadingSimilar={isLoadingSimilar}
             />
 
