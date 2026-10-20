@@ -231,6 +231,8 @@ function handleVerifyUrls(body) {
       cosine_similarity: sim,
       matches: isSame ? 120 : Math.round(score * 40),
       inliers: isSame ? 95 : Math.round(score * 20),
+      // straightened-body match (ranks "candidats à vérifier" in Pan)
+      strip_inliers: isSame ? 60 : Math.round(score * 14),
     }
   })
   results.sort((a, b) => b.score - a.score)

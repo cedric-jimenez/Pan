@@ -335,6 +335,58 @@ describe("GET /api/photos/[id]/similar", () => {
     expect(data[data.length - 1]).toMatchObject({ id: `p${total - 1}`, isSame: true })
   })
 
+  it("flags the best straightened matches as candidates to verify", async () => {
+    process.env.RAILWAY_API_URL = "https://railway.example.com"
+    const total = IDENTIFICATION.MAX_RESULTS + 10
+    vi.mocked(prisma.photo.findFirst).mockResolvedValue(
+      createMockPhoto({ id: "photo-1", segmentedUrl: "https://r2.example.com/seg1.jpg" })
+    )
+    vi.mocked(prisma.$queryRaw)
+      .mockResolvedValueOnce([{ has_embedding: true }])
+      .mockResolvedValueOnce(Array.from({ length: total }, (_, i) => candidateRow(`p${i}`, 0.1)))
+    // Base score decreases with i. strip_inliers: p0 is "same" (excluded), the
+    // last photo (ranked beyond MAX_RESULTS on the base score) is the best
+    // straightened match, p1..p6 follow, p7 is below the minimum.
+    const strips: Record<number, number> = { 0: 30, [total - 1]: 12, 1: 11, 2: 10, 3: 9, 4: 8, 5: 7, 6: 6 }
+    const results = Array.from({ length: total }, (_, i) => ({
+      ...verifyResult(i, (total - i) / 1000, i === 0),
+      strip_inliers: strips[i] ?? (i === 7 ? IDENTIFICATION.MIN_STRIP_INLIERS - 1 : 0),
+    }))
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, results }),
+    } as Response)
+
+    const data = await (await makeGetRequest("photo-1")).json()
+    const flagged = data.filter((p: { toVerify: boolean }) => p.toVerify).map((p: { id: string }) => p.id)
+
+    expect(flagged).toHaveLength(IDENTIFICATION.MAX_TO_VERIFY)
+    expect(flagged).toEqual(expect.arrayContaining([`p${total - 1}`, "p1", "p2", "p3", "p4"]))
+    expect(flagged).not.toContain("p0") // already "same individual"
+    // kept in the response even though it ranks beyond MAX_RESULTS on the base score
+    expect(data.find((p: { id: string }) => p.id === `p${total - 1}`)).toMatchObject({
+      toVerify: true,
+      stripInliers: 12,
+    })
+  })
+
+  it("flags no candidates when pan-py doesn't return strip_inliers", async () => {
+    process.env.RAILWAY_API_URL = "https://railway.example.com"
+    vi.mocked(prisma.photo.findFirst).mockResolvedValue(
+      createMockPhoto({ id: "photo-1", segmentedUrl: "https://r2.example.com/seg1.jpg" })
+    )
+    vi.mocked(prisma.$queryRaw)
+      .mockResolvedValueOnce([{ has_embedding: true }])
+      .mockResolvedValueOnce([candidateRow("a", 0.1), candidateRow("b", 0.2)])
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, results: [verifyResult(0, 0.05), verifyResult(1, 0.04)] }),
+    } as Response)
+
+    const data = await (await makeGetRequest("photo-1")).json()
+    expect(data.every((p: { toVerify: boolean; stripInliers: number }) => !p.toVerify && p.stripInliers === 0)).toBe(true)
+  })
+
   it("restricts candidates to photos already linked to an individual when linkedOnly is set", async () => {
     vi.mocked(prisma.photo.findFirst).mockResolvedValue(
       createMockPhoto({ id: "photo-1", segmentedUrl: "https://r2.example.com/seg1.jpg" })

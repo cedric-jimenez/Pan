@@ -1,5 +1,6 @@
 import Image from "next/image"
 import { Photo, SimilarPhoto } from "@/types/photo"
+import CandidatesToVerifySection from "./CandidatesToVerifySection"
 import SameIndividualSection from "./SameIndividualSection"
 
 export type ImageView = "original" | "cropped" | "segmented"
@@ -42,6 +43,7 @@ interface PhotoImagePanelProps {
   currentView: ImageView
   onViewChange: (view: ImageView) => void
   sameIndividualPhotos: SimilarPhoto[]
+  candidatesToVerify?: SimilarPhoto[]
   isLoadingSimilar: boolean
 }
 
@@ -50,6 +52,7 @@ export default function PhotoImagePanel({
   currentView,
   onViewChange,
   sameIndividualPhotos,
+  candidatesToVerify = [],
   isLoadingSimilar,
 }: PhotoImagePanelProps) {
   return (
@@ -93,6 +96,7 @@ export default function PhotoImagePanel({
       </div>
 
       <SameIndividualSection photos={sameIndividualPhotos} isLoading={isLoadingSimilar} />
+      {!isLoadingSimilar && <CandidatesToVerifySection photos={candidatesToVerify} />}
     </div>
   )
 }

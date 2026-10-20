@@ -169,6 +169,50 @@ describe("PhotoDetailsModal", () => {
     expect(await screen.findByText("Même individu (1)")).toBeInTheDocument()
     expect(screen.getByAltText("Same one")).toBeInTheDocument()
     expect(screen.queryByAltText("Different one")).not.toBeInTheDocument()
+    // no candidates flagged -> no "to verify" section
+    expect(screen.queryByText(/Candidats à vérifier/)).not.toBeInTheDocument()
+  })
+
+  it("lists candidates to verify, best straightened match first, with their individual", async () => {
+    const candidate = (id: string, title: string, stripInliers: number, extra = {}) => ({
+      id,
+      filename: `${id}.jpg`,
+      url: `/${id}.jpg`,
+      croppedUrl: null,
+      segmentedUrl: null,
+      title,
+      description: null,
+      takenAt: null,
+      latitude: null,
+      longitude: null,
+      distance: 0.3,
+      similarityScore: 0.03,
+      isSame: false,
+      stripInliers,
+      toVerify: true,
+      ...extra,
+    })
+    vi.stubGlobal(
+      "fetch",
+      makeFetchMock({
+        "/similar": () =>
+          Promise.resolve(
+            jsonResponse(200, [
+              candidate("c1", "Weaker candidate", 6),
+              candidate("c2", "Titine 2024", 9, { individualName: "Titine" }),
+              { ...candidate("c3", "Not flagged", 3), toVerify: false },
+            ])
+          ),
+      })
+    )
+
+    render(<PhotoDetailsModal photo={makePhoto()} onClose={onClose} onUpdate={onUpdate} onDelete={onDelete} />)
+
+    expect(await screen.findByText("Candidats à vérifier (2)")).toBeInTheDocument()
+    const images = screen.getAllByRole("img").map((img) => img.getAttribute("alt"))
+    expect(images.indexOf("Titine 2024")).toBeLessThan(images.indexOf("Weaker candidate"))
+    expect(screen.getByText("Titine")).toBeInTheDocument()
+    expect(screen.queryByAltText("Not flagged")).not.toBeInTheDocument()
   })
 
   it("enters edit mode, edits the fields, and saves via fetchWithCsrf", async () => {

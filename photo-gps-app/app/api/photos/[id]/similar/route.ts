@@ -17,6 +17,9 @@ interface VerifyResult {
   cosine_similarity: number;
   matches: number;
   inliers: number;
+  // Inliers between the straightened ("unbent") salamanders. Ranks candidates to
+  // verify by eye; never used for isSame. Absent on older pan-py versions.
+  strip_inliers?: number;
 }
 
 /**
@@ -225,15 +228,30 @@ export async function GET(
           cosine_similarity: result.cosine_similarity,
           matches: result.matches,
           inliers: result.inliers,
+          stripInliers: result.strip_inliers ?? 0,
+          toVerify: false,
         };
+      });
+
+    // Candidates to verify: the best matches on the straightened bodies that are
+    // not already "same individual". Unbending makes photos of one animal in
+    // different poses (often a year apart) comparable, which ranks true matches
+    // much higher, but not reliably enough for an automatic decision, so a
+    // human confirms them.
+    photosWithVerification
+      .filter((photo) => !photo.isSame && photo.stripInliers >= IDENTIFICATION.MIN_STRIP_INLIERS)
+      .sort((a, b) => b.stripInliers - a.stripInliers || b.inliers - a.inliers)
+      .slice(0, IDENTIFICATION.MAX_TO_VERIFY)
+      .forEach((photo) => {
+        photo.toVerify = true;
       });
 
     // Sort by verification score (descending), keep the best MAX_RESULTS plus
     // every same-individual match (is_same also needs an inlier floor, so a
-    // match can rank below a higher-ratio coincidence).
+    // match can rank below a higher-ratio coincidence) and every candidate to verify.
     photosWithVerification.sort((a, b) => b.similarityScore - a.similarityScore);
     const response = photosWithVerification.filter(
-      (photo, rank) => rank < IDENTIFICATION.MAX_RESULTS || photo.isSame
+      (photo, rank) => rank < IDENTIFICATION.MAX_RESULTS || photo.isSame || photo.toVerify
     );
 
     logger.log({
@@ -242,6 +260,9 @@ export async function GET(
       candidates_count: similarPhotos.length,
       results_count: response.length,
       same_count: response.filter((photo) => photo.isSame).length,
+      to_verify: response
+        .filter((photo) => photo.toVerify)
+        .map((photo) => ({ id: photo.id, stripInliers: photo.stripInliers })),
       top: response.slice(0, 10).map((photo) => ({
         id: photo.id,
         similarityScore: photo.similarityScore,
