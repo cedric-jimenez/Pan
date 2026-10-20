@@ -10,7 +10,7 @@ All development work lives in the `photo-gps-app/` subdirectory. Run all command
 
 ## Coding Principles
 
-- **DRY (Don't Repeat Yourself)**: Extract shared logic instead of copy-pasting it. The crop/segment/embed pipeline is already factored into `lib/photo-pipeline.ts` (`compressImage`, `processCropAndUpload`, `processSegmentAndEmbed`, `storeEmbedding`) and reused by both `app/api/photos/upload/route.ts` and `app/api/photos/bulk-process/route.ts`. Calls to the Railway ML service should go through `postToRailway`/`postFormDataToRailway` in `lib/photo-pipeline.ts` rather than re-implementing the fetch/timeout/AbortController boilerplate — `app/api/photos/[id]/similar/route.ts`'s `/verify` call reuses `postFormDataToRailway` for this reason.
+- **DRY (Don't Repeat Yourself)**: Extract shared logic instead of copy-pasting it. The crop/segment/embed pipeline is already factored into `lib/photo-pipeline.ts` (`compressImage`, `processCropAndUpload`, `processSegmentAndEmbed`, `storeEmbedding`) and reused by both `app/api/photos/upload/route.ts` and `app/api/photos/bulk-process/route.ts`. Calls to the Railway ML service should go through `postToRailway`/`postFormDataToRailway`/`postJsonToRailway` in `lib/photo-pipeline.ts` rather than re-implementing the fetch/timeout/AbortController boilerplate — `app/api/photos/[id]/similar/route.ts`'s `/verify-urls` call reuses `postJsonToRailway` for this reason.
 - **KISS (Keep It Simple, Stupid)**: Prefer the straightforward solution over a clever or generic one. Don't introduce abstractions, config options, or indirection for cases that don't exist yet.
 - **Time/space complexity**: Be deliberate about algorithmic cost, especially around the pgvector similarity search and any batch/bulk processing (`bulk-process`, embedding backfills). Avoid N+1 database queries and unnecessary full-table scans; prefer set-based SQL over per-row loops when working with `Photo`/`Individual` collections.
 
@@ -68,7 +68,7 @@ A separate Python service (hosted on Railway, URL in `RAILWAY_API_URL` env var) 
 1. `/crop-salamander` — YOLOv8 Nano detection, returns a base64 cropped image
 2. `/segment-salamander` — Background removal, returns a base64 segmented image
 3. `/embed` — DINOv2 embedding (384-dim vector) of the segmented image
-4. `/verify` — Patch-level verification between a query and candidate images (used by `/api/photos/[id]/similar`)
+4. `/verify-urls` — SIFT+RANSAC verification of a query against candidate images given by URL, with a per-URL feature cache in pan-py (used by `/api/photos/[id]/similar`). The older multipart `/verify` still exists but Pan no longer calls it
 
 If `RAILWAY_API_URL` is not set, all ML steps are silently skipped and the original photo is stored without crops/embeddings.
 
@@ -113,10 +113,10 @@ Server-side: call `requireAuth()` (throws `"Unauthorized"`) or `getCurrentUser()
 ### pgvector similarity search
 
 The `/api/photos/[id]/similar` endpoint:
-1. Finds the 100 nearest neighbors using `embedding <-> (SELECT embedding ...)` cosine distance via raw SQL (generous pool: cosine barely separates individuals, so the true match can rank well past the first dozen)
-2. Fetches all segmented images
-3. Calls Railway `/verify` for patch-level cross-verification
-4. Falls back to pure vector scores if `/verify` fails
+1. Lists **all** of the user's analysed photos (up to `IDENTIFICATION.MAX_VERIFY_CANDIDATES`), ordered by `embedding <-> (SELECT embedding ...)` (L2 distance; orders like cosine on normalised vectors). The embedding no longer cuts the list: it groups photos by session rather than by individual, so a true match from another date can rank outside any top-K
+2. Calls Railway `/verify-urls` with the query + candidate segmented-image **URLs**; pan-py downloads each image once, caches its SIFT features, and runs SIFT+RANSAC against every candidate
+3. Returns the best `IDENTIFICATION.MAX_RESULTS` plus every `isSame` match
+4. Falls back to the nearest `MAX_RESULTS` by vector distance if `/verify-urls` fails (e.g. timeout on a cold pan-py cache)
 
 ### Constants
 

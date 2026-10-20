@@ -25,6 +25,18 @@ export const API_TIMEOUTS = {
   DEFAULT_TIMEOUT_MS: 10000,
   RAILWAY_TIMEOUT_MS: 60000,
   UPLOAD_TIMEOUT_MS: 30000,
+  // /verify-urls compares a photo against the whole catalogue; the first search
+  // after a pan-py restart also downloads/analyses every photo. Kept under the
+  // 60s Vercel maxDuration of the /similar route.
+  VERIFY_URLS_TIMEOUT_MS: 55000,
+} as const
+
+// Identification (/api/photos/[id]/similar)
+export const IDENTIFICATION = {
+  // Max photos sent to pan-py /verify-urls (must stay <= pan-py MAX_VERIFY_URL_CANDIDATES).
+  MAX_VERIFY_CANDIDATES: 5000,
+  // Max results returned to the client (same-individual matches are always kept).
+  MAX_RESULTS: 100,
 } as const
 
 // Pagination

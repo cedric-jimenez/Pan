@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { GET } from "@/app/api/photos/[id]/similar/route"
 import { createMockPhoto } from "../../fixtures/photo"
+import { IDENTIFICATION } from "@/lib/constants"
 
 vi.mock("@/lib/session", () => ({
   requireAuth: vi.fn(),
@@ -23,12 +24,35 @@ function makeGetRequest(id: string, query = "") {
   return GET(request, { params: Promise.resolve({ id }) })
 }
 
-function mockImageFetch() {
+function candidateRow(id: string, distance: number, extra: Record<string, unknown> = {}) {
   return {
-    ok: true,
-    statusText: "OK",
-    arrayBuffer: async () => new ArrayBuffer(8),
-  } as Response
+    id,
+    filename: `${id}.jpg`,
+    url: `https://r2.example.com/${id}.jpg`,
+    croppedUrl: null,
+    segmentedUrl: `https://r2.example.com/seg-${id}.jpg`,
+    title: null,
+    description: null,
+    takenAt: null,
+    latitude: null,
+    longitude: null,
+    individualId: null,
+    individualName: null,
+    distance,
+    ...extra,
+  }
+}
+
+function verifyResult(index: number, score: number, isSame = false) {
+  return {
+    candidate_index: index,
+    is_same: isSame,
+    score,
+    confidence: isSame ? "high" : "low",
+    cosine_similarity: 0,
+    matches: isSame ? 30 : 3,
+    inliers: isSame ? 20 : 2,
+  }
 }
 
 describe("GET /api/photos/[id]/similar", () => {
@@ -130,7 +154,6 @@ describe("GET /api/photos/[id]/similar", () => {
           distance: 0.3,
         },
       ])
-    vi.mocked(global.fetch).mockImplementation(async () => mockImageFetch())
 
     const response = await makeGetRequest("photo-1")
     const data = await response.json()
@@ -143,10 +166,8 @@ describe("GET /api/photos/[id]/similar", () => {
       isSame: false,
       similarityScore: 0.7, // 1 - distance(0.3)
     })
-    // Only image fetches happened, no call to a Railway /verify endpoint
-    expect(vi.mocked(global.fetch).mock.calls.every(([url]) => !String(url).endsWith("/verify"))).toBe(
-      true
-    )
+    // No Railway call and no image download (pan-py fetches images by URL)
+    expect(global.fetch).not.toHaveBeenCalled()
   })
 
   it("falls back to vector similarity scores when Railway /verify fails", async () => {
@@ -173,12 +194,11 @@ describe("GET /api/photos/[id]/similar", () => {
           distance: 0.5,
         },
       ])
-    vi.mocked(global.fetch).mockImplementation(async (url) => {
-      if (String(url).endsWith("/verify")) {
-        return { ok: false, status: 500, statusText: "Internal Server Error" } as Response
-      }
-      return mockImageFetch()
-    })
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: false,
+      status: 500,
+      statusText: "Internal Server Error",
+    } as Response)
 
     const response = await makeGetRequest("photo-1")
     const data = await response.json()
@@ -228,7 +248,7 @@ describe("GET /api/photos/[id]/similar", () => {
         },
       ])
     vi.mocked(global.fetch).mockImplementation(async (url) => {
-      if (String(url).endsWith("/verify")) {
+      if (String(url) === "https://railway.example.com/verify-urls") {
         return {
           ok: true,
           json: async () => ({
@@ -256,17 +276,63 @@ describe("GET /api/photos/[id]/similar", () => {
           }),
         } as Response
       }
-      return mockImageFetch()
+      throw new Error(`unexpected fetch ${String(url)}`)
     })
 
     const response = await makeGetRequest("photo-1")
     const data = await response.json()
 
+    // pan-py receives the query + candidate segmented URLs, in SQL order
+    const [, init] = vi.mocked(global.fetch).mock.calls[0]
+    expect(JSON.parse(String(init?.body))).toEqual({
+      query_url: "https://r2.example.com/seg1.jpg",
+      candidate_urls: ["https://r2.example.com/seg-low.jpg", "https://r2.example.com/seg-high.jpg"],
+    })
     expect(response.status).toBe(200)
     expect(data).toHaveLength(2)
     // Sorted by score descending: photo-high (0.9) before photo-low (0.4)
     expect(data[0]).toMatchObject({ id: "photo-high", similarityScore: 0.9, confidence: "high" })
     expect(data[1]).toMatchObject({ id: "photo-low", similarityScore: 0.4, confidence: "medium" })
+  })
+
+  it("sends the whole catalogue (not a top-100) to /verify-urls", async () => {
+    vi.mocked(prisma.photo.findFirst).mockResolvedValue(
+      createMockPhoto({ id: "photo-1", segmentedUrl: "https://r2.example.com/seg1.jpg" })
+    )
+    vi.mocked(prisma.$queryRaw)
+      .mockResolvedValueOnce([{ has_embedding: true }])
+      .mockResolvedValueOnce([])
+
+    await makeGetRequest("photo-1")
+
+    const query = vi.mocked(prisma.$queryRaw).mock.calls[1][0] as { values: unknown[] }
+    expect(query.values).toContain(IDENTIFICATION.MAX_VERIFY_CANDIDATES)
+  })
+
+  it("returns the best MAX_RESULTS plus every same-individual match ranked below them", async () => {
+    process.env.RAILWAY_API_URL = "https://railway.example.com"
+    const total = IDENTIFICATION.MAX_RESULTS + 20
+    vi.mocked(prisma.photo.findFirst).mockResolvedValue(
+      createMockPhoto({ id: "photo-1", segmentedUrl: "https://r2.example.com/seg1.jpg" })
+    )
+    vi.mocked(prisma.$queryRaw)
+      .mockResolvedValueOnce([{ has_embedding: true }])
+      .mockResolvedValueOnce(Array.from({ length: total }, (_, i) => candidateRow(`p${i}`, 0.1)))
+    // Candidate i scores (total - i) / 1000; the far-away match (last) is "same"
+    // with a lower ratio than every coincidence above it.
+    const results = Array.from({ length: total }, (_, i) =>
+      verifyResult(i, i === total - 1 ? 0.0005 : (total - i) / 1000, i === total - 1)
+    )
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, results }),
+    } as Response)
+
+    const response = await makeGetRequest("photo-1")
+    const data = await response.json()
+
+    expect(data).toHaveLength(IDENTIFICATION.MAX_RESULTS + 1)
+    expect(data[data.length - 1]).toMatchObject({ id: `p${total - 1}`, isSame: true })
   })
 
   it("restricts candidates to photos already linked to an individual when linkedOnly is set", async () => {

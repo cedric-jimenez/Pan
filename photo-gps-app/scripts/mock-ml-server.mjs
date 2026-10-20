@@ -11,6 +11,7 @@
  *   POST /segment-salamander  -> echoes the uploaded image back as the "segment"
  *   POST /embed               -> deterministic 384-dim unit vector (hash of bytes)
  *   POST /verify              -> per-candidate scores (deterministic, embed-consistent)
+ *   POST /verify-urls         -> same, from a JSON { query_url, candidate_urls } body
  *   GET  /health              -> { status: "ok" }
  *
  * Usage:
@@ -211,6 +212,31 @@ function handleVerify(parts) {
   return { success: true, results }
 }
 
+/** JSON body { query_url, candidate_urls }: scores derived from the URLs (no fetch). */
+function handleVerifyUrls(body) {
+  const { query_url: queryUrl, candidate_urls: candidateUrls } = body || {}
+  if (!queryUrl || !Array.isArray(candidateUrls) || candidateUrls.length === 0) {
+    return { success: false, results: [], error: "Missing query_url or candidate_urls" }
+  }
+  const queryEmb = deterministicEmbedding(Buffer.from(queryUrl))
+  const results = candidateUrls.map((url, index) => {
+    const sim = cosineSimilarity(queryEmb, deterministicEmbedding(Buffer.from(url)))
+    const score = (sim + 1) / 2
+    const isSame = url === queryUrl
+    return {
+      candidate_index: index,
+      is_same: isSame,
+      score,
+      confidence: isSame ? "high" : score > 0.6 ? "medium" : "low",
+      cosine_similarity: sim,
+      matches: isSame ? 120 : Math.round(score * 40),
+      inliers: isSame ? 95 : Math.round(score * 20),
+    }
+  })
+  results.sort((a, b) => b.score - a.score)
+  return { success: true, results }
+}
+
 // ---------------------------------------------------------------------------
 // Server
 // ---------------------------------------------------------------------------
@@ -220,7 +246,11 @@ const ROUTES = {
   "/segment-salamander": handleSegment,
   "/embed": handleEmbed,
   "/verify": handleVerify,
+  "/verify-urls": handleVerifyUrls,
 }
+
+// Routes whose body is JSON rather than multipart/form-data.
+const JSON_ROUTES = new Set(["/verify-urls"])
 
 function sendJson(res, status, payload) {
   const body = JSON.stringify(payload)
@@ -242,10 +272,12 @@ const server = http.createServer(async (req, res) => {
 
   try {
     const body = await readBody(req)
-    const parts = parseMultipart(body, req.headers["content-type"])
-    const payload = handler(parts)
+    const input = JSON_ROUTES.has(pathname)
+      ? JSON.parse(body.toString("utf8") || "{}")
+      : parseMultipart(body, req.headers["content-type"])
+    const payload = handler(input)
     const detail =
-      pathname === "/verify"
+      pathname === "/verify" || pathname === "/verify-urls"
         ? `${payload.results?.length ?? 0} candidate(s)`
         : payload.detected === false
           ? "no detection"
